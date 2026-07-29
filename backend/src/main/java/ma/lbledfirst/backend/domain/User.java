@@ -66,13 +66,13 @@ public class User {
     @OneToMany(mappedBy = "tourist")
     private List<Review> reviews;
 
-    @JsonIgnore
-    @OneToMany(mappedBy = "sender")
-    private List<Message> sentMessages;
-
-    @JsonIgnore
-    @OneToMany(mappedBy = "receiver")
-    private List<Message> receivedMessages;
+//    @JsonIgnore
+//    @OneToMany(mappedBy = "sender")
+//    private List<Message> sentMessages;
+//
+//    @JsonIgnore
+//    @OneToMany(mappedBy = "receiver")
+//    private List<Message> receivedMessages;
 
     @JsonIgnore
     @OneToMany(mappedBy = "host")

@@ -12,9 +12,8 @@ import {
 import { Logo } from "@/components/landing/Logo";
 import { LanguageSelector } from "@/components/landing/LanguageSelector";
 import { I18nProvider } from "@/lib/i18n";
+import { useAuth } from "@/context/AuthContext";
 import {
-  AuthProvider,
-  useAuth,
   getBookings,
   saveBookings,
   getReviews,
@@ -43,9 +42,7 @@ export const Route = createFileRoute("/account")({
 function AccountRoute() {
   return (
     <I18nProvider>
-      <AuthProvider>
-        <AccountGuard />
-      </AuthProvider>
+      <AccountGuard />
     </I18nProvider>
   );
 }
@@ -69,7 +66,6 @@ function AccountGuard() {
 
 function Account() {
   const { user, logout } = useAuth();
-  const navigate = useNavigate();
   const touristId = user!.id;
 
   const [bookings, setBookings] = useState<MockBooking[]>([]);
@@ -126,7 +122,7 @@ function Account() {
           </div>
           <div className="flex items-center gap-2">
             <LanguageSelector />
-            <button onClick={() => { logout(); navigate({ to: "/" }); }} className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-2 text-sm font-medium text-foreground transition hover:bg-muted">
+            <button onClick={() => logout()} className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-2 text-sm font-medium text-foreground transition hover:bg-muted">
               <LogOut className="h-4 w-4" /> <span className="hidden sm:inline">Déconnexion</span>
             </button>
           </div>
@@ -138,7 +134,7 @@ function Account() {
           <ArrowLeft className="h-4 w-4" /> Explorer les expériences
         </Link>
 
-        <PanelHeader title={`Bonjour, ${user?.fullName.split(" ")[0]}`} subtitle="Vos réservations et vos avis." />
+        <PanelHeader title={`Bonjour, ${user?.name.split(" ")[0]}`} subtitle="Vos réservations et vos avis." />
 
         <div className="grid gap-4 sm:grid-cols-3">
           <StatCard icon={<CalendarCheck className="h-5 w-5" />} label="Réservations" value={String(myBookings.length)} tone="primary" />

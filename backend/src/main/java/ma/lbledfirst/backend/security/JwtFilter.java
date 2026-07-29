@@ -17,21 +17,37 @@ public class JwtFilter extends OncePerRequestFilter {
 
     private final JwtUtil jwtUtil;
 
+    private static final String COOKIE_NAME = "access_token";
+
     @Override
-protected void doFilterInternal(HttpServletRequest request,
-                                HttpServletResponse response,
-                                FilterChain chain) throws ServletException, IOException {
-    String header = request.getHeader("Authorization");
-    if (header != null && header.startsWith("Bearer ")) {
-        String token = header.substring(7);
-        if (jwtUtil.isValid(token)) {
+    protected void doFilterInternal(HttpServletRequest request,
+                                    HttpServletResponse response,
+                                    FilterChain chain) throws ServletException, IOException {
+        String token = extractToken(request);
+        if (token != null && jwtUtil.isValid(token)) {
             String email = jwtUtil.extractEmail(token);
             String role = jwtUtil.extractRole(token);
-            var auth = new UsernamePasswordAuthenticationToken(
-                    email, null, List.of(new SimpleGrantedAuthority("ROLE_" + role.toUpperCase())));
-            SecurityContextHolder.getContext().setAuthentication(auth);
+            if (email != null && role != null) {
+                var auth = new UsernamePasswordAuthenticationToken(
+                        email, null, List.of(new SimpleGrantedAuthority("ROLE_" + role.toUpperCase())));
+                SecurityContextHolder.getContext().setAuthentication(auth);
+            }
         }
+        chain.doFilter(request, response);
     }
-    chain.doFilter(request, response);
-}
+
+    private String extractToken(HttpServletRequest request) {
+        if (request.getCookies() != null) {
+            for (Cookie cookie : request.getCookies()) {
+                if (COOKIE_NAME.equals(cookie.getName())) {
+                    return cookie.getValue();
+                }
+            }
+        }
+        String header = request.getHeader("Authorization");
+        if (header != null && header.startsWith("Bearer ")) {
+            return header.substring(7);
+        }
+        return null;
+    }
 }

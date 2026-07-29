@@ -2,11 +2,13 @@ import { useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, Eye, EyeOff, Loader2 } from "lucide-react";
+
 import heroAtlas from "@/assets/hero-atlas.jpg";
 import { Logo } from "@/components/landing/Logo";
 import { LanguageSelector } from "@/components/landing/LanguageSelector";
 import { useI18n, type Lang } from "@/lib/i18n";
-import { useAuth } from "@/lib/mock-auth";
+import { useLogin } from "@/hooks/useLogin";
+import { useSignup } from "@/hooks/useSignup";
 
 export const Route = createFileRoute("/auth")({
   head: () => ({
@@ -33,6 +35,7 @@ type Copy = {
   fullName: string;
   email: string;
   password: string;
+  confirmPassword: string;
   country: string;
   nativeLanguage: string;
   loginBtn: string;
@@ -41,11 +44,11 @@ type Copy = {
   or: string;
   noAccount: string;
   hasAccount: string;
-  demoHint: string;
   errNoAccount: string;
   errBadPassword: string;
   errExists: string;
   errRequired: string;
+  errPasswordMismatch: string;
   roleQuestion: string;
   roleTourist: string;
   roleTouristDesc: string;
@@ -65,6 +68,7 @@ const COPY: Record<Lang, Copy> = {
     fullName: "Nom complet",
     email: "Adresse e-mail",
     password: "Mot de passe",
+    confirmPassword: "Confirmer le mot de passe",
     country: "Pays d'origine",
     nativeLanguage: "Langue maternelle",
     loginBtn: "Se connecter",
@@ -73,11 +77,11 @@ const COPY: Record<Lang, Copy> = {
     or: "ou",
     noAccount: "Pas encore de compte ?",
     hasAccount: "Déjà inscrit ?",
-    demoHint: "Démo admin : admin@lbledfirst.ma / admin123",
     errNoAccount: "Aucun compte pour cet e-mail.",
     errBadPassword: "Mot de passe incorrect.",
     errExists: "Un compte existe déjà avec cet e-mail.",
     errRequired: "Merci de remplir tous les champs.",
+    errPasswordMismatch: "Les mots de passe ne correspondent pas.",
     roleQuestion: "Je m'inscris en tant que",
     roleTourist: "Touriste",
     roleTouristDesc: "Découvrir & réserver des expériences",
@@ -95,6 +99,7 @@ const COPY: Record<Lang, Copy> = {
     fullName: "Full name",
     email: "Email address",
     password: "Password",
+    confirmPassword: "Confirm password",
     country: "Country of origin",
     nativeLanguage: "Native language",
     loginBtn: "Log in",
@@ -103,11 +108,11 @@ const COPY: Record<Lang, Copy> = {
     or: "or",
     noAccount: "No account yet?",
     hasAccount: "Already registered?",
-    demoHint: "Admin demo: admin@lbledfirst.ma / admin123",
     errNoAccount: "No account for this email.",
     errBadPassword: "Incorrect password.",
     errExists: "An account already exists with this email.",
     errRequired: "Please fill in all fields.",
+    errPasswordMismatch: "Passwords do not match.",
     roleQuestion: "I'm signing up as a",
     roleTourist: "Tourist",
     roleTouristDesc: "Discover & book experiences",
@@ -125,6 +130,7 @@ const COPY: Record<Lang, Copy> = {
     fullName: "Nombre completo",
     email: "Correo electrónico",
     password: "Contraseña",
+    confirmPassword: "Confirmar contraseña",
     country: "País de origen",
     nativeLanguage: "Lengua materna",
     loginBtn: "Entrar",
@@ -133,11 +139,11 @@ const COPY: Record<Lang, Copy> = {
     or: "o",
     noAccount: "¿Aún no tienes cuenta?",
     hasAccount: "¿Ya registrado?",
-    demoHint: "Demo admin: admin@lbledfirst.ma / admin123",
     errNoAccount: "No hay cuenta para este correo.",
     errBadPassword: "Contraseña incorrecta.",
     errExists: "Ya existe una cuenta con este correo.",
     errRequired: "Por favor, completa todos los campos.",
+    errPasswordMismatch: "Las contraseñas no coinciden.",
     roleQuestion: "Me registro como",
     roleTourist: "Turista",
     roleTouristDesc: "Descubrir y reservar experiencias",
@@ -155,6 +161,7 @@ const COPY: Record<Lang, Copy> = {
     fullName: "الاسم الكامل",
     email: "البريد الإلكتروني",
     password: "كلمة المرور",
+    confirmPassword: "تأكيد كلمة المرور",
     country: "بلد المنشأ",
     nativeLanguage: "اللغة الأم",
     loginBtn: "تسجيل الدخول",
@@ -163,11 +170,11 @@ const COPY: Record<Lang, Copy> = {
     or: "أو",
     noAccount: "ليس لديك حساب بعد؟",
     hasAccount: "مسجّل بالفعل؟",
-    demoHint: "حساب المشرف التجريبي: admin@lbledfirst.ma / admin123",
     errNoAccount: "لا يوجد حساب لهذا البريد.",
     errBadPassword: "كلمة المرور غير صحيحة.",
     errExists: "يوجد حساب بالفعل بهذا البريد.",
     errRequired: "يرجى ملء جميع الحقول.",
+    errPasswordMismatch: "كلمتا المرور غير متطابقتين.",
     roleQuestion: "أسجّل بصفتي",
     roleTourist: "سائح",
     roleTouristDesc: "اكتشاف وحجز التجارب",
@@ -184,17 +191,19 @@ function AuthScreen() {
   const { lang } = useI18n();
   const c = COPY[lang];
   const navigate = useNavigate();
-  const { login, signup } = useAuth();
+
+  const { login, loading: loginLoading, error: loginError } = useLogin();
+  const { signup, loading: signupLoading, error: signupError } = useSignup();
 
   const [mode, setMode] = useState<"login" | "signup">("login");
   const [showPw, setShowPw] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [clientError, setClientError] = useState<string | null>(null);
 
   const [form, setForm] = useState({
     fullName: "",
     email: "",
     password: "",
+    confirmPassword: "",
     country: "",
     nativeLanguage: "",
   });
@@ -202,63 +211,59 @@ function AuthScreen() {
   const set = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement>) =>
     setForm((f) => ({ ...f, [k]: e.target.value }));
 
-  const errText = (code?: string) => {
-    switch (code) {
-      case "no-account":
-        return c.errNoAccount;
-      case "bad-password":
-        return c.errBadPassword;
-      case "exists":
-        return c.errExists;
-      default:
-        return c.errRequired;
-    }
-  };
+  const loading = loginLoading || signupLoading;
+  const error = clientError || loginError || signupError;
 
-  const submit = (e: React.FormEvent) => {
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
+    setClientError(null);
 
     if (mode === "login") {
-      if (!form.email || !form.password) return setError(c.errRequired);
-    } else if (
-      !form.fullName ||
-      !form.email ||
-      !form.password ||
-      !form.country ||
-      !form.nativeLanguage
-    ) {
-      return setError(c.errRequired);
+      if (!form.email || !form.password) {
+        setClientError(c.errRequired);
+        return;
+      }
+      const res = await login({ email: form.email, password: form.password });
+      if (!res.ok) return;
+    } else {
+      if (
+        !form.fullName ||
+        !form.email ||
+        !form.password ||
+        !form.confirmPassword ||
+        !form.country ||
+        !form.nativeLanguage
+      ) {
+        setClientError(c.errRequired);
+        return;
+      }
+      if (form.password !== form.confirmPassword) {
+        setClientError(c.errPasswordMismatch);
+        return;
+      }
+      const res = await signup({
+        name: form.fullName,           // ← mapping ici
+        email: form.email,
+        password: form.password,
+        confirmPassword: form.confirmPassword,
+        country: form.country,
+        language: form.nativeLanguage, // ← mapping ici
+      });
+      if (!res.ok) return;
     }
 
-    setLoading(true);
-    // Simulate a network round-trip (frontend only, no backend yet).
-    setTimeout(() => {
-      const res =
-        mode === "login"
-          ? login(form.email, form.password)
-          : signup({
-              fullName: form.fullName,
-              email: form.email,
-              password: form.password,
-              country: form.country,
-              nativeLanguage: form.nativeLanguage,
-              role: "tourist",
-            });
-      setLoading(false);
-      if (!res.ok) {
-        setError(errText(res.error));
-        return;
-      }
-      const pendingRedirect = window.localStorage.getItem("lbf.auth.redirect");
-      if (pendingRedirect?.startsWith("/")) {
-        window.localStorage.removeItem("lbf.auth.redirect");
-        window.location.assign(pendingRedirect);
-        return;
-      }
-      const r = res.user?.role;
-      navigate({ to: r === "admin" ? "/admin" : "/account" });
-    }, 550);
+    // Redirection
+    const pendingRedirect = window.localStorage.getItem("lbf.auth.redirect");
+    if (pendingRedirect?.startsWith("/")) {
+      window.localStorage.removeItem("lbf.auth.redirect");
+      window.location.assign(pendingRedirect);
+      return;
+    }
+
+    // On ne peut plus lire res.user.role ici car le hook gère le contexte
+    // Le contexte est déjà mis à jour, on lit depuis useAuth si besoin
+    // ou on redirige vers /account par défaut
+    navigate({ to: "/account" });
   };
 
   const inputCls =
@@ -306,7 +311,7 @@ function AuthScreen() {
                 type="button"
                 onClick={() => {
                   setMode(m);
-                  setError(null);
+                  setClientError(null);
                 }}
                 className={`relative rounded-full px-6 py-2 text-sm font-semibold transition ${
                   mode === m ? "text-primary-foreground" : "text-muted-foreground hover:text-foreground"
@@ -330,7 +335,7 @@ function AuthScreen() {
 
           <button
             type="button"
-            onClick={() => setError("Google sera disponible avec le backend.")}
+            onClick={() => setClientError("Google sera disponible avec le backend.")}
             className="mb-4 inline-flex w-full items-center justify-center gap-3 rounded-xl border border-border bg-card px-4 py-3 text-sm font-semibold text-foreground transition hover:bg-muted"
           >
             <GoogleIcon />
@@ -399,6 +404,26 @@ function AuthScreen() {
                   initial={{ opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: "auto" }}
                   exit={{ opacity: 0, height: 0 }}
+                  className="overflow-hidden"
+                >
+                  <input
+                    className={inputCls}
+                    type={showPw ? "text" : "password"}
+                    placeholder={c.confirmPassword}
+                    value={form.confirmPassword}
+                    onChange={set("confirmPassword")}
+                    autoComplete="new-password"
+                  />
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            <AnimatePresence initial={false}>
+              {mode === "signup" && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
                   className="grid gap-3 overflow-hidden sm:grid-cols-2"
                 >
                   <input
@@ -440,16 +465,12 @@ function AuthScreen() {
               type="button"
               onClick={() => {
                 setMode(mode === "login" ? "signup" : "login");
-                setError(null);
+                setClientError(null);
               }}
               className="font-semibold text-primary hover:underline"
             >
               {mode === "login" ? c.signupTab : c.loginTab}
             </button>
-          </p>
-
-          <p className="mt-6 rounded-xl border border-dashed border-border bg-muted/50 px-4 py-2.5 text-center text-xs text-muted-foreground">
-            {c.demoHint}
           </p>
         </div>
       </div>

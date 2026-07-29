@@ -29,7 +29,7 @@ import {
 } from "@/lib/formations";
 import { Navbar } from "@/components/landing/Navbar";
 import { Footer } from "@/components/landing/Footer";
-import { useAuth } from "@/lib/mock-auth";
+import { useAuth } from "@/context/AuthContext";
 
 export const Route = createFileRoute("/formations/$slug")({
   head: ({ params }) => ({
