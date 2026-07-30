@@ -1,13 +1,15 @@
 import { useEffect, useState } from "react";
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { motion } from "framer-motion";
-import { Menu, X, LogIn } from "lucide-react";
+import { Menu, X, LogIn, User as UserIcon, LogOut, CalendarCheck, GraduationCap, Star, ChevronDown } from "lucide-react";
 import { Logo } from "./Logo";
 import { LanguageSelector } from "./LanguageSelector";
 import { useI18n } from "@/lib/i18n";
+import { useAuth } from "@/lib/mock-auth";
 
 export function Navbar({ onDiscover }: { onDiscover: () => void }) {
   const { t } = useI18n();
+  const { user } = useAuth();
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
 
@@ -23,6 +25,8 @@ export function Navbar({ onDiscover }: { onDiscover: () => void }) {
     { href: "#experiences", label: t("nav.experiences") },
     { href: "#how", label: t("nav.how") },
   ];
+
+  const isTourist = user?.role === "tourist";
 
   return (
     <motion.header
@@ -62,20 +66,25 @@ export function Navbar({ onDiscover }: { onDiscover: () => void }) {
           </Link>
         </div>
 
-
         <div className="flex items-center gap-2">
           <LanguageSelector variant={scrolled ? "dark" : "light"} />
-          <Link
-            to="/auth"
-            className={`hidden items-center gap-1.5 rounded-full border px-3.5 py-2 text-sm font-semibold transition-colors sm:inline-flex ${
-              scrolled
-                ? "border-border text-foreground hover:bg-muted"
-                : "border-card/40 text-card hover:bg-card/15"
-            }`}
-          >
-            <LogIn className="h-4 w-4" />
-            {t("nav.login")}
-          </Link>
+
+          {isTourist ? (
+            <TouristMenu scrolled={scrolled} />
+          ) : (
+            <Link
+              to="/auth"
+              className={`hidden items-center gap-1.5 rounded-full border px-3.5 py-2 text-sm font-semibold transition-colors sm:inline-flex ${
+                scrolled
+                  ? "border-border text-foreground hover:bg-muted"
+                  : "border-card/40 text-card hover:bg-card/15"
+              }`}
+            >
+              <LogIn className="h-4 w-4" />
+              {t("nav.login")}
+            </Link>
+          )}
+
           <button
             onClick={onDiscover}
             className="hidden rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-warm transition-transform hover:scale-105 sm:inline-flex"
@@ -118,14 +127,20 @@ export function Navbar({ onDiscover }: { onDiscover: () => void }) {
             >
               {t("nav.formations")}
             </Link>
-            <Link
-              to="/auth"
-              onClick={() => setOpen(false)}
-              className="mt-1 inline-flex items-center justify-center gap-1.5 rounded-full border border-border px-4 py-3 text-sm font-semibold text-foreground hover:bg-muted"
-            >
-              <LogIn className="h-4 w-4" />
-              {t("nav.login")}
-            </Link>
+
+            {isTourist ? (
+              <MobileTouristLinks onClose={() => setOpen(false)} />
+            ) : (
+              <Link
+                to="/auth"
+                onClick={() => setOpen(false)}
+                className="mt-1 inline-flex items-center justify-center gap-1.5 rounded-full border border-border px-4 py-3 text-sm font-semibold text-foreground hover:bg-muted"
+              >
+                <LogIn className="h-4 w-4" />
+                {t("nav.login")}
+              </Link>
+            )}
+
             <button
               onClick={() => {
                 setOpen(false);
@@ -136,9 +151,119 @@ export function Navbar({ onDiscover }: { onDiscover: () => void }) {
               {t("nav.cta")}
             </button>
           </div>
-
         </motion.div>
       )}
     </motion.header>
+  );
+}
+
+function TouristMenu({ scrolled }: { scrolled: boolean }) {
+  const { user, logout } = useAuth();
+  const { t } = useI18n();
+  const [open, setOpen] = useState(false);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!open) return;
+    const onDoc = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest("[data-tourist-menu]")) setOpen(false);
+    };
+    document.addEventListener("mousedown", onDoc);
+    return () => document.removeEventListener("mousedown", onDoc);
+  }, [open]);
+
+  if (!user) return null;
+  const initial = user.fullName.charAt(0).toUpperCase();
+
+  return (
+    <div data-tourist-menu className="relative hidden sm:block">
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className={`inline-flex items-center gap-2 rounded-full border px-2 py-1.5 pe-3 text-sm font-semibold transition-colors ${
+          scrolled ? "border-border text-foreground hover:bg-muted" : "border-card/40 text-card hover:bg-card/15"
+        }`}
+      >
+        {user.avatar ? (
+          <img src={user.avatar} alt="" className="h-7 w-7 rounded-full object-cover" />
+        ) : (
+          <span className="grid h-7 w-7 place-items-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
+            {initial}
+          </span>
+        )}
+        <span className="max-w-[120px] truncate">{user.fullName.split(" ")[0]}</span>
+        <ChevronDown className={`h-3.5 w-3.5 transition ${open ? "rotate-180" : ""}`} />
+      </button>
+
+      {open && (
+        <div className="absolute end-0 mt-2 w-64 overflow-hidden rounded-2xl border border-border bg-card shadow-lg">
+          <div className="border-b border-border bg-muted/40 px-4 py-3">
+            <p className="truncate text-sm font-semibold text-foreground">{user.fullName}</p>
+            <p className="truncate text-xs text-muted-foreground">{user.email}</p>
+          </div>
+          <div className="py-1">
+            <MenuLink to="/me/bookings" icon={<CalendarCheck className="h-4 w-4" />} label={t("nav.me.bookings")} onClick={() => setOpen(false)} />
+            <MenuLink to="/me/formations" icon={<GraduationCap className="h-4 w-4" />} label={t("nav.me.formations")} onClick={() => setOpen(false)} />
+            <MenuLink to="/me/reviews" icon={<Star className="h-4 w-4" />} label={t("nav.me.reviews")} onClick={() => setOpen(false)} />
+            <MenuLink to="/me/profile" icon={<UserIcon className="h-4 w-4" />} label={t("nav.me.profile")} onClick={() => setOpen(false)} />
+          </div>
+          <button
+            onClick={() => { logout(); setOpen(false); navigate({ to: "/" }); }}
+            className="flex w-full items-center gap-2 border-t border-border px-4 py-3 text-start text-sm font-medium text-destructive transition hover:bg-destructive/10"
+          >
+            <LogOut className="h-4 w-4" />
+            {t("nav.me.logout")}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function MenuLink({ to, icon, label, onClick }: { to: string; icon: React.ReactNode; label: string; onClick: () => void }) {
+  return (
+    <Link
+      to={to}
+      onClick={onClick}
+      className="flex items-center gap-2.5 px-4 py-2.5 text-sm font-medium text-foreground transition hover:bg-muted"
+    >
+      {icon}
+      {label}
+    </Link>
+  );
+}
+
+function MobileTouristLinks({ onClose }: { onClose: () => void }) {
+  const { user, logout } = useAuth();
+  const { t } = useI18n();
+  const navigate = useNavigate();
+  if (!user) return null;
+  const item = (to: string, label: string, icon: React.ReactNode) => (
+    <Link
+      to={to}
+      onClick={onClose}
+      className="flex items-center gap-2.5 rounded-xl px-3 py-3 text-sm font-medium text-foreground hover:bg-muted"
+    >
+      {icon}
+      {label}
+    </Link>
+  );
+  return (
+    <>
+      <div className="mt-1 border-t border-border pt-2 text-xs font-semibold uppercase text-muted-foreground px-3">
+        {user.fullName}
+      </div>
+      {item("/me/bookings", t("nav.me.bookings"), <CalendarCheck className="h-4 w-4" />)}
+      {item("/me/formations", t("nav.me.formations"), <GraduationCap className="h-4 w-4" />)}
+      {item("/me/reviews", t("nav.me.reviews"), <Star className="h-4 w-4" />)}
+      {item("/me/profile", t("nav.me.profile"), <UserIcon className="h-4 w-4" />)}
+      <button
+        onClick={() => { logout(); onClose(); navigate({ to: "/" }); }}
+        className="flex items-center gap-2.5 rounded-xl px-3 py-3 text-sm font-medium text-destructive hover:bg-destructive/10"
+      >
+        <LogOut className="h-4 w-4" />
+        {t("nav.me.logout")}
+      </button>
+    </>
   );
 }
