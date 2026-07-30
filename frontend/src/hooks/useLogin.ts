@@ -9,13 +9,15 @@ export function useLogin() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const login = async (credentials: LoginCredentials): Promise<{ ok: boolean; error?: string }> => {
+  const login = async (
+    credentials: LoginCredentials,
+  ): Promise<{ ok: boolean; error?: string; role?: "admin" | "tourist" }> => {
     setLoading(true);
     setError(null);
     try {
       const data = await authService.login(credentials);
       setAuth(data);
-      return { ok: true };
+      return { ok: true, role: data.role };
     } catch (err: any) {
       const msg = err.response?.data?.message || "Erreur de connexion";
       setError(msg);

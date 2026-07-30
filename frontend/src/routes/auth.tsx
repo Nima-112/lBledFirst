@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type ChangeEvent, type FormEvent } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, Eye, EyeOff, Loader2 } from "lucide-react";
@@ -6,22 +6,25 @@ import { ArrowLeft, Eye, EyeOff, Loader2 } from "lucide-react";
 import heroAtlas from "@/assets/hero-atlas.jpg";
 import { Logo } from "@/components/landing/Logo";
 import { LanguageSelector } from "@/components/landing/LanguageSelector";
-import { useI18n, type Lang } from "@/lib/i18n";
+import { Combobox } from "@/components/ui/combobox";
 import { useLogin } from "@/hooks/useLogin";
 import { useSignup } from "@/hooks/useSignup";
+import { COUNTRIES } from "@/lib/countries";
+import { useI18n, type Lang } from "@/lib/i18n";
+import { NATIVE_LANGUAGES } from "@/lib/languages";
 
 export const Route = createFileRoute("/auth")({
   head: () => ({
     meta: [
-      { title: "Se connecter — L'Bled First" },
+      { title: "Se connecter - L'Bled First" },
       {
         name: "description",
         content:
-          "Connectez-vous ou créez votre compte L'Bled First pour découvrir et réserver des expériences rurales authentiques au Maroc.",
+          "Connectez-vous ou creez votre compte L'Bled First pour decouvrir et reserver des experiences rurales authentiques au Maroc.",
       },
     ],
   }),
-  component: AuthRoute,
+  component: AuthScreen,
 });
 
 type Copy = {
@@ -38,55 +41,43 @@ type Copy = {
   confirmPassword: string;
   country: string;
   nativeLanguage: string;
+  countryPh: string;
+  languagePh: string;
   loginBtn: string;
   signupBtn: string;
   google: string;
   or: string;
   noAccount: string;
   hasAccount: string;
-  errNoAccount: string;
-  errBadPassword: string;
-  errExists: string;
   errRequired: string;
   errPasswordMismatch: string;
-  roleQuestion: string;
-  roleTourist: string;
-  roleTouristDesc: string;
-  roleHost: string;
-  roleHostDesc: string;
 };
 
 const COPY: Record<Lang, Copy> = {
   fr: {
-    back: "Retour à l'accueil",
+    back: "Retour a l'accueil",
     welcome: "Bienvenue au bled",
-    tagline: "Rencontrez le vrai Maroc rural, filmé et raconté par ses habitants.",
+    tagline: "Rencontrez le vrai Maroc rural, filme et raconte par ses habitants.",
     loginTab: "Connexion",
     signupTab: "Inscription",
     loginTitle: "Content de vous revoir",
-    signupTitle: "Créez votre compte",
+    signupTitle: "Creez votre compte",
     fullName: "Nom complet",
     email: "Adresse e-mail",
     password: "Mot de passe",
     confirmPassword: "Confirmer le mot de passe",
     country: "Pays d'origine",
     nativeLanguage: "Langue maternelle",
+    countryPh: "Choisissez votre pays...",
+    languagePh: "Choisissez votre langue...",
     loginBtn: "Se connecter",
-    signupBtn: "Créer mon compte",
+    signupBtn: "Creer mon compte",
     google: "Continuer avec Google",
     or: "ou",
     noAccount: "Pas encore de compte ?",
-    hasAccount: "Déjà inscrit ?",
-    errNoAccount: "Aucun compte pour cet e-mail.",
-    errBadPassword: "Mot de passe incorrect.",
-    errExists: "Un compte existe déjà avec cet e-mail.",
+    hasAccount: "Deja inscrit ?",
     errRequired: "Merci de remplir tous les champs.",
     errPasswordMismatch: "Les mots de passe ne correspondent pas.",
-    roleQuestion: "Je m'inscris en tant que",
-    roleTourist: "Touriste",
-    roleTouristDesc: "Découvrir & réserver des expériences",
-    roleHost: "Hôte",
-    roleHostDesc: "Proposer mes expériences & vidéos",
   },
   en: {
     back: "Back to home",
@@ -102,22 +93,16 @@ const COPY: Record<Lang, Copy> = {
     confirmPassword: "Confirm password",
     country: "Country of origin",
     nativeLanguage: "Native language",
+    countryPh: "Pick your country...",
+    languagePh: "Pick your language...",
     loginBtn: "Log in",
     signupBtn: "Create my account",
     google: "Continue with Google",
     or: "or",
     noAccount: "No account yet?",
     hasAccount: "Already registered?",
-    errNoAccount: "No account for this email.",
-    errBadPassword: "Incorrect password.",
-    errExists: "An account already exists with this email.",
     errRequired: "Please fill in all fields.",
     errPasswordMismatch: "Passwords do not match.",
-    roleQuestion: "I'm signing up as a",
-    roleTourist: "Tourist",
-    roleTouristDesc: "Discover & book experiences",
-    roleHost: "Host",
-    roleHostDesc: "Offer my experiences & videos",
   },
   es: {
     back: "Volver al inicio",
@@ -128,32 +113,26 @@ const COPY: Record<Lang, Copy> = {
     loginTitle: "Encantado de verte de nuevo",
     signupTitle: "Crea tu cuenta",
     fullName: "Nombre completo",
-    email: "Correo electrónico",
-    password: "Contraseña",
-    confirmPassword: "Confirmar contraseña",
-    country: "País de origen",
+    email: "Correo electronico",
+    password: "Contrasena",
+    confirmPassword: "Confirmar contrasena",
+    country: "Pais de origen",
     nativeLanguage: "Lengua materna",
+    countryPh: "Elige tu pais...",
+    languagePh: "Elige tu idioma...",
     loginBtn: "Entrar",
     signupBtn: "Crear mi cuenta",
     google: "Continuar con Google",
     or: "o",
-    noAccount: "¿Aún no tienes cuenta?",
-    hasAccount: "¿Ya registrado?",
-    errNoAccount: "No hay cuenta para este correo.",
-    errBadPassword: "Contraseña incorrecta.",
-    errExists: "Ya existe una cuenta con este correo.",
+    noAccount: "Aun no tienes cuenta?",
+    hasAccount: "Ya registrado?",
     errRequired: "Por favor, completa todos los campos.",
-    errPasswordMismatch: "Las contraseñas no coinciden.",
-    roleQuestion: "Me registro como",
-    roleTourist: "Turista",
-    roleTouristDesc: "Descubrir y reservar experiencias",
-    roleHost: "Anfitrión",
-    roleHostDesc: "Ofrecer mis experiencias y vídeos",
+    errPasswordMismatch: "Las contrasenas no coinciden.",
   },
   ar: {
     back: "العودة إلى الرئيسية",
-    welcome: "مرحباً بك في البلاد",
-    tagline: "تعرّف على المغرب القروي الحقيقي، مصوَّراً ومحكياً من أهله.",
+    welcome: "مرحبا بك في البلاد",
+    tagline: "تعرّف على المغرب القروي الحقيقي، مصوّرا ومحكيا من أهله.",
     loginTab: "تسجيل الدخول",
     signupTab: "إنشاء حساب",
     loginTitle: "سعداء بعودتك",
@@ -164,41 +143,29 @@ const COPY: Record<Lang, Copy> = {
     confirmPassword: "تأكيد كلمة المرور",
     country: "بلد المنشأ",
     nativeLanguage: "اللغة الأم",
+    countryPh: "اختر بلدك...",
+    languagePh: "اختر لغتك...",
     loginBtn: "تسجيل الدخول",
     signupBtn: "إنشاء حسابي",
     google: "المتابعة مع Google",
     or: "أو",
     noAccount: "ليس لديك حساب بعد؟",
     hasAccount: "مسجّل بالفعل؟",
-    errNoAccount: "لا يوجد حساب لهذا البريد.",
-    errBadPassword: "كلمة المرور غير صحيحة.",
-    errExists: "يوجد حساب بالفعل بهذا البريد.",
     errRequired: "يرجى ملء جميع الحقول.",
     errPasswordMismatch: "كلمتا المرور غير متطابقتين.",
-    roleQuestion: "أسجّل بصفتي",
-    roleTourist: "سائح",
-    roleTouristDesc: "اكتشاف وحجز التجارب",
-    roleHost: "مضيف",
-    roleHostDesc: "عرض تجاربي وفيديوهاتي",
   },
 };
-
-function AuthRoute() {
-  return <AuthScreen />;
-}
 
 function AuthScreen() {
   const { lang } = useI18n();
   const c = COPY[lang];
   const navigate = useNavigate();
-
   const { login, loading: loginLoading, error: loginError } = useLogin();
   const { signup, loading: signupLoading, error: signupError } = useSignup();
 
   const [mode, setMode] = useState<"login" | "signup">("login");
   const [showPw, setShowPw] = useState(false);
   const [clientError, setClientError] = useState<string | null>(null);
-
   const [form, setForm] = useState({
     fullName: "",
     email: "",
@@ -208,51 +175,16 @@ function AuthScreen() {
     nativeLanguage: "",
   });
 
-  const set = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement>) =>
-    setForm((f) => ({ ...f, [k]: e.target.value }));
+  const set = (key: keyof typeof form) => (event: ChangeEvent<HTMLInputElement>) => {
+    setForm((prev) => ({ ...prev, [key]: event.target.value }));
+  };
 
   const loading = loginLoading || signupLoading;
   const error = clientError || loginError || signupError;
+  const countryOptions = COUNTRIES.map((country) => ({ value: country.name, label: country.name, hint: country.flag }));
+  const languageOptions = NATIVE_LANGUAGES.map((language) => ({ value: language.name, label: language.name }));
 
-  const submit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setClientError(null);
-
-    if (mode === "login") {
-      if (!form.email || !form.password) {
-        setClientError(c.errRequired);
-        return;
-      }
-      const res = await login({ email: form.email, password: form.password });
-      if (!res.ok) return;
-    } else {
-      if (
-        !form.fullName ||
-        !form.email ||
-        !form.password ||
-        !form.confirmPassword ||
-        !form.country ||
-        !form.nativeLanguage
-      ) {
-        setClientError(c.errRequired);
-        return;
-      }
-      if (form.password !== form.confirmPassword) {
-        setClientError(c.errPasswordMismatch);
-        return;
-      }
-      const res = await signup({
-        name: form.fullName,           // ← mapping ici
-        email: form.email,
-        password: form.password,
-        confirmPassword: form.confirmPassword,
-        country: form.country,
-        language: form.nativeLanguage, // ← mapping ici
-      });
-      if (!res.ok) return;
-    }
-
-    // Redirection
+  const finishAuth = (role?: "admin" | "tourist") => {
     const pendingRedirect = window.localStorage.getItem("lbf.auth.redirect");
     if (pendingRedirect?.startsWith("/")) {
       window.localStorage.removeItem("lbf.auth.redirect");
@@ -260,10 +192,53 @@ function AuthScreen() {
       return;
     }
 
-    // On ne peut plus lire res.user.role ici car le hook gère le contexte
-    // Le contexte est déjà mis à jour, on lit depuis useAuth si besoin
-    // ou on redirige vers /account par défaut
-    navigate({ to: "/account" });
+    navigate({ to: role === "admin" ? "/admin" : "/me/bookings" });
+  };
+
+  const submit = async (event: FormEvent) => {
+    event.preventDefault();
+    setClientError(null);
+
+    if (mode === "login") {
+      if (!form.email || !form.password) {
+        setClientError(c.errRequired);
+        return;
+      }
+
+      const result = await login({ email: form.email, password: form.password });
+      if (!result.ok) return;
+      finishAuth(result.role);
+      return;
+    }
+
+    if (
+      !form.fullName ||
+      !form.email ||
+      !form.password ||
+      !form.confirmPassword ||
+      !form.country ||
+      !form.nativeLanguage
+    ) {
+      setClientError(c.errRequired);
+      return;
+    }
+
+    if (form.password !== form.confirmPassword) {
+      setClientError(c.errPasswordMismatch);
+      return;
+    }
+
+    const result = await signup({
+      name: form.fullName,
+      email: form.email,
+      password: form.password,
+      confirmPassword: form.confirmPassword,
+      country: form.country,
+      language: form.nativeLanguage,
+    });
+
+    if (!result.ok) return;
+    finishAuth(result.role);
   };
 
   const inputCls =
@@ -271,29 +246,18 @@ function AuthScreen() {
 
   return (
     <div className="grid min-h-screen bg-background lg:grid-cols-2">
-      {/* Visual side */}
       <div className="relative hidden overflow-hidden lg:block">
-        <img
-          src={heroAtlas}
-          alt="Paysage rural marocain dans l'Atlas"
-          className="absolute inset-0 h-full w-full object-cover"
-        />
+        <img src={heroAtlas} alt="Paysage rural marocain dans l'Atlas" className="absolute inset-0 h-full w-full object-cover" />
         <div className="absolute inset-0 bg-gradient-to-t from-ink/80 via-ink/30 to-transparent" />
         <div className="absolute inset-x-0 bottom-0 p-12 text-card">
           <p className="font-hand text-3xl text-saffron">{c.welcome}</p>
-          <p className="mt-3 max-w-md font-display text-2xl font-bold leading-snug">
-            {c.tagline}
-          </p>
+          <p className="mt-3 max-w-md font-display text-2xl font-bold leading-snug">{c.tagline}</p>
         </div>
       </div>
 
-      {/* Form side */}
       <div className="flex flex-col px-5 py-8 sm:px-10">
         <div className="flex items-center justify-between">
-          <Link
-            to="/"
-            className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground transition hover:text-foreground"
-          >
+          <Link to="/" className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground transition hover:text-foreground">
             <ArrowLeft className="h-4 w-4" />
             {c.back}
           </Link>
@@ -303,28 +267,27 @@ function AuthScreen() {
         <div className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center py-8">
           <Logo className="mb-8 self-start" />
 
-          {/* Tabs */}
           <div className="mb-6 inline-flex rounded-full border border-border bg-muted p-1">
-            {(["login", "signup"] as const).map((m) => (
+            {(["login", "signup"] as const).map((tab) => (
               <button
-                key={m}
+                key={tab}
                 type="button"
                 onClick={() => {
-                  setMode(m);
+                  setMode(tab);
                   setClientError(null);
                 }}
                 className={`relative rounded-full px-6 py-2 text-sm font-semibold transition ${
-                  mode === m ? "text-primary-foreground" : "text-muted-foreground hover:text-foreground"
+                  mode === tab ? "text-primary-foreground" : "text-muted-foreground hover:text-foreground"
                 }`}
               >
-                {mode === m && (
+                {mode === tab && (
                   <motion.span
                     layoutId="auth-tab"
                     className="absolute inset-0 rounded-full bg-primary"
                     transition={{ type: "spring", stiffness: 400, damping: 32 }}
                   />
                 )}
-                <span className="relative">{m === "login" ? c.loginTab : c.signupTab}</span>
+                <span className="relative">{tab === "login" ? c.loginTab : c.signupTab}</span>
               </button>
             ))}
           </div>
@@ -350,8 +313,6 @@ function AuthScreen() {
 
           <form onSubmit={submit} className="space-y-3">
             <AnimatePresence initial={false}>
-
-
               {mode === "signup" && (
                 <motion.div
                   initial={{ opacity: 0, height: 0 }}
@@ -359,25 +320,12 @@ function AuthScreen() {
                   exit={{ opacity: 0, height: 0 }}
                   className="overflow-hidden"
                 >
-                  <input
-                    className={inputCls}
-                    placeholder={c.fullName}
-                    value={form.fullName}
-                    onChange={set("fullName")}
-                    autoComplete="name"
-                  />
+                  <input className={inputCls} placeholder={c.fullName} value={form.fullName} onChange={set("fullName")} autoComplete="name" />
                 </motion.div>
               )}
             </AnimatePresence>
 
-            <input
-              className={inputCls}
-              type="email"
-              placeholder={c.email}
-              value={form.email}
-              onChange={set("email")}
-              autoComplete="email"
-            />
+            <input className={inputCls} type="email" placeholder={c.email} value={form.email} onChange={set("email")} autoComplete="email" />
 
             <div className="relative">
               <input
@@ -390,7 +338,7 @@ function AuthScreen() {
               />
               <button
                 type="button"
-                onClick={() => setShowPw((v) => !v)}
+                onClick={() => setShowPw((value) => !value)}
                 className="absolute end-3 top-1/2 -translate-y-1/2 text-muted-foreground transition hover:text-foreground"
                 aria-label="toggle password"
               >
@@ -424,30 +372,25 @@ function AuthScreen() {
                   initial={{ opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: "auto" }}
                   exit={{ opacity: 0, height: 0 }}
-                  className="grid gap-3 overflow-hidden sm:grid-cols-2"
+                  className="grid gap-3 overflow-visible sm:grid-cols-2"
                 >
-                  <input
-                    className={inputCls}
-                    placeholder={c.country}
+                  <Combobox
                     value={form.country}
-                    onChange={set("country")}
-                    autoComplete="country-name"
+                    onChange={(value) => setForm((prev) => ({ ...prev, country: value }))}
+                    options={countryOptions}
+                    placeholder={c.countryPh}
                   />
-                  <input
-                    className={inputCls}
-                    placeholder={c.nativeLanguage}
+                  <Combobox
                     value={form.nativeLanguage}
-                    onChange={set("nativeLanguage")}
+                    onChange={(value) => setForm((prev) => ({ ...prev, nativeLanguage: value }))}
+                    options={languageOptions}
+                    placeholder={c.languagePh}
                   />
                 </motion.div>
               )}
             </AnimatePresence>
 
-            {error && (
-              <p className="rounded-xl bg-destructive/10 px-4 py-2.5 text-sm text-destructive">
-                {error}
-              </p>
-            )}
+            {error && <p className="rounded-xl bg-destructive/10 px-4 py-2.5 text-sm text-destructive">{error}</p>}
 
             <button
               type="submit"

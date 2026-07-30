@@ -15,7 +15,13 @@ import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as FormationsRouteImport } from './routes/formations'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
+import { Route as ExperiencesIdRouteImport } from './routes/experiences.$id'
 import { Route as FormationsSlugRouteImport } from './routes/formations.$slug'
+import { Route as MeIndexRouteImport } from './routes/me.index'
+import { Route as MeBookingsRouteImport } from './routes/me.bookings'
+import { Route as MeFormationsRouteImport } from './routes/me.formations'
+import { Route as MeProfileRouteImport } from './routes/me.profile'
+import { Route as MeReviewsRouteImport } from './routes/me.reviews'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -47,10 +53,40 @@ const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   path: '/sitemap.xml',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ExperiencesIdRoute = ExperiencesIdRouteImport.update({
+  id: '/experiences/$id',
+  path: '/experiences/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const FormationsSlugRoute = FormationsSlugRouteImport.update({
   id: '/$slug',
   path: '/$slug',
   getParentRoute: () => FormationsRoute,
+} as any)
+const MeIndexRoute = MeIndexRouteImport.update({
+  id: '/me/',
+  path: '/me/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MeBookingsRoute = MeBookingsRouteImport.update({
+  id: '/me/bookings',
+  path: '/me/bookings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MeFormationsRoute = MeFormationsRouteImport.update({
+  id: '/me/formations',
+  path: '/me/formations',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MeProfileRoute = MeProfileRouteImport.update({
+  id: '/me/profile',
+  path: '/me/profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MeReviewsRoute = MeReviewsRouteImport.update({
+  id: '/me/reviews',
+  path: '/me/reviews',
+  getParentRoute: () => rootRouteImport,
 } as any)
 
 export interface FileRoutesByFullPath {
@@ -60,7 +96,13 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/formations': typeof FormationsRouteWithChildren
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/experiences/$id': typeof ExperiencesIdRoute
   '/formations/$slug': typeof FormationsSlugRoute
+  '/me/bookings': typeof MeBookingsRoute
+  '/me/formations': typeof MeFormationsRoute
+  '/me/profile': typeof MeProfileRoute
+  '/me/reviews': typeof MeReviewsRoute
+  '/me/': typeof MeIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -69,7 +111,13 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/formations': typeof FormationsRouteWithChildren
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/experiences/$id': typeof ExperiencesIdRoute
   '/formations/$slug': typeof FormationsSlugRoute
+  '/me/bookings': typeof MeBookingsRoute
+  '/me/formations': typeof MeFormationsRoute
+  '/me/profile': typeof MeProfileRoute
+  '/me/reviews': typeof MeReviewsRoute
+  '/me': typeof MeIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -79,7 +127,13 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/formations': typeof FormationsRouteWithChildren
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/experiences/$id': typeof ExperiencesIdRoute
   '/formations/$slug': typeof FormationsSlugRoute
+  '/me/bookings': typeof MeBookingsRoute
+  '/me/formations': typeof MeFormationsRoute
+  '/me/profile': typeof MeProfileRoute
+  '/me/reviews': typeof MeReviewsRoute
+  '/me/': typeof MeIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -90,7 +144,13 @@ export interface FileRouteTypes {
     | '/auth'
     | '/formations'
     | '/sitemap.xml'
+    | '/experiences/$id'
     | '/formations/$slug'
+    | '/me/bookings'
+    | '/me/formations'
+    | '/me/profile'
+    | '/me/reviews'
+    | '/me/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -99,7 +159,13 @@ export interface FileRouteTypes {
     | '/auth'
     | '/formations'
     | '/sitemap.xml'
+    | '/experiences/$id'
     | '/formations/$slug'
+    | '/me/bookings'
+    | '/me/formations'
+    | '/me/profile'
+    | '/me/reviews'
+    | '/me'
   id:
     | '__root__'
     | '/'
@@ -108,7 +174,13 @@ export interface FileRouteTypes {
     | '/auth'
     | '/formations'
     | '/sitemap.xml'
+    | '/experiences/$id'
     | '/formations/$slug'
+    | '/me/bookings'
+    | '/me/formations'
+    | '/me/profile'
+    | '/me/reviews'
+    | '/me/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -118,6 +190,12 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   FormationsRoute: typeof FormationsRouteWithChildren
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
+  ExperiencesIdRoute: typeof ExperiencesIdRoute
+  MeBookingsRoute: typeof MeBookingsRoute
+  MeFormationsRoute: typeof MeFormationsRoute
+  MeProfileRoute: typeof MeProfileRoute
+  MeReviewsRoute: typeof MeReviewsRoute
+  MeIndexRoute: typeof MeIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -164,12 +242,54 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SitemapDotxmlRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/experiences/$id': {
+      id: '/experiences/$id'
+      path: '/experiences/$id'
+      fullPath: '/experiences/$id'
+      preLoaderRoute: typeof ExperiencesIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/formations/$slug': {
       id: '/formations/$slug'
       path: '/$slug'
       fullPath: '/formations/$slug'
       preLoaderRoute: typeof FormationsSlugRouteImport
       parentRoute: typeof FormationsRoute
+    }
+    '/me/': {
+      id: '/me/'
+      path: '/me'
+      fullPath: '/me/'
+      preLoaderRoute: typeof MeIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/me/bookings': {
+      id: '/me/bookings'
+      path: '/me/bookings'
+      fullPath: '/me/bookings'
+      preLoaderRoute: typeof MeBookingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/me/formations': {
+      id: '/me/formations'
+      path: '/me/formations'
+      fullPath: '/me/formations'
+      preLoaderRoute: typeof MeFormationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/me/profile': {
+      id: '/me/profile'
+      path: '/me/profile'
+      fullPath: '/me/profile'
+      preLoaderRoute: typeof MeProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/me/reviews': {
+      id: '/me/reviews'
+      path: '/me/reviews'
+      fullPath: '/me/reviews'
+      preLoaderRoute: typeof MeReviewsRouteImport
+      parentRoute: typeof rootRouteImport
     }
   }
 }
@@ -193,6 +313,12 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   FormationsRoute: FormationsRouteWithChildren,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
+  ExperiencesIdRoute: ExperiencesIdRoute,
+  MeBookingsRoute: MeBookingsRoute,
+  MeFormationsRoute: MeFormationsRoute,
+  MeProfileRoute: MeProfileRoute,
+  MeReviewsRoute: MeReviewsRoute,
+  MeIndexRoute: MeIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

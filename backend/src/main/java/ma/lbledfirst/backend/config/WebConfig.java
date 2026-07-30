@@ -13,7 +13,7 @@ import java.util.List;
 public class WebConfig {
 
     // Liste (YAML) résolue en tableau — voir application.yml: cors.allowed-origins
-    @Value("${cors.allowed-origins:http://localhost:8081}")
+    @Value("${cors.allowed-origins:http://localhost:3000,http://localhost:8081}")
     private String[] allowedOrigins;
 
     // Bean explicite utilisé directement par SecurityConfig (http.cors(...)).

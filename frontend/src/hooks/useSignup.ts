@@ -8,13 +8,15 @@ export function useSignup() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const signup = async (data: SignupData): Promise<{ ok: boolean; error?: string }> => {
+  const signup = async (
+    data: SignupData,
+  ): Promise<{ ok: boolean; error?: string; role?: "admin" | "tourist" }> => {
     setLoading(true);
     setError(null);
     try {
       const response = await authService.signup(data);
       setAuth(response);
-      return { ok: true };
+      return { ok: true, role: response.role };
     } catch (err: any) {
       const msg = err.response?.data?.message || "Erreur d'inscription";
       setError(msg);
