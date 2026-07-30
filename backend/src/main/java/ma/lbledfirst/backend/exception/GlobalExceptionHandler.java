@@ -22,10 +22,22 @@ public class GlobalExceptionHandler {
         return buildResponse(HttpStatus.CONFLICT, ex.getMessage());
     }
 
+    @ExceptionHandler(ActivityAlreadyExistsException.class)
+    public ResponseEntity<Map<String, Object>> handleActivityExists(ActivityAlreadyExistsException ex) {
+        log.warn("Conflit des doublons : {}", ex.getMessage());
+        return buildResponse(HttpStatus.CONFLICT, ex.getMessage());
+    }
+
     @ExceptionHandler(PasswordMismatchException.class)
     public ResponseEntity<Map<String, Object>> handlePasswordMismatch(PasswordMismatchException ex) {
         log.warn("Validation échouée : {}", ex.getMessage());
-        return buildResponse(HttpStatus.BAD_REQUEST, ex.getMessage());
+        return buildResponse(HttpStatus.BAD_REQUEST, ex.getMessage()); // 400
+    }
+
+    @ExceptionHandler(NotFoundException.class)
+    public ResponseEntity<Map<String, Object>> handleNotFound(NotFoundException ex) {
+        log.warn("Non trouvé : {}", ex.getMessage());
+        return buildResponse(HttpStatus.NOT_FOUND, ex.getMessage()); // 404
     }
 
     @ExceptionHandler(InvalidCredentialsException.class)

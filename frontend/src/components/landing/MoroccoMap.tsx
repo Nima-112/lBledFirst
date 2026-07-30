@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { MapPin, ArrowRight, Film, Compass } from "lucide-react";
+
 import { Reveal, SectionHeading } from "./Reveal";
 import { regions } from "./regions";
 import { MOROCCO_PATH } from "./morocco-path";
