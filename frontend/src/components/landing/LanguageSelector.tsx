@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Globe, Check, ChevronDown } from "lucide-react";
+
 import { LANGUAGES, useI18n, type Lang } from "@/lib/i18n";
 
 type Props = {

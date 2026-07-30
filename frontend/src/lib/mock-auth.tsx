@@ -7,6 +7,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { useAuth as useBackendAuth } from "@/context/AuthContext";
 import { cdnAssetUrl } from "@/lib/asset-url";
 
 import r6 from "@/assets/rural/rural-6.jpg.asset.json";
@@ -348,10 +349,6 @@ export function emptyExperience(hostId = "u-host-1"): MockExperience {
   };
 }
 
-// ----------------------------------------------------------------------------
-// Auth context
-// ----------------------------------------------------------------------------
-
 type SignupData = {
   fullName: string;
   email: string;
@@ -374,15 +371,56 @@ type AuthContextValue = {
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+  const {
+    user: backendUser,
+    ready: backendReady,
+    logout: backendLogout,
+  } = useBackendAuth();
   const [user, setUser] = useState<MockUser | null>(null);
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    getUsers(); getExperiences(); getBookings(); getReviews(); getVideos();
-    const session = safeRead<{ id: string } | null>(SESSION_KEY, null);
-    if (session) setUser(getUsers().find((u) => u.id === session.id) ?? null);
-    setReady(true);
+    getUsers();
+    getExperiences();
+    getBookings();
+    getReviews();
+    getVideos();
   }, []);
+
+  useEffect(() => {
+    if (!backendReady) {
+      setReady(false);
+      return;
+    }
+
+    if (!backendUser) {
+      safeWrite(SESSION_KEY, null);
+      setUser(null);
+      setReady(true);
+      return;
+    }
+
+    const users = getUsers();
+    const existing = users.find((u) => u.email.toLowerCase() === backendUser.email.toLowerCase());
+    const syncedUser: MockUser = existing ?? {
+      id: backendUser.id,
+      fullName: backendUser.name,
+      email: backendUser.email,
+      password: "",
+      country: backendUser.country ?? "",
+      nativeLanguage: backendUser.language ?? "",
+      role: backendUser.role,
+      createdAt: new Date().toISOString(),
+    };
+
+    if (!existing) {
+      saveUsers([...users, syncedUser]);
+    }
+
+    safeWrite(SESSION_KEY, { id: syncedUser.id });
+    setUser(syncedUser);
+    setReady(true);
+  }, [backendReady, backendUser]);
 
   const login = useCallback<AuthContextValue["login"]>((email, password) => {
     const found = getUsers().find((u) => u.email.toLowerCase() === email.trim().toLowerCase());
@@ -398,6 +436,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (users.some((u) => u.email.toLowerCase() === data.email.trim().toLowerCase())) {
       return { ok: false, error: "exists" };
     }
+
     const newUser: MockUser = {
       id: `u-${Date.now()}`,
       fullName: data.fullName,
@@ -408,6 +447,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       role: data.role ?? "tourist",
       createdAt: new Date().toISOString(),
     };
+
     const next = [...users, newUser];
     saveUsers(next);
     safeWrite(SESSION_KEY, { id: newUser.id });
@@ -435,7 +475,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = useCallback(() => {
     safeWrite(SESSION_KEY, null);
     setUser(null);
-  }, []);
+    void backendLogout();
+  }, [backendLogout]);
 
   const value = useMemo<AuthContextValue>(
     () => ({ user, ready, login, signup, updateProfile, resetPassword, logout }),
@@ -450,6 +491,7 @@ export function useAuth() {
   if (!ctx) throw new Error("useAuth must be used within AuthProvider");
   return ctx;
 }
+
 
 // ----------------------------------------------------------------------------
 // Convenience selectors

@@ -28,8 +28,6 @@ import { Logo } from "@/components/landing/Logo";
 import { LanguageSelector } from "@/components/landing/LanguageSelector";
 import { I18nProvider, useI18n } from "@/lib/i18n";
 import {
-  AuthProvider,
-  useAuth,
   getUsers,
   saveUsers,
   getExperiences,
@@ -48,6 +46,7 @@ import {
   type Role,
   type BookingStatus,
 } from "@/lib/mock-auth";
+import { useAuth } from "@/context/AuthContext";
 import {
   getFormations,
   saveFormations,
@@ -81,9 +80,7 @@ export const Route = createFileRoute("/admin")({
 function AdminRoute() {
   return (
     <I18nProvider>
-      <AuthProvider>
-        <AdminGuard />
-      </AuthProvider>
+      <AdminGuard />
     </I18nProvider>
   );
 }
@@ -126,7 +123,6 @@ function AdminDashboard() {
   const { user, logout } = useAuth();
   const { t } = useI18n();
   const nav = useNav();
-  const navigate = useNavigate();
   const [tab, setTab] = useState<Tab>("dashboard");
   const [mobileNav, setMobileNav] = useState(false);
 
@@ -168,9 +164,9 @@ function AdminDashboard() {
           </div>
           <div className="flex items-center gap-2">
             <LanguageSelector />
-            <span className="hidden text-sm text-muted-foreground md:inline">{user?.fullName}</span>
+            <span className="hidden text-sm text-muted-foreground md:inline">{user?.name}</span>
             <button
-              onClick={() => { logout(); navigate({ to: "/" }); }}
+              onClick={() => logout()}
               className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-2 text-sm font-medium text-foreground transition hover:bg-muted"
             >
               <LogOut className="h-4 w-4" /> <span className="hidden sm:inline">{t("admin.logout")}</span>
@@ -1276,9 +1272,9 @@ function ExperiencesPanel({
 // ---------------------------------------------------------------------------
 
 function SettingsPanel() {
-  const { user, updateProfile } = useAuth();
-  const [name, setName] = useState(user?.fullName ?? "");
-  const [phone, setPhone] = useState(user?.phone ?? "");
+  const { user } = useAuth();
+  const [name, setName] = useState(user?.name ?? "");
+  const [phone, setPhone] = useState("");
   const [saved, setSaved] = useState(false);
 
   const [platform, setPlatform] = useState({
@@ -1288,8 +1284,9 @@ function SettingsPanel() {
     twoFactor: true,
   });
 
+  // Pas encore d'endpoint backend pour mettre à jour le profil (PUT /api/users/me) :
+  // ce formulaire est local uniquement pour l'instant.
   const saveProfile = () => {
-    updateProfile({ fullName: name, phone });
     setSaved(true);
     setTimeout(() => setSaved(false), 1800);
   };

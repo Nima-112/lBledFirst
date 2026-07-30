@@ -15,6 +15,12 @@ spring:
 server:
   port: 8080
 
+cors:
+  allowed-origins:
+    - http://localhost:3000
+    - http://localhost:8081
+    - https://tondomaine.com
+
 springdoc:
   swagger-ui:
     path: /swagger-ui.html
@@ -27,3 +33,6 @@ management:
 
 jwt:
   secret: ChangeThisToALongRandomSecretKeyAtLeast32CharactersLongForHS256
+
+cookie:
+  secure: false # mettre true en production (HTTPS obligatoire)
