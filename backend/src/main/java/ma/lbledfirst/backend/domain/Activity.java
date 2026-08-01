@@ -8,10 +8,11 @@ import lombok.*;
 
 @Entity
 @Table(name = "activities")
-@Builder
 @Getter
 @Setter
-@RequiredArgsConstructor
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class Activity {
 
     @Id

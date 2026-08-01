@@ -30,7 +30,12 @@ services:
     depends_on:
       mysql:
         condition: service_healthy
+    env_file:
+      - .env.example    
     environment:
+      SPRING_PROFILES_ACTIVE: dev
+      ADMIN_EMAIL: ${ADMIN_EMAIL}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD}  
       SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/lbled_first?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
       SPRING_DATASOURCE_USERNAME: lbled_first
       SPRING_DATASOURCE_PASSWORD: lbled_first

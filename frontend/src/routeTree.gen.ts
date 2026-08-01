@@ -10,11 +10,18 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as AccountRouteImport } from './routes/account'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as FormationsRouteImport } from './routes/formations'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
+import { Route as AdminIndexRouteImport } from './routes/admin/index'
+import { Route as AdminBookingsRouteImport } from './routes/admin/bookings'
+import { Route as AdminDashboardRouteImport } from './routes/admin/dashboard'
+import { Route as AdminExperiencesRouteImport } from './routes/admin/experiences'
+import { Route as AdminFormationsRouteImport } from './routes/admin/formations'
+import { Route as AdminReviewsRouteImport } from './routes/admin/reviews'
+import { Route as AdminSettingsRouteImport } from './routes/admin/settings'
+import { Route as AdminTouristsRouteImport } from './routes/admin/tourists'
 import { Route as ExperiencesIdRouteImport } from './routes/experiences.$id'
 import { Route as FormationsSlugRouteImport } from './routes/formations.$slug'
 import { Route as MeIndexRouteImport } from './routes/me.index'
@@ -26,11 +33,6 @@ import { Route as MeReviewsRouteImport } from './routes/me.reviews'
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AccountRoute = AccountRouteImport.update({
-  id: '/account',
-  path: '/account',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminRoute = AdminRouteImport.update({
@@ -52,6 +54,46 @@ const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
   path: '/sitemap.xml',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AdminIndexRoute = AdminIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminBookingsRoute = AdminBookingsRouteImport.update({
+  id: '/bookings',
+  path: '/bookings',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminDashboardRoute = AdminDashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminExperiencesRoute = AdminExperiencesRouteImport.update({
+  id: '/experiences',
+  path: '/experiences',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminFormationsRoute = AdminFormationsRouteImport.update({
+  id: '/formations',
+  path: '/formations',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminReviewsRoute = AdminReviewsRouteImport.update({
+  id: '/reviews',
+  path: '/reviews',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminSettingsRoute = AdminSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminTouristsRoute = AdminTouristsRouteImport.update({
+  id: '/tourists',
+  path: '/tourists',
+  getParentRoute: () => AdminRoute,
 } as any)
 const ExperiencesIdRoute = ExperiencesIdRouteImport.update({
   id: '/experiences/$id',
@@ -91,102 +133,141 @@ const MeReviewsRoute = MeReviewsRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/account': typeof AccountRoute
-  '/admin': typeof AdminRoute
+  '/admin': typeof AdminRouteWithChildren
   '/auth': typeof AuthRoute
   '/formations': typeof FormationsRouteWithChildren
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/admin/bookings': typeof AdminBookingsRoute
+  '/admin/dashboard': typeof AdminDashboardRoute
+  '/admin/experiences': typeof AdminExperiencesRoute
+  '/admin/formations': typeof AdminFormationsRoute
+  '/admin/reviews': typeof AdminReviewsRoute
+  '/admin/settings': typeof AdminSettingsRoute
+  '/admin/tourists': typeof AdminTouristsRoute
   '/experiences/$id': typeof ExperiencesIdRoute
   '/formations/$slug': typeof FormationsSlugRoute
   '/me/bookings': typeof MeBookingsRoute
   '/me/formations': typeof MeFormationsRoute
   '/me/profile': typeof MeProfileRoute
   '/me/reviews': typeof MeReviewsRoute
+  '/admin/': typeof AdminIndexRoute
   '/me/': typeof MeIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/account': typeof AccountRoute
-  '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
   '/formations': typeof FormationsRouteWithChildren
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/admin/bookings': typeof AdminBookingsRoute
+  '/admin/dashboard': typeof AdminDashboardRoute
+  '/admin/experiences': typeof AdminExperiencesRoute
+  '/admin/formations': typeof AdminFormationsRoute
+  '/admin/reviews': typeof AdminReviewsRoute
+  '/admin/settings': typeof AdminSettingsRoute
+  '/admin/tourists': typeof AdminTouristsRoute
   '/experiences/$id': typeof ExperiencesIdRoute
   '/formations/$slug': typeof FormationsSlugRoute
   '/me/bookings': typeof MeBookingsRoute
   '/me/formations': typeof MeFormationsRoute
   '/me/profile': typeof MeProfileRoute
   '/me/reviews': typeof MeReviewsRoute
+  '/admin': typeof AdminIndexRoute
   '/me': typeof MeIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/account': typeof AccountRoute
-  '/admin': typeof AdminRoute
+  '/admin': typeof AdminRouteWithChildren
   '/auth': typeof AuthRoute
   '/formations': typeof FormationsRouteWithChildren
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/admin/bookings': typeof AdminBookingsRoute
+  '/admin/dashboard': typeof AdminDashboardRoute
+  '/admin/experiences': typeof AdminExperiencesRoute
+  '/admin/formations': typeof AdminFormationsRoute
+  '/admin/reviews': typeof AdminReviewsRoute
+  '/admin/settings': typeof AdminSettingsRoute
+  '/admin/tourists': typeof AdminTouristsRoute
   '/experiences/$id': typeof ExperiencesIdRoute
   '/formations/$slug': typeof FormationsSlugRoute
   '/me/bookings': typeof MeBookingsRoute
   '/me/formations': typeof MeFormationsRoute
   '/me/profile': typeof MeProfileRoute
   '/me/reviews': typeof MeReviewsRoute
+  '/admin/': typeof AdminIndexRoute
   '/me/': typeof MeIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/account'
     | '/admin'
     | '/auth'
     | '/formations'
     | '/sitemap.xml'
+    | '/admin/bookings'
+    | '/admin/dashboard'
+    | '/admin/experiences'
+    | '/admin/formations'
+    | '/admin/reviews'
+    | '/admin/settings'
+    | '/admin/tourists'
     | '/experiences/$id'
     | '/formations/$slug'
     | '/me/bookings'
     | '/me/formations'
     | '/me/profile'
     | '/me/reviews'
+    | '/admin/'
     | '/me/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/account'
-    | '/admin'
     | '/auth'
     | '/formations'
     | '/sitemap.xml'
+    | '/admin/bookings'
+    | '/admin/dashboard'
+    | '/admin/experiences'
+    | '/admin/formations'
+    | '/admin/reviews'
+    | '/admin/settings'
+    | '/admin/tourists'
     | '/experiences/$id'
     | '/formations/$slug'
     | '/me/bookings'
     | '/me/formations'
     | '/me/profile'
     | '/me/reviews'
+    | '/admin'
     | '/me'
   id:
     | '__root__'
     | '/'
-    | '/account'
     | '/admin'
     | '/auth'
     | '/formations'
     | '/sitemap.xml'
+    | '/admin/bookings'
+    | '/admin/dashboard'
+    | '/admin/experiences'
+    | '/admin/formations'
+    | '/admin/reviews'
+    | '/admin/settings'
+    | '/admin/tourists'
     | '/experiences/$id'
     | '/formations/$slug'
     | '/me/bookings'
     | '/me/formations'
     | '/me/profile'
     | '/me/reviews'
+    | '/admin/'
     | '/me/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  AccountRoute: typeof AccountRoute
-  AdminRoute: typeof AdminRoute
+  AdminRoute: typeof AdminRouteWithChildren
   AuthRoute: typeof AuthRoute
   FormationsRoute: typeof FormationsRouteWithChildren
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
@@ -205,13 +286,6 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/account': {
-      id: '/account'
-      path: '/account'
-      fullPath: '/account'
-      preLoaderRoute: typeof AccountRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin': {
@@ -241,6 +315,62 @@ declare module '@tanstack/react-router' {
       fullPath: '/sitemap.xml'
       preLoaderRoute: typeof SitemapDotxmlRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/admin/': {
+      id: '/admin/'
+      path: '/'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/bookings': {
+      id: '/admin/bookings'
+      path: '/bookings'
+      fullPath: '/admin/bookings'
+      preLoaderRoute: typeof AdminBookingsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/dashboard': {
+      id: '/admin/dashboard'
+      path: '/dashboard'
+      fullPath: '/admin/dashboard'
+      preLoaderRoute: typeof AdminDashboardRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/experiences': {
+      id: '/admin/experiences'
+      path: '/experiences'
+      fullPath: '/admin/experiences'
+      preLoaderRoute: typeof AdminExperiencesRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/formations': {
+      id: '/admin/formations'
+      path: '/formations'
+      fullPath: '/admin/formations'
+      preLoaderRoute: typeof AdminFormationsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/reviews': {
+      id: '/admin/reviews'
+      path: '/reviews'
+      fullPath: '/admin/reviews'
+      preLoaderRoute: typeof AdminReviewsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/settings': {
+      id: '/admin/settings'
+      path: '/settings'
+      fullPath: '/admin/settings'
+      preLoaderRoute: typeof AdminSettingsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/tourists': {
+      id: '/admin/tourists'
+      path: '/tourists'
+      fullPath: '/admin/tourists'
+      preLoaderRoute: typeof AdminTouristsRouteImport
+      parentRoute: typeof AdminRoute
     }
     '/experiences/$id': {
       id: '/experiences/$id'
@@ -294,6 +424,30 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AdminRouteChildren {
+  AdminBookingsRoute: typeof AdminBookingsRoute
+  AdminDashboardRoute: typeof AdminDashboardRoute
+  AdminExperiencesRoute: typeof AdminExperiencesRoute
+  AdminFormationsRoute: typeof AdminFormationsRoute
+  AdminReviewsRoute: typeof AdminReviewsRoute
+  AdminSettingsRoute: typeof AdminSettingsRoute
+  AdminTouristsRoute: typeof AdminTouristsRoute
+  AdminIndexRoute: typeof AdminIndexRoute
+}
+
+const AdminRouteChildren: AdminRouteChildren = {
+  AdminBookingsRoute: AdminBookingsRoute,
+  AdminDashboardRoute: AdminDashboardRoute,
+  AdminExperiencesRoute: AdminExperiencesRoute,
+  AdminFormationsRoute: AdminFormationsRoute,
+  AdminReviewsRoute: AdminReviewsRoute,
+  AdminSettingsRoute: AdminSettingsRoute,
+  AdminTouristsRoute: AdminTouristsRoute,
+  AdminIndexRoute: AdminIndexRoute,
+}
+
+const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
+
 interface FormationsRouteChildren {
   FormationsSlugRoute: typeof FormationsSlugRoute
 }
@@ -308,8 +462,7 @@ const FormationsRouteWithChildren = FormationsRoute._addFileChildren(
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  AccountRoute: AccountRoute,
-  AdminRoute: AdminRoute,
+  AdminRoute: AdminRouteWithChildren,
   AuthRoute: AuthRoute,
   FormationsRoute: FormationsRouteWithChildren,
   SitemapDotxmlRoute: SitemapDotxmlRoute,

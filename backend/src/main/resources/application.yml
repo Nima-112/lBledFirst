@@ -36,3 +36,8 @@ jwt:
 
 cookie:
   secure: false # mettre true en production (HTTPS obligatoire)
+
+app:
+  admin:
+    email: ${ADMIN_EMAIL:admin@lbledfirst.ma}
+    password: ${ADMIN_PASSWORD:test123}
