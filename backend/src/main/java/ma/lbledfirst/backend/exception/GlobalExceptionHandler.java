@@ -40,10 +40,28 @@ public class GlobalExceptionHandler {
         return buildResponse(HttpStatus.NOT_FOUND, ex.getMessage()); // 404
     }
 
+    @ExceptionHandler(FormationAlreadyExistsException.class)
+    public ResponseEntity<Map<String, Object>> handleFormationExists(FormationAlreadyExistsException ex) {
+        log.warn("Conflit des doublons : {}", ex.getMessage());
+        return buildResponse(HttpStatus.CONFLICT, ex.getMessage());
+    }
+
+    @ExceptionHandler(FormationNotPurchasedException.class)
+    public ResponseEntity<Map<String, Object>> handleFormationNotPurchased(FormationNotPurchasedException ex) {
+        log.warn("Accès refusé : {}", ex.getMessage());
+        return buildResponse(HttpStatus.FORBIDDEN, ex.getMessage()); // 403
+    }
+
     @ExceptionHandler(InvalidCredentialsException.class)
     public ResponseEntity<Map<String, Object>> handleInvalidCredentials(InvalidCredentialsException ex) {
         log.warn("Authentification échouée : {}", ex.getMessage());
         return buildResponse(HttpStatus.UNAUTHORIZED, ex.getMessage());
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<Map<String, Object>> handleIllegalArgument(IllegalArgumentException ex) {
+        log.warn("Argument invalide : {}", ex.getMessage());
+        return buildResponse(HttpStatus.BAD_REQUEST, ex.getMessage());
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
