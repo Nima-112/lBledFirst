@@ -3,6 +3,10 @@ import axios from "axios";
 const API_BASE_URL =
   import.meta.env.VITE_API_URL || "http://localhost:8080/api";
 
+// Origine brute du backend (sans le préfixe /api) : nécessaire pour rediriger
+// le navigateur vers /oauth2/authorization/google, qui n'est pas un endpoint REST.
+export const API_ORIGIN = API_BASE_URL.replace(/\/api\/?$/, "");
+
 export const api = axios.create({
   baseURL: API_BASE_URL,
   withCredentials: true, // Envoie automatiquement les cookies HttpOnly

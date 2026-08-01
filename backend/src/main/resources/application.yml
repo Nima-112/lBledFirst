@@ -11,6 +11,18 @@ spring:
       hibernate:
         format_sql: true
     show-sql: true
+  # Identifiants à créer sur https://console.cloud.google.com/apis/credentials
+  # (Écran de consentement OAuth + Identifiant "Application Web").
+  # URI de redirection autorisée à déclarer côté Google : http://localhost:8080/login/oauth2/code/google en local.
+  # Ne jamais committer les vraies valeurs : toujours passer par les variables d'environnement.
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: ${GOOGLE_CLIENT_ID:changeme}
+            client-secret: ${GOOGLE_CLIENT_SECRET:changeme}
+            scope: openid, profile, email
 
 server:
   port: 8080
@@ -41,3 +53,7 @@ app:
   admin:
     email: ${ADMIN_EMAIL:admin@lbledfirst.ma}
     password: ${ADMIN_PASSWORD:test123}
+  oauth2:
+    # Page du frontend vers laquelle on redirige une fois le cookie de session posé
+    success-redirect-uri: ${OAUTH2_SUCCESS_REDIRECT:http://localhost:3000/me}
+    failure-redirect-uri: ${OAUTH2_FAILURE_REDIRECT:http://localhost:3000/auth?error=google}

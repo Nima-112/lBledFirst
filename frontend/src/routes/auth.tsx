@@ -9,6 +9,7 @@ import { LanguageSelector } from "@/components/landing/LanguageSelector";
 import { Combobox } from "@/components/ui/combobox";
 import { useLogin } from "@/hooks/useLogin";
 import { useSignup } from "@/hooks/useSignup";
+import { API_ORIGIN } from "@/lib/api";
 import { COUNTRIES } from "@/lib/countries";
 import { useI18n, type Lang } from "@/lib/i18n";
 import { NATIVE_LANGUAGES } from "@/lib/languages";
@@ -165,7 +166,11 @@ function AuthScreen() {
 
   const [mode, setMode] = useState<"login" | "signup">("login");
   const [showPw, setShowPw] = useState(false);
-  const [clientError, setClientError] = useState<string | null>(null);
+  const [clientError, setClientError] = useState<string | null>(() =>
+    new URLSearchParams(window.location.search).get("error") === "google"
+      ? "La connexion avec Google a échoué. Réessayez ou utilisez votre email."
+      : null
+  );
   const [form, setForm] = useState({
     fullName: "",
     email: "",
@@ -298,7 +303,11 @@ function AuthScreen() {
 
           <button
             type="button"
-            onClick={() => setClientError("Google sera disponible avec le backend.")}
+            onClick={() => {
+              // Navigation plein-page (pas d'appel axios) : le flux OAuth2 a besoin
+              // de vraies redirections de navigateur vers Google puis retour ici.
+              window.location.href = `${API_ORIGIN}/oauth2/authorization/google`;
+            }}
             className="mb-4 inline-flex w-full items-center justify-center gap-3 rounded-xl border border-border bg-card px-4 py-3 text-sm font-semibold text-foreground transition hover:bg-muted"
           >
             <GoogleIcon />
