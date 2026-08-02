@@ -12,11 +12,13 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AuthRouteImport } from './routes/auth'
+import { Route as ExperiencesRouteImport } from './routes/experiences'
 import { Route as FormationsRouteImport } from './routes/formations'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as AdminIndexRouteImport } from './routes/admin/index'
 import { Route as AdminBookingsRouteImport } from './routes/admin/bookings'
 import { Route as AdminDashboardRouteImport } from './routes/admin/dashboard'
+import { Route as AdminEnrollmentsRouteImport } from './routes/admin/enrollments'
 import { Route as AdminExperiencesRouteImport } from './routes/admin/experiences'
 import { Route as AdminFormationsRouteImport } from './routes/admin/formations'
 import { Route as AdminReviewsRouteImport } from './routes/admin/reviews'
@@ -45,6 +47,11 @@ const AuthRoute = AuthRouteImport.update({
   path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ExperiencesRoute = ExperiencesRouteImport.update({
+  id: '/experiences',
+  path: '/experiences',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const FormationsRoute = FormationsRouteImport.update({
   id: '/formations',
   path: '/formations',
@@ -68,6 +75,11 @@ const AdminBookingsRoute = AdminBookingsRouteImport.update({
 const AdminDashboardRoute = AdminDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminEnrollmentsRoute = AdminEnrollmentsRouteImport.update({
+  id: '/enrollments',
+  path: '/enrollments',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminExperiencesRoute = AdminExperiencesRouteImport.update({
@@ -96,9 +108,9 @@ const AdminTouristsRoute = AdminTouristsRouteImport.update({
   getParentRoute: () => AdminRoute,
 } as any)
 const ExperiencesIdRoute = ExperiencesIdRouteImport.update({
-  id: '/experiences/$id',
-  path: '/experiences/$id',
-  getParentRoute: () => rootRouteImport,
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => ExperiencesRoute,
 } as any)
 const FormationsSlugRoute = FormationsSlugRouteImport.update({
   id: '/$slug',
@@ -135,10 +147,12 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
   '/auth': typeof AuthRoute
+  '/experiences': typeof ExperiencesRouteWithChildren
   '/formations': typeof FormationsRouteWithChildren
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/admin/bookings': typeof AdminBookingsRoute
   '/admin/dashboard': typeof AdminDashboardRoute
+  '/admin/enrollments': typeof AdminEnrollmentsRoute
   '/admin/experiences': typeof AdminExperiencesRoute
   '/admin/formations': typeof AdminFormationsRoute
   '/admin/reviews': typeof AdminReviewsRoute
@@ -156,10 +170,12 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/experiences': typeof ExperiencesRouteWithChildren
   '/formations': typeof FormationsRouteWithChildren
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/admin/bookings': typeof AdminBookingsRoute
   '/admin/dashboard': typeof AdminDashboardRoute
+  '/admin/enrollments': typeof AdminEnrollmentsRoute
   '/admin/experiences': typeof AdminExperiencesRoute
   '/admin/formations': typeof AdminFormationsRoute
   '/admin/reviews': typeof AdminReviewsRoute
@@ -179,10 +195,12 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
   '/auth': typeof AuthRoute
+  '/experiences': typeof ExperiencesRouteWithChildren
   '/formations': typeof FormationsRouteWithChildren
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/admin/bookings': typeof AdminBookingsRoute
   '/admin/dashboard': typeof AdminDashboardRoute
+  '/admin/enrollments': typeof AdminEnrollmentsRoute
   '/admin/experiences': typeof AdminExperiencesRoute
   '/admin/formations': typeof AdminFormationsRoute
   '/admin/reviews': typeof AdminReviewsRoute
@@ -203,10 +221,12 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/auth'
+    | '/experiences'
     | '/formations'
     | '/sitemap.xml'
     | '/admin/bookings'
     | '/admin/dashboard'
+    | '/admin/enrollments'
     | '/admin/experiences'
     | '/admin/formations'
     | '/admin/reviews'
@@ -224,10 +244,12 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/auth'
+    | '/experiences'
     | '/formations'
     | '/sitemap.xml'
     | '/admin/bookings'
     | '/admin/dashboard'
+    | '/admin/enrollments'
     | '/admin/experiences'
     | '/admin/formations'
     | '/admin/reviews'
@@ -246,10 +268,12 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/auth'
+    | '/experiences'
     | '/formations'
     | '/sitemap.xml'
     | '/admin/bookings'
     | '/admin/dashboard'
+    | '/admin/enrollments'
     | '/admin/experiences'
     | '/admin/formations'
     | '/admin/reviews'
@@ -269,9 +293,9 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRouteWithChildren
   AuthRoute: typeof AuthRoute
+  ExperiencesRoute: typeof ExperiencesRouteWithChildren
   FormationsRoute: typeof FormationsRouteWithChildren
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
-  ExperiencesIdRoute: typeof ExperiencesIdRoute
   MeBookingsRoute: typeof MeBookingsRoute
   MeFormationsRoute: typeof MeFormationsRoute
   MeProfileRoute: typeof MeProfileRoute
@@ -300,6 +324,13 @@ declare module '@tanstack/react-router' {
       path: '/auth'
       fullPath: '/auth'
       preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/experiences': {
+      id: '/experiences'
+      path: '/experiences'
+      fullPath: '/experiences'
+      preLoaderRoute: typeof ExperiencesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/formations': {
@@ -335,6 +366,13 @@ declare module '@tanstack/react-router' {
       path: '/dashboard'
       fullPath: '/admin/dashboard'
       preLoaderRoute: typeof AdminDashboardRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/enrollments': {
+      id: '/admin/enrollments'
+      path: '/enrollments'
+      fullPath: '/admin/enrollments'
+      preLoaderRoute: typeof AdminEnrollmentsRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/experiences': {
@@ -374,10 +412,10 @@ declare module '@tanstack/react-router' {
     }
     '/experiences/$id': {
       id: '/experiences/$id'
-      path: '/experiences/$id'
+      path: '/$id'
       fullPath: '/experiences/$id'
       preLoaderRoute: typeof ExperiencesIdRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof ExperiencesRoute
     }
     '/formations/$slug': {
       id: '/formations/$slug'
@@ -427,6 +465,7 @@ declare module '@tanstack/react-router' {
 interface AdminRouteChildren {
   AdminBookingsRoute: typeof AdminBookingsRoute
   AdminDashboardRoute: typeof AdminDashboardRoute
+  AdminEnrollmentsRoute: typeof AdminEnrollmentsRoute
   AdminExperiencesRoute: typeof AdminExperiencesRoute
   AdminFormationsRoute: typeof AdminFormationsRoute
   AdminReviewsRoute: typeof AdminReviewsRoute
@@ -438,6 +477,7 @@ interface AdminRouteChildren {
 const AdminRouteChildren: AdminRouteChildren = {
   AdminBookingsRoute: AdminBookingsRoute,
   AdminDashboardRoute: AdminDashboardRoute,
+  AdminEnrollmentsRoute: AdminEnrollmentsRoute,
   AdminExperiencesRoute: AdminExperiencesRoute,
   AdminFormationsRoute: AdminFormationsRoute,
   AdminReviewsRoute: AdminReviewsRoute,
@@ -447,6 +487,18 @@ const AdminRouteChildren: AdminRouteChildren = {
 }
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
+
+interface ExperiencesRouteChildren {
+  ExperiencesIdRoute: typeof ExperiencesIdRoute
+}
+
+const ExperiencesRouteChildren: ExperiencesRouteChildren = {
+  ExperiencesIdRoute: ExperiencesIdRoute,
+}
+
+const ExperiencesRouteWithChildren = ExperiencesRoute._addFileChildren(
+  ExperiencesRouteChildren,
+)
 
 interface FormationsRouteChildren {
   FormationsSlugRoute: typeof FormationsSlugRoute
@@ -464,9 +516,9 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRouteWithChildren,
   AuthRoute: AuthRoute,
+  ExperiencesRoute: ExperiencesRouteWithChildren,
   FormationsRoute: FormationsRouteWithChildren,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
-  ExperiencesIdRoute: ExperiencesIdRoute,
   MeBookingsRoute: MeBookingsRoute,
   MeFormationsRoute: MeFormationsRoute,
   MeProfileRoute: MeProfileRoute,

@@ -117,6 +117,72 @@ export async function getExperiencesList(): Promise<FrontExperience[]> {
   return data.map(toFront);
 }
 
+export async function getExperienceById(id: string): Promise<FrontExperience> {
+  const { data } = await api.get<ApiExperience>(`/experiences/${id}`);
+  return toFront(data);
+}
+
+export type PagedExperiences = {
+  content: FrontExperience[];
+  totalElements: number;
+  totalPages: number;
+  number: number;
+  size: number;
+  first: boolean;
+  last: boolean;
+};
+
+type ApiPage = {
+  content: ApiExperience[];
+  totalElements: number;
+  totalPages: number;
+  number: number;
+  size: number;
+  first: boolean;
+  last: boolean;
+};
+
+export async function getExperiencesPaged(
+  page = 0,
+  size = 30,
+  sortBy = "createdAt",
+  sortDir = "desc",
+): Promise<PagedExperiences> {
+  try {
+    const { data } = await api.get<ApiPage>("/experiences/paged", {
+      params: { page, size, sortBy, sortDir },
+    });
+    return {
+      ...data,
+      content: data.content.map(toFront),
+    };
+  } catch {
+    const all = await getExperiencesList();
+    const published = all.filter((e) => e.status === "published");
+    const sorted = [...published].sort((a, b) => {
+      const dir = sortDir === "asc" ? 1 : -1;
+      if (sortBy === "createdAt") {
+        return dir * (new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+      }
+      if (sortBy === "price") return dir * (a.price - b.price);
+      return dir * a.title.localeCompare(b.title);
+    });
+    const start = page * size;
+    const content = sorted.slice(start, start + size);
+    const totalElements = sorted.length;
+    const totalPages = Math.max(1, Math.ceil(totalElements / size));
+    return {
+      content,
+      totalElements,
+      totalPages,
+      number: page,
+      size,
+      first: page === 0,
+      last: page >= totalPages - 1,
+    };
+  }
+}
+
 export async function createExperience(e: FrontExperience): Promise<FrontExperience> {
   const payload = toPayload(e);
   const { data } = await api.post<ApiExperience>("/experiences", payload);

@@ -1,7 +1,17 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { motion } from "framer-motion";
-import { Menu, X, LogIn, User as UserIcon, LogOut, CalendarCheck, GraduationCap, Star, ChevronDown } from "lucide-react";
+import {
+  Menu,
+  X,
+  LogIn,
+  User as UserIcon,
+  LogOut,
+  CalendarCheck,
+  GraduationCap,
+  Star,
+  ChevronDown,
+} from "lucide-react";
 import { Logo } from "./Logo";
 import { LanguageSelector } from "./LanguageSelector";
 import { useI18n } from "@/lib/i18n";
@@ -20,9 +30,8 @@ export function Navbar({ onDiscover }: { onDiscover: () => void }) {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  const links = [
+  const anchorLinks = [
     { href: "#regions", label: t("nav.regions") },
-    { href: "#experiences", label: t("nav.experiences") },
     { href: "#how", label: t("nav.how") },
   ];
 
@@ -34,9 +43,7 @@ export function Navbar({ onDiscover }: { onDiscover: () => void }) {
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.5, ease: "easeOut" }}
       className={`fixed inset-x-0 top-0 z-50 transition-colors duration-300 ${
-        scrolled
-          ? "border-b border-border/60 bg-background/85 backdrop-blur-xl"
-          : "bg-transparent"
+        scrolled ? "border-b border-border/60 bg-background/85 backdrop-blur-xl" : "bg-transparent"
       }`}
     >
       <nav className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3.5 sm:px-6">
@@ -45,17 +52,27 @@ export function Navbar({ onDiscover }: { onDiscover: () => void }) {
         </a>
 
         <div className="hidden items-center gap-7 lg:flex">
-          {links.map((l) => (
+          {anchorLinks.map((l) => (
             <a
               key={l.href}
               href={l.href}
               className={`story-link text-sm font-medium transition-colors ${
-                scrolled ? "text-foreground/80 hover:text-foreground" : "text-card/90 hover:text-card"
+                scrolled
+                  ? "text-foreground/80 hover:text-foreground"
+                  : "text-card/90 hover:text-card"
               }`}
             >
               {l.label}
             </a>
           ))}
+          <Link
+            to="/experiences"
+            className={`story-link text-sm font-medium transition-colors ${
+              scrolled ? "text-foreground/80 hover:text-foreground" : "text-card/90 hover:text-card"
+            }`}
+          >
+            {t("nav.experiences")}
+          </Link>
           <Link
             to="/formations"
             className={`story-link text-sm font-medium transition-colors ${
@@ -110,7 +127,7 @@ export function Navbar({ onDiscover }: { onDiscover: () => void }) {
           className="border-t border-border bg-background/95 backdrop-blur-xl lg:hidden"
         >
           <div className="flex flex-col gap-1 px-4 py-3">
-            {links.map((l) => (
+            {anchorLinks.map((l) => (
               <a
                 key={l.href}
                 href={l.href}
@@ -120,6 +137,13 @@ export function Navbar({ onDiscover }: { onDiscover: () => void }) {
                 {l.label}
               </a>
             ))}
+            <Link
+              to="/experiences"
+              onClick={() => setOpen(false)}
+              className="rounded-xl px-3 py-3 text-sm font-medium text-foreground hover:bg-muted"
+            >
+              {t("nav.experiences")}
+            </Link>
             <Link
               to="/formations"
               onClick={() => setOpen(false)}
@@ -181,7 +205,9 @@ function TouristMenu({ scrolled }: { scrolled: boolean }) {
       <button
         onClick={() => setOpen((v) => !v)}
         className={`inline-flex items-center gap-2 rounded-full border px-2 py-1.5 pe-3 text-sm font-semibold transition-colors ${
-          scrolled ? "border-border text-foreground hover:bg-muted" : "border-card/40 text-card hover:bg-card/15"
+          scrolled
+            ? "border-border text-foreground hover:bg-muted"
+            : "border-card/40 text-card hover:bg-card/15"
         }`}
       >
         {user.avatar ? (
@@ -202,13 +228,37 @@ function TouristMenu({ scrolled }: { scrolled: boolean }) {
             <p className="truncate text-xs text-muted-foreground">{user.email}</p>
           </div>
           <div className="py-1">
-            <MenuLink to="/me/bookings" icon={<CalendarCheck className="h-4 w-4" />} label={t("nav.me.bookings")} onClick={() => setOpen(false)} />
-            <MenuLink to="/me/formations" icon={<GraduationCap className="h-4 w-4" />} label={t("nav.me.formations")} onClick={() => setOpen(false)} />
-            <MenuLink to="/me/reviews" icon={<Star className="h-4 w-4" />} label={t("nav.me.reviews")} onClick={() => setOpen(false)} />
-            <MenuLink to="/me/profile" icon={<UserIcon className="h-4 w-4" />} label={t("nav.me.profile")} onClick={() => setOpen(false)} />
+            <MenuLink
+              to="/me/bookings"
+              icon={<CalendarCheck className="h-4 w-4" />}
+              label={t("nav.me.bookings")}
+              onClick={() => setOpen(false)}
+            />
+            <MenuLink
+              to="/me/formations"
+              icon={<GraduationCap className="h-4 w-4" />}
+              label={t("nav.me.formations")}
+              onClick={() => setOpen(false)}
+            />
+            <MenuLink
+              to="/me/reviews"
+              icon={<Star className="h-4 w-4" />}
+              label={t("nav.me.reviews")}
+              onClick={() => setOpen(false)}
+            />
+            <MenuLink
+              to="/me/profile"
+              icon={<UserIcon className="h-4 w-4" />}
+              label={t("nav.me.profile")}
+              onClick={() => setOpen(false)}
+            />
           </div>
           <button
-            onClick={() => { logout(); setOpen(false); navigate({ to: "/" }); }}
+            onClick={() => {
+              logout();
+              setOpen(false);
+              navigate({ to: "/" });
+            }}
             className="flex w-full items-center gap-2 border-t border-border px-4 py-3 text-start text-sm font-medium text-destructive transition hover:bg-destructive/10"
           >
             <LogOut className="h-4 w-4" />
@@ -220,7 +270,17 @@ function TouristMenu({ scrolled }: { scrolled: boolean }) {
   );
 }
 
-function MenuLink({ to, icon, label, onClick }: { to: string; icon: React.ReactNode; label: string; onClick: () => void }) {
+function MenuLink({
+  to,
+  icon,
+  label,
+  onClick,
+}: {
+  to: string;
+  icon: React.ReactNode;
+  label: string;
+  onClick: () => void;
+}) {
   return (
     <Link
       to={to}
@@ -258,7 +318,11 @@ function MobileTouristLinks({ onClose }: { onClose: () => void }) {
       {item("/me/reviews", t("nav.me.reviews"), <Star className="h-4 w-4" />)}
       {item("/me/profile", t("nav.me.profile"), <UserIcon className="h-4 w-4" />)}
       <button
-        onClick={() => { logout(); onClose(); navigate({ to: "/" }); }}
+        onClick={() => {
+          logout();
+          onClose();
+          navigate({ to: "/" });
+        }}
         className="flex items-center gap-2.5 rounded-xl px-3 py-3 text-sm font-medium text-destructive hover:bg-destructive/10"
       >
         <LogOut className="h-4 w-4" />

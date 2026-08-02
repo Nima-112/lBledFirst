@@ -9,6 +9,8 @@ import ma.lbledfirst.backend.repository.ExperienceRepository;
 import ma.lbledfirst.backend.repository.RegionRepository;
 import ma.lbledfirst.backend.repository.UserRepository;
 import org.hibernate.Hibernate;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
@@ -50,6 +52,58 @@ public class ExperienceService extends AbstractCrudService<Experience, Long> {
             if (e.getRegion() != null) Hibernate.initialize(e.getRegion());
         }
         return list;
+    }
+
+    @Transactional(readOnly = true)
+    public Page<Experience> findAllPaged(Pageable pageable) {
+        List<Experience> all = findAll();
+        List<Experience> filtered = new java.util.ArrayList<>(all);
+        filtered.sort(sortFromPageable(pageable));
+        int total = filtered.size();
+        int start = (int) pageable.getOffset();
+        int end = Math.min(start + pageable.getPageSize(), total);
+        List<Experience> pageContent = start >= total ? List.of() : filtered.subList(start, end);
+        return new org.springframework.data.domain.PageImpl<>(pageContent, pageable, total);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<Experience> findPublishedPaged(Pageable pageable) {
+        List<Experience> all = findAll();
+        List<Experience> filtered = all.stream()
+                .filter(e -> e.getStatus() == ExperienceStatus.published)
+                .collect(java.util.stream.Collectors.toCollection(java.util.ArrayList::new));
+        filtered.sort(sortFromPageable(pageable));
+        int total = filtered.size();
+        int start = (int) pageable.getOffset();
+        int end = Math.min(start + pageable.getPageSize(), total);
+        List<Experience> pageContent = start >= total ? List.of() : filtered.subList(start, end);
+        return new org.springframework.data.domain.PageImpl<>(pageContent, pageable, total);
+    }
+
+    private java.util.Comparator<Experience> sortFromPageable(Pageable pageable) {
+        if (pageable == null || pageable.getSort() == null || pageable.getSort().isUnsorted()) {
+            return (a, b) -> -java.util.Objects.compare(a.getCreatedAt(), b.getCreatedAt(), java.util.Comparator.nullsLast(java.util.Comparator.naturalOrder()));
+        }
+        java.util.Comparator<Experience> cmp = null;
+        for (org.springframework.data.domain.Sort.Order order : pageable.getSort()) {
+            java.util.Comparator<Experience> fieldCmp = switch (order.getProperty()) {
+                case "createdAt" ->
+                    (a, b) -> java.util.Objects.compare(a.getCreatedAt(), b.getCreatedAt(), java.util.Comparator.nullsLast(java.util.Comparator.naturalOrder()));
+                case "price" ->
+                    (a, b) -> java.util.Objects.compare(a.getPrice(), b.getPrice(), java.util.Comparator.nullsLast(java.util.Comparator.naturalOrder()));
+                case "duration", "durationDays" ->
+                    (a, b) -> java.util.Objects.compare(a.getDuration(), b.getDuration(), java.util.Comparator.nullsLast(java.util.Comparator.naturalOrder()));
+                case "title" ->
+                    (a, b) -> java.util.Objects.compare(a.getTitle(), b.getTitle(), java.util.Comparator.nullsFirst(java.util.Comparator.naturalOrder()));
+                case "city", "region" ->
+                    (a, b) -> java.util.Objects.compare(a.getCity(), b.getCity(), java.util.Comparator.nullsFirst(java.util.Comparator.naturalOrder()));
+                default ->
+                    (a, b) -> java.util.Objects.compare(a.getId(), b.getId(), java.util.Comparator.nullsLast(java.util.Comparator.naturalOrder()));
+            };
+            if (order.isDescending()) fieldCmp = fieldCmp.reversed();
+            cmp = cmp == null ? fieldCmp : cmp.thenComparing(fieldCmp);
+        }
+        return cmp;
     }
 
     @Override
