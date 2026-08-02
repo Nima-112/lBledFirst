@@ -1,9 +1,10 @@
-import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { PlayCircle, Clock, GraduationCap } from "lucide-react";
 import { MeShell } from "@/components/me/MeShell";
 import { useI18n } from "@/lib/i18n";
-import { getFormations, getPurchases, formatDuration, totalCapsules, type Formation } from "@/lib/formations";
+import { formatDuration, totalCapsules } from "@/lib/formations";
+import { getMyPurchasedFormations } from "@/services/formations.service";
 
 export const Route = createFileRoute("/me/formations")({
   head: () => ({ meta: [{ title: "Mes formations — L'Bled First" }] }),
@@ -12,15 +13,10 @@ export const Route = createFileRoute("/me/formations")({
 
 function MyFormations() {
   const { t } = useI18n();
-  const [purchased, setPurchased] = useState<string[]>([]);
-  const [formations, setFormations] = useState<Formation[]>([]);
-
-  useEffect(() => {
-    setPurchased(getPurchases());
-    setFormations(getFormations());
-  }, []);
-
-  const mine = formations.filter((f) => purchased.includes(f.slug));
+  const { data: mine = [] } = useQuery({
+    queryKey: ["formations", "purchased"],
+    queryFn: getMyPurchasedFormations,
+  });
 
   return (
     <MeShell title={t("me.formations.title")}>
