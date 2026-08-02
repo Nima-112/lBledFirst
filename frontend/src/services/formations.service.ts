@@ -35,6 +35,7 @@ export type ApiFormationDetail = ApiFormationSummary & {
   objectives: string[];
   skills: string[];
   prerequisites: string[];
+  purchased: boolean;
   instructor: {
     name: string;
     specialty?: string | null;
@@ -203,6 +204,7 @@ const detailToFront = (d: ApiFormationDetail): Formation => ({
   prerequisites: d.prerequisites,
   chapters: d.chapters.map(detailChapterToFront),
   instructor: detailInstructorToFront(d.instructor),
+  purchased: d.purchased,
 });
 
 const formationToPayload = (f: Formation): ApiFormationPayload => ({
@@ -285,4 +287,35 @@ export async function uploadVideo(file: File): Promise<UploadResult> {
     data.url = `${API_ORIGIN}${data.url}`;
   }
   return data;
+}
+
+// ---- Achat, progression, favoris (utilisateur courant) --------------------
+
+export async function purchaseFormationApi(slug: string): Promise<void> {
+  await api.post(`/formations/${slug}/purchase`);
+}
+
+export async function getMyPurchasedFormations(): Promise<Formation[]> {
+  const { data } = await api.get<ApiFormationSummary[]>("/formations/me/purchased");
+  return data.map(summaryToFront);
+}
+
+export async function getFormationProgressApi(slug: string): Promise<string[]> {
+  const { data } = await api.get<number[]>(`/formations/${slug}/progress`);
+  return data.map(String);
+}
+
+export async function toggleCapsuleCompletionApi(slug: string, capsuleId: string): Promise<boolean> {
+  const { data } = await api.post<{ completed: boolean }>(`/formations/${slug}/capsules/${capsuleId}/toggle`);
+  return data.completed;
+}
+
+export async function toggleFormationFavoriteApi(slug: string): Promise<boolean> {
+  const { data } = await api.post<{ favorited: boolean }>(`/formations/${slug}/favorite`);
+  return data.favorited;
+}
+
+export async function getMyFavoriteFormations(): Promise<Formation[]> {
+  const { data } = await api.get<ApiFormationSummary[]>("/formations/me/favorites");
+  return data.map(summaryToFront);
 }

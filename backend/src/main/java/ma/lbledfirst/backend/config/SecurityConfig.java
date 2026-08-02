@@ -42,7 +42,11 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/uploads/**").permitAll()
                         .requestMatchers("/api/health").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/formations", "/api/formations/**").permitAll()
+                        // "*" (un seul segment) et non "**" : couvre uniquement la liste et le
+                        // détail par slug. /formations/me/purchased, /formations/me/favorites et
+                        // /formations/{slug}/progress ont plus d'un segment après /formations et
+                        // restent donc protégés par anyRequest().authenticated() ci-dessous.
+                        .requestMatchers(HttpMethod.GET, "/api/formations", "/api/formations/*").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/experiences", "/api/experiences/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/reviews", "/api/reviews/**").permitAll()
                         .requestMatchers("/api/auth/register", "/api/auth/login", "/api/auth/logout").permitAll()

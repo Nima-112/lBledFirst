@@ -1,6 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useMemo, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Award,
   BookOpen,
@@ -17,16 +18,17 @@ import {
   X,
 } from "lucide-react";
 import {
-  findFormation,
   formatDuration,
   totalCapsules,
-  isPurchased,
-  purchaseFormation,
-  getProgress,
-  toggleCapsuleCompletion,
   type Formation,
   type Capsule,
 } from "@/lib/formations";
+import {
+  getFormationDetail,
+  purchaseFormationApi,
+  getFormationProgressApi,
+  toggleCapsuleCompletionApi,
+} from "@/services/formations.service";
 import { Navbar } from "@/components/landing/Navbar";
 import { Footer } from "@/components/landing/Footer";
 import { useAuth } from "@/context/AuthContext";
@@ -50,15 +52,17 @@ function FormationDetail() {
   const { slug } = Route.useParams();
   const navigate = useNavigate();
   const { user, ready: authReady } = useAuth();
-  const [tick, setTick] = useState(0);
-  const [ready, setReady] = useState(false);
-  const [f, setF] = useState<Formation | null>(null);
+  const queryClient = useQueryClient();
   const [checkoutTrigger, setCheckoutTrigger] = useState(false);
 
+  const { data: f, isLoading } = useQuery({
+    queryKey: ["formations", slug],
+    queryFn: () => getFormationDetail(slug),
+    retry: false,
+  });
+  const ready = !isLoading;
+
   useEffect(() => {
-    const found = findFormation(slug);
-    setF(found ?? null);
-    setReady(true);
     if (typeof window !== "undefined") {
       window.scrollTo({ top: 0, behavior: "instant" as ScrollBehavior });
     }
@@ -85,8 +89,28 @@ function FormationDetail() {
     if (f && !openChapter) setOpenChapter(f.chapters[0]?.id ?? null);
   }, [f, openChapter]);
 
-  const purchased = useMemo(() => (f ? isPurchased(f.slug) : false), [f, tick]);
-  const progress = useMemo(() => (f ? getProgress(f.slug) : []), [f, tick]);
+  const purchased = f?.purchased ?? false;
+
+  const { data: progress = [] } = useQuery({
+    queryKey: ["formations", slug, "progress"],
+    queryFn: () => getFormationProgressApi(slug),
+    enabled: !!user && purchased,
+  });
+
+  const purchaseMutation = useMutation({
+    mutationFn: () => purchaseFormationApi(slug),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["formations", slug] });
+      setCheckoutOpen(false);
+    },
+  });
+
+  const toggleCapsuleMutation = useMutation({
+    mutationFn: (capsuleId: string) => toggleCapsuleCompletionApi(slug, capsuleId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["formations", slug, "progress"] });
+    },
+  });
 
   useEffect(() => {
     if (!f || !authReady || !user || purchased) return;
@@ -484,9 +508,7 @@ function FormationDetail() {
         onClose={() => setCheckoutOpen(false)}
         formation={f}
         onPaid={() => {
-          purchaseFormation(f.slug);
-          setCheckoutOpen(false);
-          setTick((v) => v + 1);
+          purchaseMutation.mutate();
         }}
       />
 
@@ -495,8 +517,7 @@ function FormationDetail() {
         capsule={activeCapsule}
         onClose={() => setActiveCapsule(null)}
         onComplete={(id) => {
-          toggleCapsuleCompletion(f.slug, id);
-          setTick((v) => v + 1);
+          toggleCapsuleMutation.mutate(id);
         }}
         isDone={(id) => progress.includes(id)}
       />

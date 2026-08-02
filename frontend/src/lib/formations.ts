@@ -58,6 +58,9 @@ export type Formation = {
   chapters: Chapter[];
   instructor: Instructor;
   createdAt: string;
+  // renseigné uniquement par l'API (le détail d'une formation) : true si
+  // l'utilisateur courant a acheté cette formation
+  purchased?: boolean;
 };
 
 // ---- Instructors ----------------------------------------------------------
