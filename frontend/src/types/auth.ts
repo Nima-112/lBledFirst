@@ -7,6 +7,8 @@ export interface User {
   role: Role;
   country?: string;
   language?: string;
+  phone?: string;
+  avatar?: string;
 }
 
 export interface LoginCredentials {

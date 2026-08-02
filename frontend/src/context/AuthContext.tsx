@@ -1,6 +1,5 @@
-import { createContext, useContext, useState, useEffect, useCallback, useMemo } from "react";
 import type { ReactNode } from "react";
-
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import type { AuthResponse, User } from "@/types/auth";
 import { authService } from "@/services/auth.service";
 
@@ -8,6 +7,7 @@ type AuthContextValue = {
   user: User | null;
   ready: boolean;
   setAuth: (auth: AuthResponse) => void;
+  setUser: (u: Partial<User> & { id: string; email: string; name: string; role: User["role"] }) => void;
   logout: () => Promise<void>;
 };
 
@@ -18,35 +18,63 @@ function toUser(auth: AuthResponse): User {
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUserState] = useState<User | null>(null);
   const [ready, setReady] = useState(false);
 
   // Le JWT vit uniquement dans un cookie httpOnly (inaccessible en JS) : on
   // hydrate la session en interrogeant /auth/me, qui l'envoie automatiquement.
   useEffect(() => {
+    let mounted = true;
     authService
       .me()
-      .then((data) => setUser(toUser(data)))
-      .catch(() => setUser(null))
-      .finally(() => setReady(true));
+      .then((u) => {
+        if (!mounted) return;
+        setUserState(u);
+      })
+      .catch(() => {
+        if (!mounted) return;
+        setUserState(null);
+      })
+      .finally(() => {
+        if (mounted) setReady(true);
+      });
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   const setAuth = useCallback((auth: AuthResponse) => {
-    setUser(toUser(auth));
+    setUserState(toUser(auth));
   }, []);
+
+  const setUser = useCallback(
+    (u: Partial<User> & { id: string; email: string; name: string; role: User["role"] }) => {
+      setUserState({
+        id: u.id,
+        email: u.email,
+        name: u.name,
+        role: u.role,
+        phone: u.phone,
+        country: u.country,
+        language: u.language,
+        avatar: u.avatar,
+      });
+    },
+    [],
+  );
 
   const logout = useCallback(async () => {
     try {
       await authService.logout();
     } finally {
-      setUser(null);
+      setUserState(null);
       window.location.href = "/auth";
     }
   }, []);
 
   const value = useMemo(
-    () => ({ user, ready, setAuth, logout }),
-    [user, ready, setAuth, logout]
+    () => ({ user, ready, setAuth, setUser, logout }),
+    [user, ready, setAuth, setUser, logout],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

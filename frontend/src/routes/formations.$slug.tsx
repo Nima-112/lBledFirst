@@ -53,14 +53,27 @@ function FormationDetail() {
   const [tick, setTick] = useState(0);
   const [ready, setReady] = useState(false);
   const [f, setF] = useState<Formation | null>(null);
+  const [checkoutTrigger, setCheckoutTrigger] = useState(false);
 
-  // Client-only lookup — avoids SSR loader crashes on the shared preview and
-  // lets the admin edit formations locally without a route reload.
   useEffect(() => {
     const found = findFormation(slug);
     setF(found ?? null);
     setReady(true);
-    window.scrollTo({ top: 0, behavior: "instant" as ScrollBehavior });
+    if (typeof window !== "undefined") {
+      window.scrollTo({ top: 0, behavior: "instant" as ScrollBehavior });
+    }
+  }, [slug]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const checkoutParam = new URLSearchParams(window.location.search).get("checkout");
+      if (checkoutParam === "1") {
+        setCheckoutTrigger(true);
+      }
+    } catch {
+      // ignore
+    }
   }, [slug]);
 
   const [openChapter, setOpenChapter] = useState<string | null>(null);
@@ -77,12 +90,14 @@ function FormationDetail() {
 
   useEffect(() => {
     if (!f || !authReady || !user || purchased) return;
-    const search = new URLSearchParams(window.location.search);
-    if (search.get("checkout") === "1") {
+    if (checkoutTrigger) {
       setCheckoutOpen(true);
-      window.history.replaceState(null, "", window.location.pathname);
+      setCheckoutTrigger(false);
+      if (typeof window !== "undefined") {
+        try { window.history.replaceState(null, "", window.location.pathname); } catch { /* ignore */ }
+      }
     }
-  }, [authReady, f, purchased, user]);
+  }, [authReady, f, purchased, user, checkoutTrigger, navigate]);
 
   const capsuleCount = f ? totalCapsules(f) : 0;
   const progressPct = capsuleCount === 0 ? 0 : Math.round((progress.length / capsuleCount) * 100);

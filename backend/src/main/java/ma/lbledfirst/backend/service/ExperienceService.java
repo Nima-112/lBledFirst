@@ -2,26 +2,170 @@ package ma.lbledfirst.backend.service;
 
 import ma.lbledfirst.backend.domain.Experience;
 import ma.lbledfirst.backend.domain.ExperienceStatus;
+import ma.lbledfirst.backend.domain.Region;
+import ma.lbledfirst.backend.domain.User;
+import ma.lbledfirst.backend.repository.BookingRepository;
 import ma.lbledfirst.backend.repository.ExperienceRepository;
+import ma.lbledfirst.backend.repository.RegionRepository;
+import ma.lbledfirst.backend.repository.UserRepository;
+import org.hibernate.Hibernate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
+
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.List;
+
+import static org.springframework.http.HttpStatus.BAD_REQUEST;
+import static org.springframework.http.HttpStatus.NOT_FOUND;
 
 @Service
 public class ExperienceService extends AbstractCrudService<Experience, Long> {
 
-    public ExperienceService(ExperienceRepository repository) {
+    private final ExperienceRepository experienceRepository;
+    private final UserRepository userRepository;
+    private final RegionRepository regionRepository;
+    private final BookingRepository bookingRepository;
+
+    public ExperienceService(ExperienceRepository repository,
+                             UserRepository userRepository,
+                             RegionRepository regionRepository,
+                             BookingRepository bookingRepository) {
         super(repository);
+        this.experienceRepository = repository;
+        this.userRepository = userRepository;
+        this.regionRepository = regionRepository;
+        this.bookingRepository = bookingRepository;
     }
 
     @Override
-    public Experience save(Experience experience) {
-        // New experiences always start as draft, regardless of client input
-        experience.setStatus(ExperienceStatus.draft);
-        return super.save(experience);
+    @Transactional(readOnly = true)
+    public List<Experience> findAll() {
+        List<Experience> list = experienceRepository.findByDeletedFalse();
+        for (Experience e : list) {
+            Hibernate.initialize(e.getCoverImages());
+            Hibernate.initialize(e.getDayPrograms());
+            Hibernate.initialize(e.getHost());
+            if (e.getRegion() != null) Hibernate.initialize(e.getRegion());
+        }
+        return list;
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public Experience findById(Long id) {
+        Experience e = super.findById(id);
+        if (Boolean.TRUE.equals(e.getDeleted())) {
+            throw new ResponseStatusException(NOT_FOUND, "Experience not found");
+        }
+        Hibernate.initialize(e.getCoverImages());
+        Hibernate.initialize(e.getDayPrograms());
+        Hibernate.initialize(e.getHost());
+        if (e.getRegion() != null) Hibernate.initialize(e.getRegion());
+        return e;
+    }
+
+    @Override
+    @Transactional
+    public Experience save(Experience experience) {
+        resolveOwner(experience);
+        resolveRegion(experience);
+        if (experience.getStatus() == null) {
+            experience.setStatus(ExperienceStatus.draft);
+        } else {
+            experience.setStatus(ExperienceStatus.draft);
+        }
+        if (experience.getCreatedAt() == null) {
+            experience.setCreatedAt(LocalDateTime.now());
+        }
+        Experience saved = super.save(experience);
+        Hibernate.initialize(saved.getHost());
+        if (saved.getRegion() != null) Hibernate.initialize(saved.getRegion());
+        Hibernate.initialize(saved.getCoverImages());
+        Hibernate.initialize(saved.getDayPrograms());
+        return saved;
+    }
+
+    @Override
+    @Transactional
+    public Experience update(Long id, Experience experience) {
+        Experience existing = experienceRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(
+                        org.springframework.http.HttpStatus.NOT_FOUND, "Experience not found"));
+
+        if (experience.getHost() != null && experience.getHost().getId() != null
+                && !existing.getHost().getId().equals(experience.getHost().getId())) {
+            User owner = userRepository.findById(experience.getHost().getId())
+                    .orElseThrow(() -> new ResponseStatusException(BAD_REQUEST, "Owner user not found"));
+            existing.setHost(owner);
+        }
+
+        if (experience.getRegion() != null && experience.getRegion().getId() != null) {
+            if (existing.getRegion() == null || !experience.getRegion().getId().equals(existing.getRegion().getId())) {
+                Region region = regionRepository.findById(experience.getRegion().getId())
+                        .orElseThrow(() -> new ResponseStatusException(BAD_REQUEST, "Region not found"));
+                existing.setRegion(region);
+            }
+        }
+
+        if (experience.getTitle() != null) existing.setTitle(experience.getTitle());
+        if (experience.getDescription() != null) existing.setDescription(experience.getDescription());
+        if (experience.getPrice() != null) existing.setPrice(experience.getPrice());
+        if (experience.getDuration() != null) existing.setDuration(experience.getDuration());
+        if (experience.getCategory() != null) existing.setCategory(experience.getCategory());
+        if (experience.getStatus() != null) existing.setStatus(experience.getStatus());
+        if (experience.getCity() != null) existing.setCity(experience.getCity());
+        if (experience.getLatitude() != null) existing.setLatitude(experience.getLatitude());
+        if (experience.getLongitude() != null) existing.setLongitude(experience.getLongitude());
+        if (experience.getCoverImages() != null) existing.setCoverImages(experience.getCoverImages());
+        if (experience.getDayPrograms() != null) existing.setDayPrograms(experience.getDayPrograms());
+
+        Experience saved = experienceRepository.save(existing);
+        Hibernate.initialize(saved.getHost());
+        if (saved.getRegion() != null) Hibernate.initialize(saved.getRegion());
+        Hibernate.initialize(saved.getCoverImages());
+        Hibernate.initialize(saved.getDayPrograms());
+        return saved;
+    }
+
+    @Transactional
     public Experience publish(Long id) {
         Experience experience = findById(id);
         experience.setStatus(ExperienceStatus.published);
-        return super.save(experience);
+        Experience saved = experienceRepository.save(experience);
+        Hibernate.initialize(saved.getHost());
+        if (saved.getRegion() != null) Hibernate.initialize(saved.getRegion());
+        return saved;
+    }
+
+    private void resolveOwner(Experience experience) {
+        if (experience.getHost() == null || experience.getHost().getId() == null) {
+            throw new ResponseStatusException(BAD_REQUEST, "Owner is required");
+        }
+        User owner = userRepository.findById(experience.getHost().getId())
+                .orElseThrow(() -> new ResponseStatusException(BAD_REQUEST, "Owner user not found"));
+        experience.setHost(owner);
+
+        if (experience.getLatitude() == null) experience.setLatitude(BigDecimal.ZERO);
+        if (experience.getLongitude() == null) experience.setLongitude(BigDecimal.ZERO);
+        if (experience.getCity() == null) experience.setCity("");
+    }
+
+    private void resolveRegion(Experience experience) {
+        if (experience.getRegion() != null && experience.getRegion().getId() != null) {
+            Region region = regionRepository.findById(experience.getRegion().getId())
+                    .orElseThrow(() -> new ResponseStatusException(BAD_REQUEST, "Region not found"));
+            experience.setRegion(region);
+        }
+    }
+
+    @Override
+    @Transactional
+    public void delete(Long id) {
+        Experience experience = experienceRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "Experience not found"));
+        experience.setDeleted(Boolean.TRUE);
+        experienceRepository.save(experience);
     }
 }

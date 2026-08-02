@@ -40,7 +40,11 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                        // /me exige une session valide : ne doit PAS être public
+                        .requestMatchers("/uploads/**").permitAll()
+                        .requestMatchers("/api/health").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/formations", "/api/formations/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/experiences", "/api/experiences/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/reviews", "/api/reviews/**").permitAll()
                         .requestMatchers("/api/auth/register", "/api/auth/login", "/api/auth/logout").permitAll()
                         .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**", "/actuator/health").permitAll()
                         .requestMatchers("/oauth2/**", "/login/oauth2/**").permitAll()

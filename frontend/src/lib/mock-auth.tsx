@@ -44,7 +44,7 @@ const IMG = {
 // FRONTEND-ONLY mock data + auth. Everything is persisted in localStorage.
 // ----------------------------------------------------------------------------
 
-export type Role = "tourist" | "host" | "admin";
+export type Role = "tourist" | "admin";
 
 export type MockUser = {
   id: string;
@@ -143,9 +143,9 @@ const REVIEWS_KEY = `${V}.reviews`;
 
 const SEED_USERS: MockUser[] = [
   { id: "u-admin", fullName: "Admin L'Bled", email: "admin@lbledfirst.ma", password: "admin123", phone: "+212 600-000000", country: "Maroc", nativeLanguage: "Français", role: "admin", createdAt: "2026-01-05T09:00:00.000Z" },
-  { id: "u-host-1", fullName: "Brahim Aït Toubkal", email: "brahim@host.ma", password: "host123", phone: "+212 661-112233", country: "Maroc", nativeLanguage: "Amazigh", role: "host", region: "Imlil — Marrakech-Safi", bio: "Guide de montagne depuis 15 ans dans le Haut Atlas.", createdAt: "2026-01-20T09:00:00.000Z" },
-  { id: "u-host-2", fullName: "Khadija El Merzougi", email: "khadija@host.ma", password: "host123", phone: "+212 662-445566", country: "Maroc", nativeLanguage: "Arabe", role: "host", region: "Merzouga — Drâa-Tafilalet", bio: "Famille nomade, bivouacs et dîners sous les étoiles.", createdAt: "2026-02-01T09:00:00.000Z" },
-  { id: "u-host-3", fullName: "Youssef Ouzoud", email: "youssef@host.ma", password: "host123", phone: "+212 663-778899", country: "Maroc", nativeLanguage: "Amazigh", role: "host", region: "Ouzoud — Béni Mellal-Khénifra", bio: "Passionné des cascades et de la cuisine du terroir.", createdAt: "2026-02-10T09:00:00.000Z" },
+  { id: "u-host-1", fullName: "Brahim Aït Toubkal", email: "brahim@host.ma", password: "host123", phone: "+212 661-112233", country: "Maroc", nativeLanguage: "Amazigh", role: "tourist", region: "Imlil — Marrakech-Safi", bio: "Guide de montagne depuis 15 ans dans le Haut Atlas.", createdAt: "2026-01-20T09:00:00.000Z" },
+  { id: "u-host-2", fullName: "Khadija El Merzougi", email: "khadija@host.ma", password: "host123", phone: "+212 662-445566", country: "Maroc", nativeLanguage: "Arabe", role: "tourist", region: "Merzouga — Drâa-Tafilalet", bio: "Famille nomade, bivouacs et dîners sous les étoiles.", createdAt: "2026-02-01T09:00:00.000Z" },
+  { id: "u-host-3", fullName: "Youssef Ouzoud", email: "youssef@host.ma", password: "host123", phone: "+212 663-778899", country: "Maroc", nativeLanguage: "Amazigh", role: "tourist", region: "Ouzoud — Béni Mellal-Khénifra", bio: "Passionné des cascades et de la cuisine du terroir.", createdAt: "2026-02-10T09:00:00.000Z" },
   { id: "u-tourist-1", fullName: "Sofia Martín", email: "sofia@example.com", password: "demo123", phone: "+34 600-111222", country: "España", nativeLanguage: "Español", role: "tourist", createdAt: "2026-02-11T14:20:00.000Z" },
   { id: "u-tourist-2", fullName: "Liam O'Connor", email: "liam@example.com", password: "demo123", phone: "+353 830-333444", country: "Ireland", nativeLanguage: "English", role: "tourist", createdAt: "2026-02-18T10:00:00.000Z" },
   { id: "u-tourist-3", fullName: "Camille Dubois", email: "camille@example.com", password: "demo123", phone: "+33 610-555666", country: "France", nativeLanguage: "Français", role: "tourist", createdAt: "2026-03-02T16:40:00.000Z" },

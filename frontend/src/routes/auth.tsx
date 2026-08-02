@@ -1,4 +1,4 @@
-import { useState, type ChangeEvent, type FormEvent } from "react";
+import { useState, type ChangeEvent, type FormEvent, useEffect } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, Eye, EyeOff, Loader2 } from "lucide-react";
@@ -166,11 +166,8 @@ function AuthScreen() {
 
   const [mode, setMode] = useState<"login" | "signup">("login");
   const [showPw, setShowPw] = useState(false);
-  const [clientError, setClientError] = useState<string | null>(() =>
-    new URLSearchParams(window.location.search).get("error") === "google"
-      ? "La connexion avec Google a échoué. Réessayez ou utilisez votre email."
-      : null
-  );
+  const [clientError, setClientError] = useState<string | null>(null);
+  const [googleFailed, setGoogleFailed] = useState(false);
   const [form, setForm] = useState({
     fullName: "",
     email: "",
@@ -180,12 +177,25 @@ function AuthScreen() {
     nativeLanguage: "",
   });
 
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const errorParam = new URLSearchParams(window.location.search).get("error");
+      if (errorParam === "google") {
+        setGoogleFailed(true);
+        setClientError("La connexion avec Google a échoué. Réessayez ou utilisez votre email.");
+      }
+    } catch {
+      // ignore
+    }
+  }, []);
+
   const set = (key: keyof typeof form) => (event: ChangeEvent<HTMLInputElement>) => {
     setForm((prev) => ({ ...prev, [key]: event.target.value }));
   };
 
   const loading = loginLoading || signupLoading;
-  const error = clientError || loginError || signupError;
+  const error = (googleFailed ? "La connexion avec Google a échoué. Réessayez ou utilisez votre email." : null) || clientError || loginError || signupError;
   const countryOptions = COUNTRIES.map((country) => ({ value: country.name, label: country.name, hint: country.flag }));
   const languageOptions = NATIVE_LANGUAGES.map((language) => ({ value: language.name, label: language.name }));
 

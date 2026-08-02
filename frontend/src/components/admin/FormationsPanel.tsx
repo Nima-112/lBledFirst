@@ -1,22 +1,70 @@
 import { IconBtn, PanelHeader } from "@/components/dashboard/ui";
 import { emptyFormation, formatDuration, Formation, totalCapsules } from "@/lib/formations";
 import { useI18n } from "@/lib/i18n";
-import { Clock, ExternalLink, GraduationCap, Link, Pencil, Trash2, Users } from "lucide-react";
-import { useMemo, useState } from "react";
-import { FormationEditor } from "./ExperiencesEditor";
+import { Clock, ExternalLink, GraduationCap, Link, Loader2, Pencil, Trash2, Users } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { FormationEditor } from "./FormationEditor";
+import {
+  createFormation,
+  deleteFormation,
+  getFormationDetail,
+  getFormationsList,
+  updateFormation,
+} from "@/services/formations.service";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-export function FormationsPanel({
-  formations,
-  onChange,
-}: {
-  formations: Formation[];
-  onChange: (f: Formation[]) => void;
-}) {
+export function FormationsPanel() {
   const { t } = useI18n();
+  const queryClient = useQueryClient();
   const [query, setQuery] = useState("");
   const [editing, setEditing] = useState<Formation | null>(null);
   const [creating, setCreating] = useState(false);
   const [draft, setDraft] = useState<Formation>(emptyFormation());
+  const [loadDetailError, setLoadDetailError] = useState<string | null>(null);
+  const [validationError, setValidationError] = useState<string | null>(null);
+
+  const listQuery = useQuery({
+    queryKey: ["admin-formations"],
+    queryFn: getFormationsList,
+  });
+
+  const createMutation = useMutation({
+    mutationFn: createFormation,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-formations"] });
+      setCreating(false);
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: ({ slug, data }: { slug: string; data: Formation }) =>
+      updateFormation(slug, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-formations"] });
+      setEditing(null);
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: deleteFormation,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-formations"] });
+    },
+  });
+
+  const formations = listQuery.data ?? [];
+  const busy =
+    listQuery.isLoading ||
+    createMutation.isPending ||
+    updateMutation.isPending ||
+    deleteMutation.isPending;
+  const anyError =
+    validationError ??
+    loadDetailError ??
+    listQuery.error ??
+    createMutation.error ??
+    updateMutation.error ??
+    deleteMutation.error;
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -29,14 +77,23 @@ export function FormationsPanel({
     );
   }, [formations, query]);
 
-  const startCreate = () => {
+  const startCreate = useCallback(() => {
     setDraft(emptyFormation());
     setCreating(true);
-  };
-  const startEdit = (f: Formation) => {
-    setDraft(structuredClone(f));
+  }, []);
+
+  const startEdit = useCallback(async (f: Formation) => {
     setEditing(f);
-  };
+    setDraft(emptyFormation());
+    setLoadDetailError(null);
+    try {
+      const full = await getFormationDetail(f.slug);
+      setDraft(full);
+    } catch (err: any) {
+      setLoadDetailError(err?.message ?? "Impossible de charger la formation");
+      setDraft(f);
+    }
+  }, []);
 
   const slugify = (s: string) =>
     s
@@ -46,8 +103,33 @@ export function FormationsPanel({
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/^-|-$/g, "");
 
-  const save = () => {
+  const save = useCallback(async () => {
+    setValidationError(null);
     if (!draft.title.trim()) return;
+    if (!draft.shortDescription.trim()) {
+      setValidationError("La description courte est obligatoire.");
+      return;
+    }
+    if (!draft.longDescription.trim()) {
+      setValidationError("La description longue est obligatoire.");
+      return;
+    }
+    if (!draft.instructor?.name?.trim()) {
+      setValidationError("Le nom du formateur est obligatoire.");
+      return;
+    }
+    if (!draft.category?.trim()) {
+      setValidationError("La catégorie est obligatoire.");
+      return;
+    }
+    if (!draft.language?.trim()) {
+      setValidationError("La langue est obligatoire.");
+      return;
+    }
+    if (!draft.coverImage?.trim()) {
+      setValidationError("L'image de couverture est obligatoire.");
+      return;
+    }
     const total = draft.chapters.reduce(
       (s, ch) => s + ch.capsules.reduce((cs, c) => cs + c.duration, 0),
       0,
@@ -58,22 +140,30 @@ export function FormationsPanel({
       slug: draft.slug || slugify(draft.title) || `formation-${Date.now()}`,
     };
     if (editing) {
-      onChange(formations.map((f) => (f.slug === editing.slug ? next : f)));
-      setEditing(null);
+      await updateMutation.mutateAsync({ slug: editing.slug, data: next });
     } else {
       const uniqueSlug = formations.some((f) => f.slug === next.slug)
         ? `${next.slug}-${Date.now()}`
         : next.slug;
-      onChange([...formations, { ...next, slug: uniqueSlug }]);
-      setCreating(false);
+      await createMutation.mutateAsync({ ...next, slug: uniqueSlug });
     }
-  };
+  }, [draft, editing, formations, createMutation, updateMutation]);
 
-  const remove = (slug: string) => {
-    if (confirm(t("admin.formations.confirmDelete"))) {
-      onChange(formations.filter((f) => f.slug !== slug));
-    }
-  };
+  const remove = useCallback(
+    (slug: string) => {
+      if (confirm(t("admin.formations.confirmDelete"))) {
+        deleteMutation.mutate(slug);
+      }
+    },
+    [t, deleteMutation],
+  );
+
+  const closeEditor = useCallback(() => {
+    setCreating(false);
+    setEditing(null);
+    setLoadDetailError(null);
+    setValidationError(null);
+  }, []);
 
   return (
     <section>
@@ -86,8 +176,43 @@ export function FormationsPanel({
         addLabel={t("admin.formations.add")}
       />
 
+      {(busy || anyError) && (
+        <div className="mb-4 flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-2.5 text-sm">
+          {listQuery.isLoading && (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+              <span className="text-muted-foreground">Chargement des formations…</span>
+            </>
+          )}
+          {(createMutation.isPending || updateMutation.isPending) && (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin text-primary" />
+              <span className="text-foreground">Enregistrement en cours…</span>
+            </>
+          )}
+          {deleteMutation.isPending && (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin text-destructive" />
+              <span className="text-destructive">Suppression en cours…</span>
+            </>
+          )}
+          {anyError && (
+            <span className="text-destructive">
+              {validationError ??
+                loadDetailError ??
+                (listQuery.error instanceof Error
+                  ? listQuery.error.message
+                  : (createMutation.error as Error)?.message ??
+                    (updateMutation.error as Error)?.message ??
+                    (deleteMutation.error as Error)?.message ??
+                    "Erreur inconnue")}
+            </span>
+          )}
+        </div>
+      )}
+
       <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
-        {filtered.length === 0 && (
+        {filtered.length === 0 && !listQuery.isLoading && (
           <p className="col-span-full rounded-2xl border border-border bg-card px-5 py-10 text-center text-sm text-muted-foreground">
             {t("admin.formations.empty")}
           </p>
@@ -126,13 +251,19 @@ export function FormationsPanel({
               </p>
 
               <div className="mt-3 flex items-center gap-2 border-t border-border/70 pt-3">
-                <img
-                  src={f.instructor.photo}
-                  alt=""
-                  className="h-7 w-7 rounded-full object-cover"
-                />
+                {f.instructor.photo ? (
+                  <img
+                    src={f.instructor.photo}
+                    alt=""
+                    className="h-7 w-7 rounded-full object-cover"
+                  />
+                ) : (
+                  <div className="flex h-7 w-7 items-center justify-center rounded-full bg-muted text-[10px] font-bold uppercase text-muted-foreground">
+                    {(f.instructor.name || "F").slice(0, 2)}
+                  </div>
+                )}
                 <span className="truncate text-xs font-semibold text-foreground">
-                  {f.instructor.name}
+                  {f.instructor.name || "Formateur non renseigné"}
                 </span>
               </div>
 
@@ -165,6 +296,7 @@ export function FormationsPanel({
                     onClick={() => remove(f.slug)}
                     label={t("admin.formations.delete")}
                     danger
+                    disabled={deleteMutation.isPending}
                   >
                     <Trash2 className="h-4 w-4" />
                   </IconBtn>
@@ -180,11 +312,10 @@ export function FormationsPanel({
         title={editing ? t("admin.formations.editTitle") : t("admin.formations.createTitle")}
         draft={draft}
         setDraft={setDraft}
-        onClose={() => {
-          setCreating(false);
-          setEditing(null);
-        }}
+        onClose={closeEditor}
         onSave={save}
+        saving={createMutation.isPending || updateMutation.isPending}
+        loadDetailError={loadDetailError}
       />
     </section>
   );

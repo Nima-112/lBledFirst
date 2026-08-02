@@ -2,9 +2,11 @@ package ma.lbledfirst.backend.domain;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -26,6 +28,7 @@ public class Experience {
     private Long id;
 
     @ManyToOne(optional = false)
+    @JsonIgnoreProperties({"bookings","experiences","reviews","password","authorities","enabled","accountNonLocked","accountNonExpired","credentialsNonExpired"})
     private User host;
 
     @Column(nullable = false)
@@ -52,8 +55,24 @@ public class Experience {
 
     @ManyToOne
     @JoinColumn(name = "region_id")
+    @JsonIgnoreProperties({"experiences"})
     private Region region;
 
+    private BigDecimal latitude;
+    private BigDecimal longitude;
+
+    @Builder.Default
+    @ElementCollection
+    @CollectionTable(name = "experience_images", joinColumns = @JoinColumn(name = "experience_id"))
+    @Column(name = "image_url", columnDefinition = "TEXT")
+    private List<String> coverImages = new ArrayList<>();
+
+    @Builder.Default
+    @ElementCollection
+    @CollectionTable(name = "experience_day_programs", joinColumns = @JoinColumn(name = "experience_id"))
+    private List<ExperienceDayProgram> dayPrograms = new ArrayList<>();
+
+    @JsonIgnore
     @OneToMany(mappedBy = "experience")
     private List<Program> programs;
 
@@ -76,4 +95,8 @@ public class Experience {
     @JsonIgnore
     @OneToMany(mappedBy = "experience")
     private List<Video> videos;
+
+    @Builder.Default
+    @Column(nullable = false)
+    private Boolean deleted = Boolean.FALSE;
 }

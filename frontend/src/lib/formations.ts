@@ -37,6 +37,7 @@ export type Instructor = {
 };
 
 export type Formation = {
+  id?: string | number;
   slug: string;
   title: string;
   shortDescription: string;

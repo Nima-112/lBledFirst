@@ -2,6 +2,7 @@ package ma.lbledfirst.backend.service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import lombok.RequiredArgsConstructor;
@@ -31,6 +32,7 @@ import ma.lbledfirst.backend.repository.FormationFavoriteRepository;
 import ma.lbledfirst.backend.repository.FormationPurchaseRepository;
 import ma.lbledfirst.backend.repository.FormationRepository;
 import ma.lbledfirst.backend.repository.UserRepository;
+import org.hibernate.Hibernate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -86,7 +88,8 @@ public class FormationService {
             throw new FormationAlreadyExistsException("Une formation avec ce slug existe déjà");
         }
         formation.setSlug(req.getSlug());
-        applyRequest(formation, req);
+        applyRequestForUpdate(formation, req);
+        formationRepository.save(formation);
 
         return toDetail(formation, false);
     }
@@ -225,6 +228,119 @@ public class FormationService {
         formation.setChapters(toChapters(req.getChapters(), formation));
     }
 
+    private void applyRequestForUpdate(Formation formation, FormationRequest req) {
+        formation.setTitle(req.getTitle());
+        formation.setShortDescription(req.getShortDescription());
+        formation.setLongDescription(req.getLongDescription());
+        formation.setCategory(req.getCategory());
+        formation.setLevel(parseLevel(req.getLevel()));
+        formation.setLanguage(parseLanguage(req.getLanguage()));
+        formation.setPrice(req.getPrice());
+        formation.setCoverImage(req.getCoverImage());
+        formation.setPreviewVideo(req.getPreviewVideo());
+        formation.setStudentsCount(req.getStudentsCount() != null ? req.getStudentsCount() : formation.getStudentsCount());
+        formation.setAverageRating(req.getAverageRating() != null ? req.getAverageRating() : formation.getAverageRating());
+        formation.setReviewsCount(req.getReviewsCount() != null ? req.getReviewsCount() : formation.getReviewsCount());
+        formation.setObjectives(req.getObjectives() != null ? req.getObjectives() : new ArrayList<>());
+        formation.setSkills(req.getSkills() != null ? req.getSkills() : new ArrayList<>());
+        formation.setPrerequisites(req.getPrerequisites() != null ? req.getPrerequisites() : new ArrayList<>());
+        formation.setInstructor(toInstructor(req.getInstructor()));
+        mergeChapters(formation, req.getChapters());
+    }
+
+    private void mergeChapters(Formation formation, List<ChapterDto> dtos) {
+        if (dtos == null) dtos = new ArrayList<>();
+        Map<Long, Chapter> existingChapters = new java.util.HashMap<>();
+        for (Chapter ch : formation.getChapters()) {
+            existingChapters.put(ch.getId(), ch);
+        }
+
+        List<Chapter> merged = new ArrayList<>();
+        for (ChapterDto dto : dtos) {
+            Chapter chapter;
+            if (dto.getId() != null && existingChapters.containsKey(dto.getId())) {
+                chapter = existingChapters.remove(dto.getId());
+                chapter.setOrder(dto.getOrder());
+                chapter.setTitle(dto.getTitle());
+                mergeCapsules(chapter, dto.getCapsules());
+            } else {
+                chapter = Chapter.builder()
+                        .order(dto.getOrder())
+                        .title(dto.getTitle())
+                        .formation(formation)
+                        .build();
+                chapter.setCapsules(buildCapsules(dto.getCapsules(), chapter));
+            }
+            merged.add(chapter);
+        }
+
+        for (Chapter removed : existingChapters.values()) {
+            for (Capsule cap : removed.getCapsules()) {
+                progressRepository.deleteByCapsuleId(cap.getId());
+            }
+        }
+
+        formation.getChapters().clear();
+        formation.getChapters().addAll(merged);
+    }
+
+    private void mergeCapsules(Chapter chapter, List<CapsuleDto> dtos) {
+        if (dtos == null) dtos = new ArrayList<>();
+        Map<Long, Capsule> existingCaps = new java.util.HashMap<>();
+        for (Capsule c : chapter.getCapsules()) {
+            existingCaps.put(c.getId(), c);
+        }
+
+        List<Capsule> merged = new ArrayList<>();
+        for (CapsuleDto dto : dtos) {
+            Capsule cap;
+            if (dto.getId() != null && existingCaps.containsKey(dto.getId())) {
+                cap = existingCaps.remove(dto.getId());
+                cap.setOrder(dto.getOrder());
+                cap.setTitle(dto.getTitle());
+                cap.setDescription(dto.getDescription());
+                cap.setDuration(dto.getDuration());
+                cap.setThumbnail(dto.getThumbnail());
+                cap.setVideoUrl(dto.getVideoUrl());
+            } else {
+                cap = Capsule.builder()
+                        .order(dto.getOrder())
+                        .title(dto.getTitle())
+                        .description(dto.getDescription())
+                        .duration(dto.getDuration())
+                        .thumbnail(dto.getThumbnail())
+                        .videoUrl(dto.getVideoUrl())
+                        .chapter(chapter)
+                        .build();
+            }
+            merged.add(cap);
+        }
+
+        for (Capsule removed : existingCaps.values()) {
+            progressRepository.deleteByCapsuleId(removed.getId());
+        }
+
+        chapter.getCapsules().clear();
+        chapter.getCapsules().addAll(merged);
+    }
+
+    private List<Capsule> buildCapsules(List<CapsuleDto> dtos, Chapter chapter) {
+        List<Capsule> capsules = new ArrayList<>();
+        if (dtos == null) return capsules;
+        for (CapsuleDto capDto : dtos) {
+            capsules.add(Capsule.builder()
+                    .order(capDto.getOrder())
+                    .title(capDto.getTitle())
+                    .description(capDto.getDescription())
+                    .duration(capDto.getDuration())
+                    .thumbnail(capDto.getThumbnail())
+                    .videoUrl(capDto.getVideoUrl())
+                    .chapter(chapter)
+                    .build());
+        }
+        return capsules;
+    }
+
     private List<Chapter> toChapters(List<ChapterDto> dtos, Formation formation) {
         List<Chapter> chapters = new ArrayList<>();
         if (dtos == null) return chapters;
@@ -317,6 +433,16 @@ public class FormationService {
     }
 
     private FormationDetailResponse toDetail(Formation f, boolean purchased) {
+        Hibernate.initialize(f.getObjectives());
+        Hibernate.initialize(f.getSkills());
+        Hibernate.initialize(f.getPrerequisites());
+        Hibernate.initialize(f.getChapters());
+        if (f.getChapters() != null) {
+            for (Chapter ch : f.getChapters()) {
+                Hibernate.initialize(ch.getCapsules());
+            }
+        }
+
         List<ChapterDto> chapters = f.getChapters().stream()
                 .map(ch -> new ChapterDto(
                         ch.getId(),

@@ -1,342 +1,588 @@
-import { Field, fieldCls, IconBtn, Modal, PanelHeader } from "@/components/dashboard/ui";
-import { useI18n } from "@/lib/i18n";
-import { emptyExperience, MockExperience, MockUser } from "@/lib/mock-auth";
-import { MapPin, Pencil, Plus, ShieldCheck, Trash2 } from "lucide-react";
+import {
+  CalendarRange,
+  MapPin,
+  Pencil,
+  Plus,
+  Trash2,
+  Upload,
+  X,
+} from "lucide-react";
 import { useMemo, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  Field,
+  fieldCls,
+  IconBtn,
+  Modal,
+  PanelHeader,
+  StatusBadge,
+} from "@/components/dashboard/ui";
+import {
+  createExperience,
+  deleteExperience,
+  DayProgram,
+  FrontExperience,
+  getExperiencesList,
+  publishExperience,
+  updateExperience,
+} from "@/services/experiences.service";
+import { getUsersList } from "@/services/users.service";
 
-export function ExperiencesPanel({
-  experiences,
-  users,
-  onChange,
-}: {
-  experiences: MockExperience[];
-  users: MockUser[];
-  onChange: (n: MockExperience[]) => void;
-}) {
-  const { t } = useI18n();
+const EXPERIENCE_CATEGORIES = [
+  "Hiking",
+  "Cuisine",
+  "Crafts",
+  "Homestays",
+  "Culture",
+  "Atelier",
+  "Nature",
+  "Visite",
+  "Détente",
+];
+
+const DEFAULT_IMAGE =
+  "https://images.unsplash.com/photo-1545893835-abaa50cbe628?auto=format&fit=crop&w=800&q=80";
+
+type DraftExperience = {
+  title: string;
+  description: string;
+  hostId: string;
+  price: string;
+  durationDays: string;
+  region: string;
+  category: string;
+  latitude: string;
+  longitude: string;
+  images: string[];
+  program: DayProgram[];
+  status: "draft" | "published" | "archived";
+};
+
+const emptyProgram = (day = 1): DayProgram => ({
+  day,
+  title: `Jour ${day}`,
+  description: "",
+  images: [],
+});
+
+const EMPTY: DraftExperience = {
+  title: "",
+  description: "",
+  hostId: "",
+  price: "",
+  durationDays: "1",
+  region: "",
+  category: EXPERIENCE_CATEGORIES[0] ?? "Culture",
+  latitude: "35.7595",
+  longitude: "-5.8340",
+  images: [],
+  program: [emptyProgram(1)],
+  status: "draft",
+};
+
+export function ExperiencesPanel() {
+  const queryClient = useQueryClient();
   const [query, setQuery] = useState("");
-  const [editing, setEditing] = useState<MockExperience | null>(null);
-  const [isNew, setIsNew] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [creating, setCreating] = useState(false);
+  const [draft, setDraft] = useState<DraftExperience>(EMPTY);
 
-  const hosts = users.filter((u) => u.role === "admin" || u.role === "tourist");
-  const list = useMemo(() => {
-    const q = query.toLowerCase();
+  const expQuery = useQuery({
+    queryKey: ["admin-experiences"],
+    queryFn: getExperiencesList,
+  });
+  const usersQuery = useQuery({
+    queryKey: ["admin-users"],
+    queryFn: getUsersList,
+  });
+
+  const createMutation = useMutation({
+    mutationFn: (e: FrontExperience) => createExperience(e),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-experiences"] });
+      setCreating(false);
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: FrontExperience }) =>
+      updateExperience(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-experiences"] });
+      setEditingId(null);
+    },
+  });
+
+  const publishMutation = useMutation({
+    mutationFn: publishExperience,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-experiences"] });
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: deleteExperience,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-experiences"] });
+    },
+  });
+
+  const experiences = expQuery.data ?? [];
+  const users = usersQuery.data ?? [];
+
+  const ownerName = (id: string) =>
+    users.find((u) => u.id === id)?.fullName ?? `Auteur #${id}`;
+
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return experiences;
     return experiences.filter(
       (e) =>
-        !q ||
         e.title.toLowerCase().includes(q) ||
-        e.region.toLowerCase().includes(q) ||
-        e.category.toLowerCase().includes(q),
+        (e.region ?? "").toLowerCase().includes(q) ||
+        e.category.toLowerCase().includes(q) ||
+        e.description.toLowerCase().includes(q),
     );
   }, [experiences, query]);
 
   const startCreate = () => {
-    const first = hosts[0]?.id ?? "u-host-1";
-    setEditing({ ...emptyExperience(first), status: "draft" });
-    setIsNew(true);
+    const authors = users;
+    setDraft({ ...EMPTY, hostId: authors[0]?.id ?? "" });
+    setCreating(true);
   };
-  const startEdit = (e: MockExperience) => {
-    setEditing({ ...e });
-    setIsNew(false);
-  };
-  const remove = (id: string) => {
-    if (!confirm(t("admin.exp.confirmDelete"))) return;
-    onChange(experiences.filter((e) => e.id !== id));
-  };
-  const togglePublish = (e: MockExperience) => {
-    onChange(
-      experiences.map((x) =>
-        x.id === e.id ? { ...x, status: x.status === "published" ? "draft" : "published" } : x,
-      ),
-    );
-  };
-  const save = () => {
-    if (!editing) return;
-    // Enforce draft on creation (business rule)
-    const clean: MockExperience = {
-      ...editing,
-      status: isNew ? "draft" : editing.status,
-      program: (editing.program ?? [])
-        .map((d, i) => ({ ...d, day: i + 1 }))
-        .slice(0, editing.durationDays),
-    };
-    // Ensure program length == durationDays
-    while (clean.program.length < clean.durationDays) {
-      clean.program.push({ day: clean.program.length + 1, title: "", description: "", images: [] });
-    }
-    onChange(
-      isNew ? [clean, ...experiences] : experiences.map((e) => (e.id === clean.id ? clean : e)),
-    );
-    setEditing(null);
-    setIsNew(false);
+  const startEdit = (e: FrontExperience) => {
+    setDraft({
+      title: e.title,
+      description: e.description,
+      hostId: e.hostId,
+      price: String(e.price),
+      durationDays: String(e.durationDays),
+      region: e.region,
+      category: e.category,
+      latitude: String(e.latitude),
+      longitude: String(e.longitude),
+      images: [...e.images],
+      program: e.program.length
+        ? e.program.map((p) => ({
+            day: p.day,
+            title: p.title,
+            description: p.description,
+            images: [...(p.images ?? [])],
+          }))
+        : [emptyProgram(1)],
+      status: e.status,
+    });
+    setEditingId(e.id);
   };
 
+  const togglePublish = (e: FrontExperience) => {
+    if (e.status === "published") {
+      updateMutation.mutate({
+        id: e.id,
+        data: { ...e, status: "draft" },
+      });
+    } else {
+      publishMutation.mutate(e.id);
+    }
+  };
+
+  const addImage = () => {
+    setDraft({ ...draft, images: [...draft.images, DEFAULT_IMAGE] });
+  };
+  const setImage = (i: number, v: string) => {
+    const next = [...draft.images];
+    next[i] = v;
+    setDraft({ ...draft, images: next });
+  };
+  const removeImage = (i: number) => {
+    const next = draft.images.filter((_, k) => k !== i);
+    setDraft({ ...draft, images: next });
+  };
+
+  const addProgram = () => {
+    setDraft({
+      ...draft,
+      program: [...draft.program, emptyProgram(draft.program.length + 1)],
+    });
+  };
+  const updateProgram = (i: number, patch: Partial<DayProgram>) => {
+    const next = [...draft.program];
+    next[i] = { ...next[i], ...patch };
+    setDraft({ ...draft, program: next });
+  };
+  const removeProgram = (i: number) => {
+    setDraft({ ...draft, program: draft.program.filter((_, k) => k !== i) });
+  };
+  const addProgramImage = (idx: number) => {
+    updateProgram(idx, {
+      images: [...(draft.program[idx].images ?? []), DEFAULT_IMAGE],
+    });
+  };
+  const setProgramImage = (idx: number, i: number, v: string) => {
+    const next = [...(draft.program[idx].images ?? [])];
+    next[i] = v;
+    updateProgram(idx, { images: next });
+  };
+  const removeProgramImage = (idx: number, i: number) => {
+    updateProgram(idx, {
+      images: draft.program[idx].images.filter((_, k) => k !== i),
+    });
+  };
+
+  const save = async () => {
+    if (!draft.title || !draft.hostId) return;
+    const payload: FrontExperience = {
+      id: editingId ?? "",
+      title: draft.title,
+      description: draft.description,
+      hostId: draft.hostId,
+      price: Number(draft.price) || 0,
+      durationDays: Number(draft.durationDays) || 1,
+      region: draft.region,
+      category: draft.category,
+      latitude: Number(draft.latitude) || 0,
+      longitude: Number(draft.longitude) || 0,
+      images: draft.images,
+      program: draft.program,
+      status: draft.status,
+      createdAt: new Date().toISOString(),
+    };
+    if (editingId) {
+      await updateMutation.mutateAsync({ id: editingId, data: payload });
+    } else {
+      await createMutation.mutateAsync(payload);
+    }
+  };
+
+  const remove = (id: string) => {
+    if (confirm("Supprimer cette expérience ?")) deleteMutation.mutate(id);
+  };
+
+  const busy =
+    expQuery.isLoading ||
+    usersQuery.isLoading ||
+    createMutation.isPending ||
+    updateMutation.isPending ||
+    deleteMutation.isPending ||
+    publishMutation.isPending;
+
+  const authors = users;
+
   return (
-    <div className="space-y-4">
+    <section>
       <PanelHeader
-        title={t("admin.exp.title")}
-        subtitle={t("admin.exp.subtitle")}
+        title="Expériences"
+        subtitle="Gérez les expériences et leur publication."
         query={query}
         setQuery={setQuery}
         onAdd={startCreate}
-        addLabel={t("admin.exp.add")}
+        addLabel="Nouvelle expérience"
       />
 
-      {list.length === 0 && (
-        <div className="rounded-2xl border border-dashed border-border bg-card px-6 py-14 text-center text-sm text-muted-foreground">
-          {t("admin.exp.empty")}
-        </div>
+      {busy && (
+        <p className="mb-4 text-sm text-muted-foreground">Chargement…</p>
       )}
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-        {list.map((e) => (
-          <div
-            key={e.id}
-            className="flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-card"
-          >
-            <div className="relative aspect-video overflow-hidden bg-muted">
-              {e.images[0] && (
+        {filtered.length === 0 && !expQuery.isLoading && (
+          <p className="col-span-full rounded-2xl border border-border bg-card px-5 py-10 text-center text-sm text-muted-foreground">
+            Aucune expérience.
+          </p>
+        )}
+        {filtered.map((e) => {
+          const cover = e.images?.[0] ?? DEFAULT_IMAGE;
+          return (
+            <article
+              key={e.id}
+              className="overflow-hidden rounded-2xl border border-border bg-card shadow-card"
+            >
+              <div className="relative">
                 <img
-                  src={e.images[0]}
+                  src={cover}
                   alt={e.title}
-                  className="h-full w-full object-cover"
-                  loading="lazy"
+                  className="aspect-[16/10] w-full object-cover"
                 />
-              )}
-              <span
-                className={`absolute left-3 top-3 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide ${
-                  e.status === "published" ? "bg-emerald-500 text-white" : "bg-amber-500 text-white"
-                }`}
-              >
-                {e.status}
-              </span>
-            </div>
-            <div className="flex flex-1 flex-col p-4">
-              <h4 className="line-clamp-1 font-display text-base font-bold text-foreground">
-                {e.title || "—"}
-              </h4>
-              <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">
-                {e.description || "—"}
-              </p>
-              <div className="mt-3 flex flex-wrap gap-1.5 text-[10px] font-semibold text-muted-foreground">
-                <span className="inline-flex items-center gap-1 rounded-md bg-muted/60 px-2 py-1">
-                  <MapPin className="h-3 w-3" /> {e.region || "—"}
-                </span>
-                <span className="rounded-md bg-muted/60 px-2 py-1">{e.category}</span>
-                <span className="rounded-md bg-muted/60 px-2 py-1">
-                  {e.durationDays} {t("acts.dayShort")}
-                </span>
-                <span className="rounded-md bg-muted/60 px-2 py-1">{e.price} MAD</span>
+                <div className="absolute left-3 top-3 flex items-center gap-1.5">
+                  <StatusBadge status={e.status} />
+                </div>
+                <div className="absolute right-3 top-3">
+                  <button
+                    onClick={() => togglePublish(e)}
+                    disabled={updateMutation.isPending || publishMutation.isPending}
+                    className={
+                      "rounded-full px-2.5 py-1 text-[11px] font-semibold shadow-sm transition " +
+                      (e.status === "published"
+                        ? "bg-white/90 text-foreground hover:bg-white"
+                        : "bg-primary text-primary-foreground hover:bg-primary/90")
+                    }
+                  >
+                    {e.status === "published" ? "Dépublier" : "Publier"}
+                  </button>
+                </div>
               </div>
-              <div className="mt-4 flex items-center justify-between gap-2">
-                <button
-                  onClick={() => togglePublish(e)}
-                  className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition ${
-                    e.status === "published"
-                      ? "border border-border bg-card text-foreground hover:bg-muted"
-                      : "bg-emerald-500 text-white hover:brightness-110"
-                  }`}
-                >
-                  <ShieldCheck className="h-3.5 w-3.5" />
-                  {e.status === "published" ? t("admin.exp.unpublish") : t("admin.exp.publish")}
-                </button>
-                <div className="flex items-center gap-1">
-                  <IconBtn label="edit" onClick={() => startEdit(e)}>
+              <div className="p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <h4 className="truncate font-semibold text-foreground">{e.title}</h4>
+                    <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                      {ownerName(e.hostId)}
+                    </p>
+                  </div>
+                  <p className="whitespace-nowrap font-display font-bold text-primary">
+                    {e.price} MAD
+                  </p>
+                </div>
+                <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+                  <span className="inline-flex items-center gap-1">
+                    <MapPin className="h-3.5 w-3.5" /> {e.region || "—"}
+                  </span>
+                  <span className="inline-flex items-center gap-1">
+                    <CalendarRange className="h-3.5 w-3.5" /> {e.durationDays} j
+                  </span>
+                  <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+                    {e.category}
+                  </span>
+                </div>
+                <div className="mt-4 flex items-center gap-1.5 border-t border-border pt-3">
+                  <IconBtn onClick={() => startEdit(e)} label="Modifier">
                     <Pencil className="h-4 w-4" />
                   </IconBtn>
-                  <IconBtn label="delete" danger onClick={() => remove(e.id)}>
+                  <IconBtn
+                    onClick={() => remove(e.id)}
+                    label="Supprimer"
+                    danger
+                    disabled={deleteMutation.isPending}
+                  >
                     <Trash2 className="h-4 w-4" />
                   </IconBtn>
                 </div>
               </div>
-            </div>
-          </div>
-        ))}
+            </article>
+          );
+        })}
       </div>
 
       <Modal
-        open={!!editing}
+        open={creating || !!editingId}
+        title={editingId ? "Modifier l'expérience" : "Nouvelle expérience"}
+        size="xl"
         onClose={() => {
-          setEditing(null);
-          setIsNew(false);
+          setCreating(false);
+          setEditingId(null);
         }}
         onSave={save}
-        title={isNew ? t("admin.exp.createTitle") : t("admin.exp.editTitle")}
       >
-        {editing && (
-          <div className="space-y-4">
-            <div className="grid gap-3 sm:grid-cols-2">
-              <Field label={t("admin.exp.f.title")}>
-                <input
-                  className={fieldCls}
-                  value={editing.title}
-                  onChange={(e) => setEditing({ ...editing, title: e.target.value })}
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field label="Titre">
+            <input
+              className={fieldCls}
+              value={draft.title}
+              onChange={(e) => setDraft({ ...draft, title: e.target.value })}
+            />
+          </Field>
+          <Field label="Auteur">
+            <select
+              className={fieldCls}
+              value={draft.hostId}
+              onChange={(e) => setDraft({ ...draft, hostId: e.target.value })}
+            >
+              <option value="">Sélectionner…</option>
+              {authors.map((h) => (
+                <option key={h.id} value={h.id}>
+                  {h.fullName} ({h.email})
+                </option>
+              ))}
+            </select>
+          </Field>
+        </div>
+        <Field label="Description">
+          <textarea
+            className={fieldCls}
+            rows={3}
+            value={draft.description}
+            onChange={(e) => setDraft({ ...draft, description: e.target.value })}
+          />
+        </Field>
+        <div className="grid gap-4 sm:grid-cols-3">
+          <Field label="Prix (MAD)">
+            <input
+              type="number"
+              min={0}
+              className={fieldCls}
+              value={draft.price}
+              onChange={(e) => setDraft({ ...draft, price: e.target.value })}
+            />
+          </Field>
+          <Field label="Durée (jours)">
+            <input
+              type="number"
+              min={1}
+              className={fieldCls}
+              value={draft.durationDays}
+              onChange={(e) => setDraft({ ...draft, durationDays: e.target.value })}
+            />
+          </Field>
+          <Field label="Catégorie">
+            <select
+              className={fieldCls}
+              value={draft.category}
+              onChange={(e) => setDraft({ ...draft, category: e.target.value })}
+            >
+              {EXPERIENCE_CATEGORIES.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+            </select>
+          </Field>
+        </div>
+        <div className="grid gap-4 sm:grid-cols-3">
+          <Field label="Région / Ville">
+            <input
+              className={fieldCls}
+              value={draft.region}
+              onChange={(e) => setDraft({ ...draft, region: e.target.value })}
+            />
+          </Field>
+          <Field label="Latitude">
+            <input
+              type="number"
+              step="any"
+              className={fieldCls}
+              value={draft.latitude}
+              onChange={(e) => setDraft({ ...draft, latitude: e.target.value })}
+            />
+          </Field>
+          <Field label="Longitude">
+            <input
+              type="number"
+              step="any"
+              className={fieldCls}
+              value={draft.longitude}
+              onChange={(e) => setDraft({ ...draft, longitude: e.target.value })}
+            />
+          </Field>
+        </div>
+        <Field label="Images de couverture">
+          <div className="grid gap-3 sm:grid-cols-3">
+            {draft.images.map((img, i) => (
+              <div key={i} className="relative">
+                <img
+                  src={img}
+                  alt=""
+                  className="aspect-video w-full rounded-xl border border-border object-cover"
                 />
-              </Field>
-              <Field label={t("admin.exp.f.category")}>
-                <input
-                  className={fieldCls}
-                  value={editing.category}
-                  onChange={(e) => setEditing({ ...editing, category: e.target.value })}
-                />
-              </Field>
-              <Field label={t("admin.exp.f.region")}>
-                <input
-                  className={fieldCls}
-                  value={editing.region}
-                  onChange={(e) => setEditing({ ...editing, region: e.target.value })}
-                />
-              </Field>
-              <Field label={t("admin.exp.f.host")}>
-                <select
-                  className={fieldCls}
-                  value={editing.hostId}
-                  onChange={(e) => setEditing({ ...editing, hostId: e.target.value })}
+                <IconBtn
+                  onClick={() => removeImage(i)}
+                  label="Retirer"
+                  danger
+                  className="absolute right-1.5 top-1.5"
                 >
-                  {hosts.map((h) => (
-                    <option key={h.id} value={h.id}>
-                      {h.fullName}
-                    </option>
-                  ))}
-                </select>
-              </Field>
-              <Field label={t("admin.exp.f.price")}>
+                  <X className="h-3.5 w-3.5" />
+                </IconBtn>
                 <input
-                  type="number"
-                  className={fieldCls}
-                  value={editing.price}
-                  onChange={(e) => setEditing({ ...editing, price: Number(e.target.value) })}
+                  className="mt-1 w-full rounded-lg border border-border px-2 py-1 text-[11px]"
+                  value={img}
+                  onChange={(e) => setImage(i, e.target.value)}
                 />
-              </Field>
-              <Field label={t("admin.exp.f.duration")}>
-                <input
-                  type="number"
-                  min={1}
-                  className={fieldCls}
-                  value={editing.durationDays}
-                  onChange={(e) =>
-                    setEditing({ ...editing, durationDays: Math.max(1, Number(e.target.value)) })
-                  }
-                />
-              </Field>
-            </div>
-            <Field label={t("admin.exp.f.description")}>
-              <textarea
-                rows={4}
-                className={fieldCls}
-                value={editing.description}
-                onChange={(e) => setEditing({ ...editing, description: e.target.value })}
-              />
-            </Field>
-            <Field label={t("admin.exp.f.images")}>
-              <textarea
-                rows={3}
-                className={fieldCls}
-                value={editing.images.join("\n")}
-                onChange={(e) =>
-                  setEditing({
-                    ...editing,
-                    images: e.target.value
-                      .split("\n")
-                      .map((s) => s.trim())
-                      .filter(Boolean),
-                  })
-                }
-              />
-            </Field>
-
-            <div>
-              <div className="mb-2 flex items-center justify-between">
-                <h4 className="font-display text-sm font-bold text-foreground">
-                  {t("admin.exp.f.program")}
-                </h4>
-                <button
-                  type="button"
-                  onClick={() =>
-                    setEditing({
-                      ...editing,
-                      durationDays: editing.durationDays + 1,
-                      program: [
-                        ...editing.program,
-                        { day: editing.program.length + 1, title: "", description: "", images: [] },
-                      ],
-                    })
-                  }
-                  className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary hover:bg-primary/20"
-                >
-                  <Plus className="h-3.5 w-3.5" /> {t("admin.exp.f.addDay")}
-                </button>
               </div>
-              <div className="space-y-3">
-                {editing.program.map((d, i) => (
-                  <div key={i} className="rounded-xl border border-border bg-muted/30 p-3">
-                    <div className="mb-2 flex items-center justify-between">
-                      <span className="rounded-full bg-primary/15 px-2.5 py-0.5 text-xs font-bold text-primary">
-                        {t("exp.detail.day")} {i + 1}
-                      </span>
-                      {editing.program.length > 1 && (
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setEditing({
-                              ...editing,
-                              durationDays: Math.max(1, editing.durationDays - 1),
-                              program: editing.program.filter((_, j) => j !== i),
-                            })
-                          }
-                          className="inline-flex items-center gap-1 text-xs font-semibold text-destructive hover:underline"
-                        >
-                          <Trash2 className="h-3 w-3" /> {t("admin.exp.f.removeDay")}
-                        </button>
-                      )}
-                    </div>
-                    <div className="grid gap-2">
-                      <input
-                        className={fieldCls}
-                        placeholder={t("admin.exp.f.dayTitle")}
-                        value={d.title}
-                        onChange={(e) => {
-                          const p = [...editing.program];
-                          p[i] = { ...p[i], title: e.target.value };
-                          setEditing({ ...editing, program: p });
-                        }}
-                      />
-                      <textarea
-                        rows={2}
-                        className={fieldCls}
-                        placeholder={t("admin.exp.f.dayDescription")}
-                        value={d.description}
-                        onChange={(e) => {
-                          const p = [...editing.program];
-                          p[i] = { ...p[i], description: e.target.value };
-                          setEditing({ ...editing, program: p });
-                        }}
-                      />
-                      <textarea
-                        rows={2}
-                        className={fieldCls}
-                        placeholder={t("admin.exp.f.dayImages")}
-                        value={d.images.join("\n")}
-                        onChange={(e) => {
-                          const p = [...editing.program];
-                          p[i] = {
-                            ...p[i],
-                            images: e.target.value
-                              .split("\n")
-                              .map((s) => s.trim())
-                              .filter(Boolean),
-                          };
-                          setEditing({ ...editing, program: p });
-                        }}
-                      />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
+            ))}
+            <button
+              onClick={addImage}
+              className="flex aspect-video flex-col items-center justify-center rounded-xl border-2 border-dashed border-border text-xs font-medium text-muted-foreground hover:text-foreground"
+            >
+              <Upload className="mb-1 h-4 w-4" /> Ajouter une image
+            </button>
           </div>
-        )}
+        </Field>
+        <Field label="Programme par jour">
+          <div className="space-y-4">
+            {draft.program.map((p, idx) => (
+              <div key={idx} className="rounded-xl border border-border p-4">
+                <div className="mb-3 flex items-center justify-between">
+                  <span className="text-sm font-semibold text-foreground">
+                    Jour {idx + 1}
+                  </span>
+                  {draft.program.length > 1 && (
+                    <IconBtn onClick={() => removeProgram(idx)} label="Retirer" danger>
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </IconBtn>
+                  )}
+                </div>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <Field label="Titre">
+                    <input
+                      className={fieldCls}
+                      value={p.title}
+                      onChange={(e) => updateProgram(idx, { title: e.target.value })}
+                    />
+                  </Field>
+                </div>
+                <Field label="Description">
+                  <textarea
+                    className={fieldCls}
+                    rows={2}
+                    value={p.description}
+                    onChange={(e) => updateProgram(idx, { description: e.target.value })}
+                  />
+                </Field>
+                <div className="mt-3">
+                  <p className="mb-1.5 text-xs font-medium text-muted-foreground">
+                    Images du jour
+                  </p>
+                  <div className="grid gap-2 sm:grid-cols-3">
+                    {(p.images ?? []).map((img, i) => (
+                      <div key={i} className="relative">
+                        <img
+                          src={img}
+                          alt=""
+                          className="aspect-square w-full rounded-lg border border-border object-cover"
+                        />
+                        <IconBtn
+                          onClick={() => removeProgramImage(idx, i)}
+                          label="Retirer"
+                          danger
+                          className="absolute right-1 top-1"
+                        >
+                          <X className="h-3 w-3" />
+                        </IconBtn>
+                        <input
+                          className="mt-1 w-full rounded-lg border border-border px-2 py-1 text-[10px]"
+                          value={img}
+                          onChange={(e) => setProgramImage(idx, i, e.target.value)}
+                        />
+                      </div>
+                    ))}
+                    <button
+                      onClick={() => addProgramImage(idx)}
+                      className="flex aspect-square flex-col items-center justify-center rounded-lg border-2 border-dashed border-border text-[10px] font-medium text-muted-foreground hover:text-foreground"
+                    >
+                      <Plus className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+            <button
+              onClick={addProgram}
+              className="w-full rounded-xl border-2 border-dashed border-border py-3 text-xs font-medium text-muted-foreground hover:text-foreground"
+            >
+              + Ajouter un jour
+            </button>
+          </div>
+        </Field>
+        <Field label="Statut">
+          <select
+            className={fieldCls}
+            value={draft.status}
+            onChange={(e) => setDraft({ ...draft, status: e.target.value as DraftExperience["status"] })}
+          >
+            <option value="draft">Brouillon</option>
+            <option value="published">Publié</option>
+            <option value="archived">Archivé</option>
+          </select>
+        </Field>
       </Modal>
-    </div>
+    </section>
   );
 }

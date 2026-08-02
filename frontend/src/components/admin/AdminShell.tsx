@@ -11,6 +11,7 @@ import {
   Settings,
   ShieldCheck,
   Star,
+  UserPlus,
   Users,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
@@ -19,7 +20,14 @@ import { Logo } from "@/components/landing/Logo";
 import { LanguageSelector } from "@/components/landing/LanguageSelector";
 
 type TabId =
-  "dashboard" | "bookings" | "tourists" | "experiences" | "reviews" | "formations" | "settings";
+  | "dashboard"
+  | "bookings"
+  | "tourists"
+  | "experiences"
+  | "reviews"
+  | "formations"
+  | "enrollments"
+  | "settings";
 
 function useNav() {
   const { t } = useI18n();
@@ -49,6 +57,11 @@ function useNav() {
       id: "formations" as TabId,
       label: t("admin.nav.formations"),
       icon: <GraduationCap className="h-4 w-4" />,
+    },
+    {
+      id: "enrollments" as TabId,
+      label: t("admin.nav.enrollments"),
+      icon: <UserPlus className="h-4 w-4" />,
     },
     {
       id: "settings" as TabId,

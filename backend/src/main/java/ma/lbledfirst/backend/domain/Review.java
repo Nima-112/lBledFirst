@@ -2,6 +2,7 @@ package ma.lbledfirst.backend.domain;
 
 import java.time.LocalDateTime;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -34,6 +35,7 @@ public class Review {
     private User tourist;
 
     @ManyToOne(optional = false)
+    @JsonIgnoreProperties({"coverImages", "dayPrograms", "region", "programs", "bookings", "reviews", "media", "videos"})
     private Experience experience;
 
     @Min(1)

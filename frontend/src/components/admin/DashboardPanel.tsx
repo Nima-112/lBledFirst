@@ -1,30 +1,53 @@
-import { CalendarCheck, DollarSign, MapPin, Star, TrendingUp, UserCheck, Users } from "lucide-react";
+import { CalendarCheck, DollarSign, GraduationCap, MapPin, Star, UserCheck, Users } from "lucide-react";
 import { useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 
 import { BarChart, PanelHeader, StatCard, StatusBadge } from "@/components/dashboard/ui";
-import { Formation } from "@/lib/formations";
-import { BookingStatus, experienceById, experienceTitle, MockBooking, MockExperience, MockReview, MockUser, userName } from "@/lib/mock-auth";
+import { getUsersList } from "@/services/users.service";
+import { getExperiencesList } from "@/services/experiences.service";
+import { getBookingsList } from "@/services/bookings.service";
+import { getReviewsList } from "@/services/reviews.service";
+import { getFormationsList } from "@/services/formations.service";
+import type { Formation } from "@/lib/formations";
 
-export function DashboardPanel({
-  users,
-  experiences,
-  bookings,
-  reviews,
-  formations,
-}: {
-  users: MockUser[];
-  experiences: MockExperience[];
-  bookings: MockBooking[];
-  reviews: MockReview[];
-  formations: Formation[];
-}) {
-  void formations;
+type BookingStatus = "pending" | "confirmed" | "completed" | "cancelled";
+
+export function DashboardPanel() {
+  const usersQuery = useQuery({ queryKey: ["admin-users"], queryFn: getUsersList });
+  const experiencesQuery = useQuery({
+    queryKey: ["admin-experiences"],
+    queryFn: getExperiencesList,
+  });
+  const bookingsQuery = useQuery({
+    queryKey: ["admin-bookings"],
+    queryFn: getBookingsList,
+  });
+  const reviewsQuery = useQuery({
+    queryKey: ["admin-reviews"],
+    queryFn: getReviewsList,
+  });
+  const formationsQuery = useQuery<Formation[]>({
+    queryKey: ["admin-formations"],
+    queryFn: getFormationsList,
+  });
+
+  const users = usersQuery.data ?? [];
+  const experiences = experiencesQuery.data ?? [];
+  const bookings = bookingsQuery.data ?? [];
+  const reviews = reviewsQuery.data ?? [];
+  const formations = formationsQuery.data ?? [];
+
+  void formationsQuery;
 
   const revenue = bookings
-    .filter((b) => b.status === "confirmed" || b.status === "completed")
+    .filter(
+      (b) =>
+        (b.status === "confirmed" || b.status === "completed") &&
+        !b.experienceDeleted,
+    )
     .reduce((s, b) => s + b.totalPrice, 0);
   const totalTourists = users.filter((u) => u.role === "tourist").length;
-  const publishedVideos = experiences.filter((e) => e.status === "published").length;
+  const publishedExperiences = experiences.filter((e) => e.status === "published").length;
   const avgRating =
     reviews.length > 0
       ? (reviews.reduce((s, r) => s + r.rating, 0) / reviews.length).toFixed(1)
@@ -47,11 +70,20 @@ export function DashboardPanel({
   const topRegions = useMemo(() => {
     const map = new Map<string, number>();
     bookings.forEach((b) => {
-      const region = experienceById(b.experienceId)?.region ?? "—";
+      const region = experiences.find((e) => e.id === b.experienceId)?.region ?? "—";
       map.set(region, (map.get(region) ?? 0) + 1);
     });
     return [...map.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5);
-  }, [bookings]);
+  }, [bookings, experiences]);
+
+  const experienceById = (id: string) => experiences.find((e) => e.id === id);
+  const touristName = (id: string) => users.find((u) => u.id === id)?.fullName ?? `#${id}`;
+
+  const loading =
+    usersQuery.isLoading ||
+    experiencesQuery.isLoading ||
+    bookingsQuery.isLoading ||
+    reviewsQuery.isLoading;
 
   return (
     <section>
@@ -59,6 +91,10 @@ export function DashboardPanel({
         title="Tableau de bord"
         subtitle="Vue d'ensemble de la plateforme en temps réel."
       />
+
+      {loading && (
+        <p className="mb-4 text-sm text-muted-foreground">Chargement des données…</p>
+      )}
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         <StatCard
@@ -83,7 +119,7 @@ export function DashboardPanel({
         <StatCard
           icon={<Users className="h-5 w-5" />}
           label="Expériences publiées"
-          value={String(publishedVideos)}
+          value={String(publishedExperiences)}
           tone="sky"
         />
 
@@ -95,9 +131,10 @@ export function DashboardPanel({
           tone="saffron"
         />
         <StatCard
-          icon={<TrendingUp className="h-5 w-5" />}
-          label="Expériences publiées"
-          value={String(experiences.filter((e) => e.status === "published").length)}
+          icon={<GraduationCap className="h-5 w-5" />}
+          label="Formations totales"
+          value={String(formations.length)}
+          hint="Catalogue Academy"
           tone="primary"
         />
       </div>
@@ -118,7 +155,7 @@ export function DashboardPanel({
               <p className="text-sm text-muted-foreground">Aucune donnée.</p>
             )}
             {topRegions.map(([region, count], i) => {
-              const max = topRegions[0][1];
+              const max = topRegions[0]?.[1] ?? 1;
               return (
                 <div key={region}>
                   <div className="mb-1 flex items-center justify-between text-sm">
@@ -145,6 +182,9 @@ export function DashboardPanel({
           Dernières réservations
         </h3>
         <div className="space-y-2">
+          {bookings.length === 0 && (
+            <p className="text-sm text-muted-foreground">Aucune réservation.</p>
+          )}
           {bookings
             .slice(-4)
             .reverse()
@@ -155,10 +195,10 @@ export function DashboardPanel({
               >
                 <div className="min-w-0">
                   <p className="truncate font-semibold text-foreground">
-                    {experienceTitle(b.experienceId)}
+                    {experienceById(b.experienceId)?.title ?? `Expérience #${b.experienceId}`}
                   </p>
                   <p className="truncate text-muted-foreground">
-                    {userName(b.touristId)} · {b.date}
+                    {touristName(b.touristId)} · {b.date.slice(0, 10)}
                   </p>
                 </div>
                 <div className="flex items-center gap-3">

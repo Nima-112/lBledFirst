@@ -92,13 +92,23 @@ export function Modal({
   onClose,
   onSave,
   children,
+  size = "lg",
 }: {
   open: boolean;
   title: string;
   onClose: () => void;
   onSave?: () => void;
   children: ReactNode;
+  size?: "lg" | "xl" | "2xl" | "3xl";
 }) {
+  const sizeCls =
+    size === "3xl"
+      ? "max-w-7xl"
+      : size === "2xl"
+        ? "max-w-5xl"
+        : size === "xl"
+          ? "max-w-3xl"
+          : "max-w-lg";
   return (
     <AnimatePresence>
       {open && (
@@ -115,7 +125,7 @@ export function Modal({
             exit={{ y: 30, opacity: 0, scale: 0.98 }}
             transition={{ type: "spring", stiffness: 320, damping: 30 }}
             onClick={(e) => e.stopPropagation()}
-            className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-t-3xl border border-border bg-card p-6 shadow-warm sm:rounded-3xl"
+            className={`max-h-[90vh] w-full ${sizeCls} overflow-y-auto rounded-t-3xl border border-border bg-card p-6 shadow-warm sm:rounded-3xl`}
           >
             <div className="mb-5 flex items-center justify-between">
               <h2 className="font-display text-xl font-bold text-foreground">{title}</h2>

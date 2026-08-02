@@ -31,17 +31,21 @@ services:
       mysql:
         condition: service_healthy
     env_file:
-      - .env.example    
+      - .env
+      - .env.example
     environment:
       SPRING_PROFILES_ACTIVE: dev
-      ADMIN_EMAIL: ${ADMIN_EMAIL}
-      ADMIN_PASSWORD: ${ADMIN_PASSWORD}  
       SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/lbled_first?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
       SPRING_DATASOURCE_USERNAME: lbled_first
       SPRING_DATASOURCE_PASSWORD: lbled_first
       CORS_ALLOWED_ORIGINS: http://localhost:3000,http://localhost:8081
+      OAUTH2_SUCCESS_REDIRECT_URI: http://localhost:3000/me/bookings
+      OAUTH2_FAILURE_REDIRECT_URI: http://localhost:3000/auth?error=google
+      APP_UPLOAD_DIR: /app/uploads/videos
     ports:
       - "8080:8080"
+    volumes:
+      - uploads_data:/app/uploads
 
   frontend:
     build:
@@ -70,3 +74,4 @@ services:
 
 volumes:
   mysql_data:
+  uploads_data:

@@ -12,18 +12,15 @@ import {
   saveExperiences,
   saveUsers,
 } from "@/lib/mock-auth";
-import { Formation, getFormations, saveFormations } from "@/lib/formations";
 
 interface AdminData {
   users: MockUser[];
   experiences: MockExperience[];
   bookings: MockBooking[];
   reviews: MockReview[];
-  formations: Formation[];
   updUsers: (n: MockUser[]) => void;
   updExperiences: (n: MockExperience[]) => void;
   updBookings: (n: MockBooking[]) => void;
-  updFormations: (n: Formation[]) => void;
 }
 
 const AdminDataContext = createContext<AdminData | null>(null);
@@ -33,14 +30,12 @@ export function AdminDataProvider({ children }: { children: React.ReactNode }) {
   const [experiences, setExperiences] = useState<MockExperience[]>([]);
   const [bookings, setBookings] = useState<MockBooking[]>([]);
   const [reviews, setReviews] = useState<MockReview[]>([]);
-  const [formations, setFormations] = useState<Formation[]>([]);
 
   useEffect(() => {
     setUsers(getUsers());
     setExperiences(getExperiences());
     setBookings(getBookings());
     setReviews(getReviews());
-    setFormations(getFormations());
   }, []);
 
   const updUsers = (n: MockUser[]) => {
@@ -55,10 +50,6 @@ export function AdminDataProvider({ children }: { children: React.ReactNode }) {
     setBookings(n);
     saveBookings(n);
   };
-  const updFormations = (n: Formation[]) => {
-    setFormations(n);
-    saveFormations(n);
-  };
 
   return (
     <AdminDataContext.Provider
@@ -67,11 +58,9 @@ export function AdminDataProvider({ children }: { children: React.ReactNode }) {
         experiences,
         bookings,
         reviews,
-        formations,
         updUsers,
         updExperiences,
         updBookings,
-        updFormations,
       }}
     >
       {children}

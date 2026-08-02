@@ -4,6 +4,7 @@ import java.util.List;
 
 import ma.lbledfirst.backend.domain.Review;
 import ma.lbledfirst.backend.service.ReviewService;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -36,16 +37,18 @@ public class ReviewController {
     }
 
     @PostMapping
-public Review create(@Valid @RequestBody Review review) {
-    return service.save(review);
-}
+    public Review create(@Valid @RequestBody Review review) {
+        return service.save(review);
+    }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{id}")
     public Review update(@PathVariable Long id, @RequestBody Review review) {
         review.setId(id);
         return service.update(id, review);
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{id}")
     public void delete(@PathVariable Long id) {
         service.delete(id);

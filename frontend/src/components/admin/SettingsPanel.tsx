@@ -1,28 +1,75 @@
 import { Field, fieldCls, PanelHeader } from "@/components/dashboard/ui";
 import { useAuth } from "@/context/AuthContext";
-import { Check } from "lucide-react";
-import { useState } from "react";
+import { Check, Loader2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Toggle } from "./Toggle";
+import { FrontSettings, getSettings, saveSettings } from "@/services/settings.service";
+import { patchUser } from "@/services/users.service";
 
 export function SettingsPanel() {
-  const { user } = useAuth();
+  const queryClient = useQueryClient();
+  const { user, setUser } = useAuth();
   const [name, setName] = useState(user?.name ?? "");
-  const [phone, setPhone] = useState("");
-  const [saved, setSaved] = useState(false);
+  const [phone, setPhone] = useState((user as any)?.phone ?? "");
+  const [profileSaved, setProfileSaved] = useState(false);
+  const [settingsSaved, setSettingsSaved] = useState(false);
 
-  const [platform, setPlatform] = useState({
+  const settingsQuery = useQuery<FrontSettings>({
+    queryKey: ["admin-settings"],
+    queryFn: getSettings,
+  });
+
+  const [platform, setPlatform] = useState<FrontSettings>({
     autoConfirm: false,
     allowSignups: true,
     maintenance: false,
     twoFactor: true,
   });
 
-  // Pas encore d'endpoint backend pour mettre à jour le profil (PUT /api/users/me) :
-  // ce formulaire est local uniquement pour l'instant.
-  const saveProfile = () => {
-    setSaved(true);
-    setTimeout(() => setSaved(false), 1800);
-  };
+  useEffect(() => {
+    if (settingsQuery.data) {
+      setPlatform(settingsQuery.data);
+    }
+  }, [settingsQuery.data]);
+
+  useEffect(() => {
+    setName(user?.name ?? "");
+    setPhone((user as any)?.phone ?? "");
+  }, [user]);
+
+  const profileMutation = useMutation({
+    mutationFn: async () => {
+      if (!user?.id) throw new Error("No connected user");
+      const updated = await patchUser(user.id, { name, phone });
+      return updated;
+    },
+    onSuccess: (updated) => {
+      void queryClient.invalidateQueries({ queryKey: ["admin-users"] });
+      setUser?.({
+        id: updated.id,
+        name: updated.fullName,
+        email: updated.email,
+        role: updated.role,
+        phone: updated.phone ?? "",
+        country: updated.country,
+        nativeLanguage: updated.nativeLanguage,
+      });
+      setProfileSaved(true);
+      setTimeout(() => setProfileSaved(false), 1800);
+    },
+  });
+
+  const settingsMutation = useMutation({
+    mutationFn: async () => {
+      return await saveSettings(platform);
+    },
+    onSuccess: (data) => {
+      setPlatform(data);
+      setSettingsSaved(true);
+      setTimeout(() => setSettingsSaved(false), 1800);
+    },
+  });
 
   return (
     <section>
@@ -46,14 +93,28 @@ export function SettingsPanel() {
                 className={fieldCls}
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
+                placeholder="+212 6 00 00 00 00"
               />
             </Field>
             <button
-              onClick={saveProfile}
-              className="inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-warm transition hover:scale-105"
+              onClick={() => profileMutation.mutate()}
+              disabled={profileMutation.isPending}
+              className="inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-warm transition hover:scale-105 disabled:opacity-60 disabled:hover:scale-100"
             >
-              {saved ? <Check className="h-4 w-4" /> : null} {saved ? "Enregistré" : "Enregistrer"}
+              {profileMutation.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : profileSaved ? (
+                <Check className="h-4 w-4" />
+              ) : null}
+              {profileMutation.isPending ? "Enregistrement…" : profileSaved ? "Enregistré" : "Enregistrer"}
             </button>
+            {profileMutation.error && (
+              <p className="text-xs text-destructive">
+                {(profileMutation.error as any)?.response?.data?.message ??
+                  (profileMutation.error as any)?.message ??
+                  "Erreur d'enregistrement"}
+              </p>
+            )}
           </div>
         </div>
 
@@ -61,6 +122,9 @@ export function SettingsPanel() {
           <h3 className="mb-4 font-display text-base font-bold text-foreground">
             Paramètres généraux
           </h3>
+          {settingsQuery.isLoading && (
+            <p className="mb-3 text-xs text-muted-foreground">Chargement des paramètres…</p>
+          )}
           <div className="space-y-1">
             <Toggle
               label="Confirmation automatique des réservations"
@@ -70,7 +134,7 @@ export function SettingsPanel() {
             />
             <Toggle
               label="Autoriser les inscriptions"
-              hint="Nouveaux comptes touristes / hôtes"
+              hint="Nouveaux comptes utilisateurs"
               value={platform.allowSignups}
               onChange={(v) => setPlatform({ ...platform, allowSignups: v })}
             />
@@ -87,6 +151,29 @@ export function SettingsPanel() {
               onChange={(v) => setPlatform({ ...platform, maintenance: v })}
             />
           </div>
+          <button
+            onClick={() => settingsMutation.mutate()}
+            disabled={settingsMutation.isPending || settingsQuery.isLoading}
+            className="mt-5 inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-warm transition hover:scale-105 disabled:opacity-60 disabled:hover:scale-100"
+          >
+            {settingsMutation.isPending ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : settingsSaved ? (
+              <Check className="h-4 w-4" />
+            ) : null}
+            {settingsMutation.isPending
+              ? "Enregistrement…"
+              : settingsSaved
+                ? "Paramètres enregistrés"
+                : "Enregistrer les paramètres"}
+          </button>
+          {settingsMutation.error && (
+            <p className="mt-3 text-xs text-destructive">
+              {(settingsMutation.error as any)?.response?.data?.message ??
+                (settingsMutation.error as any)?.message ??
+                "Erreur d'enregistrement"}
+            </p>
+          )}
         </div>
       </div>
     </section>

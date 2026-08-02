@@ -6,20 +6,22 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 
 @Configuration
-public class WebConfig {
+public class WebConfig implements WebMvcConfigurer {
 
-    // Liste (YAML) résolue en tableau — voir application.yml: cors.allowed-origins
     @Value("${cors.allowed-origins:http://localhost:3000,http://localhost:8081}")
     private String[] allowedOrigins;
 
-    // Bean explicite utilisé directement par SecurityConfig (http.cors(...)).
-    // Spring Security passe en amont du DispatcherServlet : sans ce bean branché
-    // dans la chaîne de filtres, les requêtes preflight OPTIONS vers les
-    // endpoints protégés étaient bloquées avant d'atteindre la config CORS MVC.
+    @Value("${app.upload.dir:/app/uploads/videos}")
+    private String uploadDir;
+
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
@@ -31,6 +33,16 @@ public class WebConfig {
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/api/**", configuration);
+        source.registerCorsConfiguration("/uploads/**", configuration);
         return source;
+    }
+
+    @Override
+    public void addResourceHandlers(ResourceHandlerRegistry registry) {
+        Path uploadPath = Paths.get(uploadDir).toAbsolutePath().normalize();
+        String location = "file:" + uploadPath.toString().replace("\\", "/") + "/";
+        registry.addResourceHandler("/uploads/videos/**")
+                .addResourceLocations(location)
+                .setCachePeriod(31536000);
     }
 }

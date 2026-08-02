@@ -31,7 +31,15 @@ public class AdminSeeder implements CommandLineRunner {
     @Override
     public void run(String... args) {
         repo.findByEmail(adminEmail).ifPresentOrElse(
-            existing -> log.info("ℹ️ Admin déjà existant : {}", adminEmail),
+            existing -> {
+                if (!encoder.matches(adminPassword, existing.getPassword())) {
+                    existing.setPassword(encoder.encode(adminPassword));
+                    repo.save(existing);
+                    log.info("🔑 Mot de passe admin mis à jour : {}", adminEmail);
+                } else {
+                    log.info("ℹ️ Admin déjà existant : {}", adminEmail);
+                }
+            },
             () -> {
                 User admin = User.builder()
                         .name("Admin")

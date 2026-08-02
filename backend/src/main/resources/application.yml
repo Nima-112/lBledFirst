@@ -11,6 +11,10 @@ spring:
       hibernate:
         format_sql: true
     show-sql: true
+  servlet:
+    multipart:
+      max-file-size: 500MB
+      max-request-size: 512MB
   # Identifiants à créer sur https://console.cloud.google.com/apis/credentials
   # (Écran de consentement OAuth + Identifiant "Application Web").
   # URI de redirection autorisée à déclarer côté Google : http://localhost:8080/login/oauth2/code/google en local.
@@ -57,3 +61,5 @@ app:
     # Page du frontend vers laquelle on redirige une fois le cookie de session posé
     success-redirect-uri: ${OAUTH2_SUCCESS_REDIRECT:http://localhost:3000/me}
     failure-redirect-uri: ${OAUTH2_FAILURE_REDIRECT:http://localhost:3000/auth?error=google}
+  upload:
+    dir: ${APP_UPLOAD_DIR:/app/uploads/videos}

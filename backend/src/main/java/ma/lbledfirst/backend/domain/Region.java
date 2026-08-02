@@ -1,5 +1,6 @@
 package ma.lbledfirst.backend.domain;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -29,6 +30,7 @@ public class Region {
     @Column(nullable = false, precision = 10, scale = 6)
     private BigDecimal longitude;
 
+    @JsonIgnore
     @OneToMany(mappedBy = "region")
     private List<Experience> experiences;
 
