@@ -36,4 +36,9 @@ public class FormationDetailResponse {
     // true si l'utilisateur courant (authentifié) a acheté la formation ;
     // conditionne la présence des videoUrl dans les capsules
     private boolean purchased;
+    // true si l'utilisateur courant a terminé toutes les capsules ; conditionne
+    // la possibilité de publier un avis (POST /api/reviews)
+    private boolean completed;
+    // true si l'utilisateur courant a déjà laissé un avis pour cette formation
+    private boolean reviewed;
 }

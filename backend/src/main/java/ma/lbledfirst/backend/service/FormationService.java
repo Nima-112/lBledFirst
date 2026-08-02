@@ -31,6 +31,7 @@ import ma.lbledfirst.backend.repository.FormationCapsuleProgressRepository;
 import ma.lbledfirst.backend.repository.FormationFavoriteRepository;
 import ma.lbledfirst.backend.repository.FormationPurchaseRepository;
 import ma.lbledfirst.backend.repository.FormationRepository;
+import ma.lbledfirst.backend.repository.ReviewRepository;
 import ma.lbledfirst.backend.repository.UserRepository;
 import org.hibernate.Hibernate;
 import org.springframework.stereotype.Service;
@@ -46,6 +47,7 @@ public class FormationService {
     private final FormationFavoriteRepository favoriteRepository;
     private final FormationCapsuleProgressRepository progressRepository;
     private final UserRepository userRepository;
+    private final ReviewRepository reviewRepository;
 
     // ---- Catalogue (public) ------------------------------------------------
 
@@ -60,7 +62,29 @@ public class FormationService {
     public FormationDetailResponse getFormationBySlug(String slug, String currentUserEmail) {
         Formation formation = findBySlugOrThrow(slug);
         boolean purchased = currentUserEmail != null && isPurchased(formation, currentUserEmail);
-        return toDetail(formation, purchased);
+
+        boolean completed = false;
+        boolean reviewed = false;
+        if (currentUserEmail != null) {
+            User user = userRepository.findByEmail(currentUserEmail).orElse(null);
+            if (user != null) {
+                completed = purchased && isFormationCompleted(formation, user.getId());
+                reviewed = reviewRepository.findByTouristIdAndFormationId(user.getId(), formation.getId()).isPresent();
+            }
+        }
+
+        return toDetail(formation, purchased, completed, reviewed);
+    }
+
+    private boolean isFormationCompleted(Formation formation, Long userId) {
+        int totalCapsules = formation.getChapters().stream()
+                .mapToInt(ch -> ch.getCapsules().size())
+                .sum();
+        if (totalCapsules == 0) return false;
+        long completedCapsules = progressRepository
+                .findByUserIdAndCapsule_Chapter_Formation_Id(userId, formation.getId())
+                .size();
+        return completedCapsules >= totalCapsules;
     }
 
     // ---- Administration (admin uniquement, cf. FormationController) -------
@@ -77,7 +101,7 @@ public class FormationService {
         applyRequest(formation, req);
         formationRepository.save(formation);
 
-        return toDetail(formation, false);
+        return toDetail(formation, false, false, false);
     }
 
     @Transactional
@@ -91,7 +115,7 @@ public class FormationService {
         applyRequestForUpdate(formation, req);
         formationRepository.save(formation);
 
-        return toDetail(formation, false);
+        return toDetail(formation, false, false, false);
     }
 
     @Transactional
@@ -219,8 +243,9 @@ public class FormationService {
         formation.setCoverImage(req.getCoverImage());
         formation.setPreviewVideo(req.getPreviewVideo());
         formation.setStudentsCount(req.getStudentsCount() != null ? req.getStudentsCount() : 0);
-        formation.setAverageRating(req.getAverageRating() != null ? req.getAverageRating() : 0.0);
-        formation.setReviewsCount(req.getReviewsCount() != null ? req.getReviewsCount() : 0);
+        // averageRating / reviewsCount ne sont plus saisis à la main : ils sont
+        // calculés par ReviewService à partir des avis réels (cf. bug corrigé —
+        // ces champs étaient auparavant complètement déconnectés des avis).
         formation.setObjectives(req.getObjectives() != null ? req.getObjectives() : new ArrayList<>());
         formation.setSkills(req.getSkills() != null ? req.getSkills() : new ArrayList<>());
         formation.setPrerequisites(req.getPrerequisites() != null ? req.getPrerequisites() : new ArrayList<>());
@@ -239,8 +264,7 @@ public class FormationService {
         formation.setCoverImage(req.getCoverImage());
         formation.setPreviewVideo(req.getPreviewVideo());
         formation.setStudentsCount(req.getStudentsCount() != null ? req.getStudentsCount() : formation.getStudentsCount());
-        formation.setAverageRating(req.getAverageRating() != null ? req.getAverageRating() : formation.getAverageRating());
-        formation.setReviewsCount(req.getReviewsCount() != null ? req.getReviewsCount() : formation.getReviewsCount());
+        // averageRating / reviewsCount : idem, jamais écrasés par un edit admin.
         formation.setObjectives(req.getObjectives() != null ? req.getObjectives() : new ArrayList<>());
         formation.setSkills(req.getSkills() != null ? req.getSkills() : new ArrayList<>());
         formation.setPrerequisites(req.getPrerequisites() != null ? req.getPrerequisites() : new ArrayList<>());
@@ -432,7 +456,7 @@ public class FormationService {
         );
     }
 
-    private FormationDetailResponse toDetail(Formation f, boolean purchased) {
+    private FormationDetailResponse toDetail(Formation f, boolean purchased, boolean completed, boolean reviewed) {
         Hibernate.initialize(f.getObjectives());
         Hibernate.initialize(f.getSkills());
         Hibernate.initialize(f.getPrerequisites());
@@ -485,7 +509,9 @@ public class FormationService {
                 chapters,
                 toInstructorDto(f.getInstructor()),
                 f.getCreatedAt(),
-                purchased
+                purchased,
+                completed,
+                reviewed
         );
     }
 

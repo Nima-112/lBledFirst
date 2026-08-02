@@ -42,8 +42,8 @@ public class FormationSeeder implements CommandLineRunner {
                 .price(new BigDecimal("890"))
                 .coverImage("https://images.unsplash.com/photo-1610030006870-cbc4d1cca3c6?auto=format&fit=crop&w=1200&q=80")
                 .studentsCount(342)
-                .averageRating(4.9)
-                .reviewsCount(128)
+                // averageRating / reviewsCount : ne plus les figer ici, ils sont
+                // recalculés à partir des vrais avis (cf. ReviewTestDataSeeder).
                 .objectives(List.of(
                         "Comprendre l'histoire et les symboles du Tarz Fassi",
                         "Maîtriser les 5 points de base de la broderie fassie",
@@ -96,8 +96,7 @@ public class FormationSeeder implements CommandLineRunner {
                 .price(new BigDecimal("1290"))
                 .coverImage("https://images.unsplash.com/photo-1548013146-72479768bada?auto=format&fit=crop&w=1200&q=80")
                 .studentsCount(218)
-                .averageRating(4.8)
-                .reviewsCount(87)
+                // averageRating / reviewsCount : idem, plus de valeur figée.
                 .objectives(List.of(
                         "Reconnaître les motifs classiques du zellige",
                         "Tailler les tesselles à la main",

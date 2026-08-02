@@ -5,6 +5,7 @@ import java.util.List;
 import ma.lbledfirst.backend.domain.Review;
 import ma.lbledfirst.backend.service.ReviewService;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -36,15 +37,32 @@ public class ReviewController {
         return service.findById(id);
     }
 
+    @GetMapping("/formation/{formationId}")
+    public List<Review> findByFormation(@PathVariable Long formationId) {
+        return service.findByFormationId(formationId);
+    }
+
+    @GetMapping("/experience/{experienceId}")
+    public List<Review> findByExperience(@PathVariable Long experienceId) {
+        return service.findByExperienceId(experienceId);
+    }
+
+    // Avis de l'utilisateur connecté (toutes cibles confondues) — protégé
+    // explicitement dans SecurityConfig car /api/reviews/** est public par ailleurs.
+    @GetMapping("/me")
+    public List<Review> findMine(Authentication authentication) {
+        return service.findByTouristEmail(authentication.getName());
+    }
+
+    // Le tourist est déduit du JWT, jamais du corps de la requête.
     @PostMapping
-    public Review create(@Valid @RequestBody Review review) {
-        return service.save(review);
+    public Review create(@Valid @RequestBody Review review, Authentication authentication) {
+        return service.createForCurrentUser(review, authentication.getName());
     }
 
     @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{id}")
     public Review update(@PathVariable Long id, @RequestBody Review review) {
-        review.setId(id);
         return service.update(id, review);
     }
 

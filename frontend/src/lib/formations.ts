@@ -61,6 +61,11 @@ export type Formation = {
   // renseigné uniquement par l'API (le détail d'une formation) : true si
   // l'utilisateur courant a acheté cette formation
   purchased?: boolean;
+   // true si l'utilisateur courant a terminé toutes les capsules — condition
+  // pour pouvoir publier un avis
+  completed?: boolean;
+  // true si l'utilisateur courant a déjà publié un avis sur cette formation
+  reviewed?: boolean;
 };
 
 // ---- Instructors ----------------------------------------------------------

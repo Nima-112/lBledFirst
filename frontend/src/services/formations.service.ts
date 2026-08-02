@@ -36,6 +36,8 @@ export type ApiFormationDetail = ApiFormationSummary & {
   skills: string[];
   prerequisites: string[];
   purchased: boolean;
+  completed: boolean;
+  reviewed: boolean;
   instructor: {
     name: string;
     specialty?: string | null;
@@ -205,6 +207,8 @@ const detailToFront = (d: ApiFormationDetail): Formation => ({
   chapters: d.chapters.map(detailChapterToFront),
   instructor: detailInstructorToFront(d.instructor),
   purchased: d.purchased,
+  completed: d.completed,
+  reviewed: d.reviewed,
 });
 
 const formationToPayload = (f: Formation): ApiFormationPayload => ({

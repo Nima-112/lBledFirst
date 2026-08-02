@@ -11,6 +11,7 @@ import {
   CreditCard,
   Download,
   Lock,
+  MessageSquare,
   Play,
   ShieldCheck,
   Star,
@@ -29,6 +30,11 @@ import {
   getFormationProgressApi,
   toggleCapsuleCompletionApi,
 } from "@/services/formations.service";
+import {
+  getReviewsForFormation,
+  createFormationReview,
+  type FrontReview,
+} from "@/services/reviews.service";
 import { Navbar } from "@/components/landing/Navbar";
 import { Footer } from "@/components/landing/Footer";
 import { useAuth } from "@/context/AuthContext";
@@ -500,6 +506,8 @@ function FormationDetail() {
         </div>
       </section>
 
+      <FormationReviews formation={f} completed={completed} isLoggedIn={!!user} />
+
       <Footer />
 
       {/* Checkout modal */}
@@ -955,5 +963,193 @@ function CertificateModal({
         </motion.div>
       )}
     </AnimatePresence>
+  );
+}
+
+// ----------------------------------------------------------------------------
+// Section avis — visible par tout le monde. Le formulaire est toujours
+// affiché, mais ne peut être soumis (côté serveur ET côté client) que si
+// l'utilisateur a acheté ET terminé toutes les capsules de la formation.
+// ----------------------------------------------------------------------------
+function FormationReviews({
+  formation,
+  completed,
+  isLoggedIn,
+}: {
+  formation: Formation;
+  completed: boolean;
+  isLoggedIn: boolean;
+}) {
+  const queryClient = useQueryClient();
+  const navigate = useNavigate();
+  const [rating, setRating] = useState(0);
+  const [hoverRating, setHoverRating] = useState(0);
+  const [comment, setComment] = useState("");
+
+  const reviewsQuery = useQuery({
+    queryKey: ["formations", formation.slug, "reviews"],
+    queryFn: () => getReviewsForFormation(formation.id!),
+    enabled: !!formation.id,
+  });
+
+  const reviews = reviewsQuery.data ?? [];
+  const alreadyReviewed = formation.reviewed ?? false;
+  const canSubmit = isLoggedIn && completed && !alreadyReviewed;
+
+  const submitMutation = useMutation({
+    mutationFn: () => createFormationReview(formation.id!, rating, comment),
+    onSuccess: () => {
+      setRating(0);
+      setComment("");
+      queryClient.invalidateQueries({ queryKey: ["formations", formation.slug, "reviews"] });
+      queryClient.invalidateQueries({ queryKey: ["formations", formation.slug] });
+    },
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!canSubmit || rating === 0) return;
+    submitMutation.mutate();
+  };
+
+  return (
+    <section className="border-t border-border py-14 sm:py-20">
+      <div className="mx-auto max-w-5xl px-4 sm:px-6">
+        <SectionKicker>Avis des étudiants</SectionKicker>
+        <div className="mt-3 flex items-center gap-3">
+          <h2 className="font-display text-2xl font-extrabold text-foreground sm:text-3xl">
+            {formation.reviewsCount > 0
+              ? `${formation.averageRating.toFixed(1)} / 5 · ${formation.reviewsCount} avis`
+              : "Aucun avis pour le moment"}
+          </h2>
+        </div>
+
+        {/* Formulaire — toujours visible, activé seulement si éligible */}
+        <div className="mt-8 rounded-3xl border border-border bg-card p-6 shadow-card">
+          <p className="font-display text-lg font-bold text-foreground">Laisser un avis</p>
+
+          {!isLoggedIn && (
+            <p className="mt-2 text-sm text-muted-foreground">
+              Connectez-vous pour laisser un avis sur cette formation.
+            </p>
+          )}
+          {isLoggedIn && !completed && (
+            <p className="mt-2 text-sm text-muted-foreground">
+              Vous pourrez publier un avis une fois que vous aurez terminé toutes les capsules de
+              la formation.
+            </p>
+          )}
+          {isLoggedIn && completed && alreadyReviewed && (
+            <p className="mt-2 text-sm text-muted-foreground">
+              Vous avez déjà laissé un avis pour cette formation — merci !
+            </p>
+          )}
+
+          <form onSubmit={handleSubmit} className="mt-4">
+            <div className="flex items-center gap-1">
+              {[1, 2, 3, 4, 5].map((n) => (
+                <button
+                  key={n}
+                  type="button"
+                  disabled={!canSubmit}
+                  onClick={() => setRating(n)}
+                  onMouseEnter={() => setHoverRating(n)}
+                  onMouseLeave={() => setHoverRating(0)}
+                  className="disabled:cursor-not-allowed disabled:opacity-40"
+                  aria-label={`${n} étoile${n > 1 ? "s" : ""}`}
+                >
+                  <Star
+                    className={`h-6 w-6 transition ${
+                      n <= (hoverRating || rating)
+                        ? "fill-saffron text-saffron"
+                        : "text-muted"
+                    }`}
+                  />
+                </button>
+              ))}
+            </div>
+
+            <textarea
+              value={comment}
+              onChange={(e) => setComment(e.target.value)}
+              disabled={!canSubmit}
+              placeholder="Qu'avez-vous pensé de cette formation ?"
+              rows={3}
+              className="mt-3 w-full rounded-2xl border border-border bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-60"
+            />
+
+            {submitMutation.isError && (
+              <p className="mt-2 text-sm text-red-500">
+                Une erreur est survenue lors de l'envoi de votre avis. Réessayez.
+              </p>
+            )}
+
+            <div className="mt-3 flex items-center gap-3">
+              {isLoggedIn ? (
+                <button
+                  type="submit"
+                  disabled={!canSubmit || rating === 0 || submitMutation.isPending}
+                  className="inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-bold text-primary-foreground shadow-warm transition hover:scale-105 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:scale-100"
+                >
+                  {submitMutation.isPending ? "Envoi…" : "Publier mon avis"}
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => navigate({ to: "/auth" })}
+                  className="inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-bold text-primary-foreground shadow-warm transition hover:scale-105"
+                >
+                  Se connecter
+                </button>
+              )}
+            </div>
+          </form>
+        </div>
+
+        {/* Liste des avis */}
+        <div className="mt-8 space-y-4">
+          {reviews.length === 0 && !reviewsQuery.isLoading && (
+            <p className="rounded-2xl border border-dashed border-border bg-card px-6 py-10 text-center text-sm text-muted-foreground">
+              Cette formation n'a pas encore reçu d'avis.
+            </p>
+          )}
+          {reviews.map((r: FrontReview) => (
+            <div key={r.id} className="rounded-2xl border border-border bg-card p-5 shadow-card">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 font-display font-bold text-primary">
+                    {(r.touristName ?? "?").charAt(0)}
+                  </span>
+                  <div>
+                    <p className="text-sm font-semibold text-foreground">
+                      {r.touristName ?? "Étudiant"}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {new Date(r.createdAt).toLocaleDateString()}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex shrink-0 items-center gap-0.5">
+                  {[1, 2, 3, 4, 5].map((n) => (
+                    <Star
+                      key={n}
+                      className={`h-3.5 w-3.5 ${
+                        n <= r.rating ? "fill-saffron text-saffron" : "text-muted"
+                      }`}
+                    />
+                  ))}
+                </div>
+              </div>
+              {r.comment && (
+                <div className="mt-3 flex items-start gap-2">
+                  <MessageSquare className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+                  <p className="text-sm leading-relaxed text-foreground/80">{r.comment}</p>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
   );
 }

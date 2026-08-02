@@ -32,11 +32,18 @@ public class Review {
     private Long id;
 
     @ManyToOne(optional = false)
+    @JsonIgnoreProperties({"password", "email", "phone", "country", "language", "experiences", "bookings", "reviews", "videos", "notifications"})
     private User tourist;
 
-    @ManyToOne(optional = false)
+    // Un avis porte soit sur une expérience, soit sur une formation (jamais les deux) —
+    // voir ReviewService#resolveTargetAndValidate pour la règle "exactement un des deux".
+    @ManyToOne
     @JsonIgnoreProperties({"coverImages", "dayPrograms", "region", "programs", "bookings", "reviews", "media", "videos"})
     private Experience experience;
+
+    @ManyToOne
+    @JsonIgnoreProperties({"chapters", "objectives", "skills", "prerequisites", "instructor"})
+    private Formation formation;
 
     @Min(1)
     @Max(5)
