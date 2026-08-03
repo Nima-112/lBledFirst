@@ -81,6 +81,6 @@ public class AuthController {
     }
 
     private UserResponse toUserResponse(AuthResponse auth) {
-        return new UserResponse(auth.getId(), auth.getName(), auth.getEmail(), auth.getRole());
+        return new UserResponse(auth.getId(), auth.getName(), auth.getEmail(), auth.getRole(), auth.getPhone(), auth.getCountry(), auth.getLanguage(), auth.getAvatar());
     }
 }

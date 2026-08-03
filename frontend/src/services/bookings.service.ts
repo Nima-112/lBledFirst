@@ -65,9 +65,19 @@ export async function getBookingsList(): Promise<FrontBooking[]> {
   return data.map(toFront);
 }
 
+export async function getMyBookings(): Promise<FrontBooking[]> {
+  const { data } = await api.get<ApiBooking[]>("/bookings/my-bookings");
+  return data.map(toFront);
+}
+
 export async function createBooking(b: FrontBooking): Promise<FrontBooking> {
   const payload = toPayload(b);
   const { data } = await api.post<ApiBooking>("/bookings", payload);
+  return toFront(data);
+}
+
+export async function cancelBooking(id: string): Promise<FrontBooking> {
+  const { data } = await api.post<ApiBooking>(`/bookings/${id}/cancel`);
   return toFront(data);
 }
 

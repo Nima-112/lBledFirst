@@ -48,7 +48,7 @@ public class AuthService {
 
         String token = jwtUtil.generateToken(user.getEmail(), user.getRole().name());
 
-        return new AuthResponse(user.getId(), token, user.getRole().name(), user.getName(), user.getEmail());
+        return new AuthResponse(user.getId(), token, user.getRole().name(), user.getName(), user.getEmail(), user.getPhone(), user.getCountry(), user.getLanguage(), user.getAvatar());
     }
 
     public AuthResponse login(LoginRequest req) {
@@ -64,14 +64,14 @@ public class AuthService {
 
         String token = jwtUtil.generateToken(user.getEmail(), user.getRole().name());
 
-        return new AuthResponse(user.getId(), token, user.getRole().name(), user.getName(), user.getEmail());
+        return new AuthResponse(user.getId(), token, user.getRole().name(), user.getName(), user.getEmail(), user.getPhone(), user.getCountry(), user.getLanguage(), user.getAvatar());
     }
 
     public UserResponse getCurrentUser(String email) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new InvalidCredentialsException("Utilisateur introuvable"));
 
-        return new UserResponse(user.getId(), user.getName(), user.getEmail(), user.getRole().name());
+        return new UserResponse(user.getId(), user.getName(), user.getEmail(), user.getRole().name(), user.getPhone(), user.getCountry(), user.getLanguage(), user.getAvatar());
     }
 
 }

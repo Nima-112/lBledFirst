@@ -16,12 +16,8 @@ import { Navbar } from "@/components/landing/Navbar";
 import { Footer } from "@/components/landing/Footer";
 import { ImageCarousel } from "@/components/experiences/ImageCarousel";
 import { useI18n } from "@/lib/i18n";
-import {
-  getBookings,
-  saveBookings,
-  useAuth,
-  type MockBooking,
-} from "@/lib/mock-auth";
+import { useAuth } from "@/context/AuthContext";
+import { createBooking } from "@/services/bookings.service";
 import { getExperienceById, type FrontExperience } from "@/services/experiences.service";
 
 export const Route = createFileRoute("/experiences/$id")({
@@ -134,6 +130,7 @@ function ExperienceDetail({ exp }: { exp: FrontExperience }) {
   });
   const [guests, setGuests] = useState(2);
   const [confirmed, setConfirmed] = useState(false);
+  const [booking, setBooking] = useState(false);
 
   const total = useMemo(() => exp.price * guests, [exp.price, guests]);
   const program = exp.program.length
@@ -141,26 +138,32 @@ function ExperienceDetail({ exp }: { exp: FrontExperience }) {
     : [{ day: 1, title: exp.title, description: exp.description, images: exp.images }];
   const active = program.find((p) => p.day === activeDay) ?? program[0];
 
-  const book = () => {
+  const book = async () => {
     if (!user) {
       if (typeof window !== "undefined")
         window.localStorage.setItem("lbf.auth.redirect", `/experiences/${exp.id}`);
       navigate({ to: "/auth" });
       return;
     }
-    const booking: MockBooking = {
-      id: `b-${Date.now()}`,
-      touristId: user.id,
-      experienceId: String(exp.id),
-      date: startDate,
-      status: "pending",
-      totalPrice: total,
-      guests,
-      createdAt: new Date().toISOString(),
-    };
-    saveBookings([...getBookings(), booking]);
-    setConfirmed(true);
-    setTimeout(() => navigate({ to: "/me/bookings" }), 1400);
+    try {
+      setBooking(true);
+      await createBooking({
+        id: "",
+        touristId: user.id,
+        experienceId: String(exp.id),
+        date: startDate,
+        status: "pending",
+        totalPrice: total,
+        guests,
+        createdAt: "",
+      });
+      setConfirmed(true);
+      setTimeout(() => navigate({ to: "/me/bookings" }), 1400);
+    } catch (err) {
+      console.error("Booking failed", err);
+    } finally {
+      setBooking(false);
+    }
   };
 
   return (
@@ -314,10 +317,12 @@ function ExperienceDetail({ exp }: { exp: FrontExperience }) {
 
               <button
                 onClick={book}
-                disabled={confirmed}
+                disabled={confirmed || booking}
                 className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground shadow-warm transition hover:scale-[1.01] disabled:opacity-70"
               >
-                {confirmed ? (
+                {booking ? (
+                  <><Loader2 className="h-4 w-4 animate-spin" /> {t("exp.book.cta")}</>
+                ) : confirmed ? (
                   <>
                     <Check className="h-4 w-4" /> {t("exp.book.confirmed")}
                   </>

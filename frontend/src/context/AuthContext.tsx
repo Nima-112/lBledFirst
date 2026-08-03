@@ -14,7 +14,16 @@ type AuthContextValue = {
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 function toUser(auth: AuthResponse): User {
-  return { id: auth.id, email: auth.email, name: auth.name, role: auth.role };
+  return { 
+    id: auth.id, 
+    email: auth.email, 
+    name: auth.name, 
+    role: auth.role,
+    phone: auth.phone,
+    country: auth.country,
+    language: auth.language,
+    avatar: auth.avatar
+  };
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {

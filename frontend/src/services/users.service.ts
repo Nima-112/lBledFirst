@@ -66,20 +66,17 @@ export async function getUsersList(): Promise<FrontUser[]> {
 }
 
 export async function patchUser(
-  id: number | string,
+  _id: number | string,
   patch: Partial<Pick<ApiUser, "name" | "phone" | "country" | "language" | "avatar" | "role">>,
 ): Promise<FrontUser> {
-  const current = (await api.get<ApiUser>(`/users/${id}`)).data;
-  const payload: ApiUserPayload = {
-    name: patch.name ?? current.name,
-    email: current.email,
-    role: patch.role ?? current.role,
-    phone: patch.phone ?? current.phone ?? null,
-    avatar: patch.avatar ?? current.avatar ?? null,
-    country: patch.country ?? current.country ?? null,
-    language: patch.language ?? current.language ?? null,
-  };
-  const { data } = await api.put<ApiUser>(`/users/${id}`, payload);
+  // Use the self-update endpoint (PATCH /users/me) — works for any authenticated user
+  const { data } = await api.patch<ApiUser>("/users/me", {
+    name: patch.name,
+    phone: patch.phone,
+    country: patch.country,
+    language: patch.language,
+    avatar: patch.avatar,
+  });
   return toFront(data);
 }
 

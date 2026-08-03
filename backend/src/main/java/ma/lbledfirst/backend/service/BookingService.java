@@ -59,6 +59,29 @@ public class BookingService extends AbstractCrudService<Booking, Long> {
         return list;
     }
 
+    @Transactional(readOnly = true)
+    public List<Booking> findMyBookings() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || auth.getName() == null) {
+            throw new ResponseStatusException(org.springframework.http.HttpStatus.UNAUTHORIZED, "Not authenticated");
+        }
+        User user = userRepository.findByEmail(auth.getName())
+                .orElseThrow(() -> new ResponseStatusException(org.springframework.http.HttpStatus.UNAUTHORIZED, "User not found"));
+
+        List<Booking> list = bookingRepository.findByTouristId(user.getId());
+        for (Booking b : list) {
+            Hibernate.initialize(b.getTourist());
+            Hibernate.initialize(b.getExperience());
+            if (b.getExperience() != null) {
+                Hibernate.initialize(b.getExperience().getHost());
+                if (b.getExperience().getRegion() != null) {
+                    Hibernate.initialize(b.getExperience().getRegion());
+                }
+            }
+        }
+        return list;
+    }
+
     @Override
     @Transactional(readOnly = true)
     public Booking findById(Long id) {

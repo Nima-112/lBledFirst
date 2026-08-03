@@ -21,6 +21,7 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.core.annotation.Order;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.support.TransactionTemplate;
 
 /**
  * Données de test pour vérifier le flux "avis de formation" de bout en bout
@@ -60,9 +61,14 @@ public class ReviewTestDataSeeder implements CommandLineRunner {
     private final FormationCapsuleProgressRepository progressRepository;
     private final ReviewRepository reviewRepository;
     private final PasswordEncoder passwordEncoder;
+    private final TransactionTemplate txTemplate;
 
     @Override
     public void run(String... args) {
+        txTemplate.executeWithoutResult(status -> doSeed());
+    }
+
+    private void doSeed() {
         // Idempotent : si le compte "prêt à noter" existe déjà, on ne reseed rien.
         if (userRepository.findByEmail("test.pret@lbledfirst.ma").isPresent()) {
             log.info("ℹ️ Données de test avis déjà présentes, seed ignoré.");

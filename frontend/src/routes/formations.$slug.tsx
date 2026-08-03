@@ -801,16 +801,28 @@ function VideoModal({
             className="w-full max-w-3xl overflow-hidden rounded-3xl border border-border bg-card shadow-warm"
           >
             <div className="relative aspect-video bg-ink">
-              <img
-                src={capsule.thumbnail}
-                alt=""
-                className="h-full w-full object-cover opacity-70"
-              />
-              <div className="absolute inset-0 flex items-center justify-center">
-                <span className="inline-flex h-20 w-20 items-center justify-center rounded-full bg-primary/90 text-primary-foreground shadow-warm">
-                  <Play className="h-8 w-8 fill-current" />
-                </span>
-              </div>
+              {capsule.videoUrl ? (
+                <video
+                  src={capsule.videoUrl}
+                  controls
+                  autoPlay
+                  className="h-full w-full"
+                  poster={capsule.thumbnail || undefined}
+                />
+              ) : (
+                <>
+                  <img
+                    src={capsule.thumbnail}
+                    alt=""
+                    className="h-full w-full object-cover opacity-70"
+                  />
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <span className="inline-flex h-20 w-20 items-center justify-center rounded-full bg-primary/90 text-primary-foreground shadow-warm">
+                      <Play className="h-8 w-8 fill-current" />
+                    </span>
+                  </div>
+                </>
+              )}
               <button
                 onClick={onClose}
                 aria-label="Fermer"

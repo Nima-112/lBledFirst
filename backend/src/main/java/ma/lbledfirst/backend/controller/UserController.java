@@ -3,25 +3,32 @@ package ma.lbledfirst.backend.controller;
 import java.util.List;
 
 import ma.lbledfirst.backend.domain.User;
+import ma.lbledfirst.backend.repository.UserRepository;
 import ma.lbledfirst.backend.service.UserService;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
 
 @RestController
 @RequestMapping("/api/users")
 public class UserController {
 
     private final UserService service;
+    private final UserRepository userRepository;
 
-    public UserController(UserService service) {
+    public UserController(UserService service, UserRepository userRepository) {
         this.service = service;
+        this.userRepository = userRepository;
     }
 
     @PreAuthorize("hasRole('ADMIN')")
@@ -53,5 +60,23 @@ public class UserController {
     @DeleteMapping("/{id}")
     public void delete(@PathVariable Long id) {
         service.delete(id);
+    }
+
+    // Self-update: any authenticated user can update their own profile
+    @PatchMapping("/me")
+    public User updateMe(@RequestBody User patch, Authentication authentication) {
+        if (authentication == null || authentication.getName() == null) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Not authenticated");
+        }
+        User current = userRepository.findByEmail(authentication.getName())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not found"));
+
+        if (patch.getName() != null && !patch.getName().isBlank()) current.setName(patch.getName());
+        if (patch.getPhone() != null) current.setPhone(patch.getPhone());
+        if (patch.getCountry() != null) current.setCountry(patch.getCountry());
+        if (patch.getLanguage() != null) current.setLanguage(patch.getLanguage());
+        if (patch.getAvatar() != null) current.setAvatar(patch.getAvatar());
+
+        return userRepository.save(current);
     }
 }
