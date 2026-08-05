@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 
 import { Navbar } from "@/components/landing/Navbar";
 import { Hero } from "@/components/landing/Hero";
@@ -38,13 +38,18 @@ function scrollTo(id: string) {
 }
 
 function Index() {
+  const navigate = useNavigate();
   return (
     <div className="min-h-screen bg-background">
       <Navbar onDiscover={() => scrollTo("map")} />
       <main>
         <Hero onDiscover={() => scrollTo("map")} />
         <WhatIs />
-        <MoroccoMap onSelectRegion={() => scrollTo("experiences")} />
+        <MoroccoMap
+          onSelectRegion={(regionId) =>
+            navigate({ to: "/experiences", search: { region: regionId } })
+          }
+        />
         <Experiences />
         <HorizontalGallery />
         <Timeline />

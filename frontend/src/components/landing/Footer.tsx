@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from "react";
+import { Link } from "@tanstack/react-router";
 import { Send, Instagram, Youtube, Facebook } from "lucide-react";
 import { Logo } from "./Logo";
 import { LANGUAGES, useI18n, type Lang } from "@/lib/i18n";
@@ -45,7 +46,7 @@ export function Footer() {
               {t("foot.explore")}
             </h4>
             <ul className="mt-4 space-y-2.5 text-card/80">
-              <li><a href="#regions" className="hover:text-saffron">{t("nav.regions")}</a></li>
+              <li><Link to="/regions" className="hover:text-saffron">{t("nav.regions")}</Link></li>
               <li><a href="#experiences" className="hover:text-saffron">{t("nav.experiences")}</a></li>
               <li><a href="#how" className="hover:text-saffron">{t("nav.how")}</a></li>
               <li><a href="#host" className="hover:text-saffron">{t("nav.host")}</a></li>

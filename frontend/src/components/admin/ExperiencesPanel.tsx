@@ -27,6 +27,7 @@ import {
   updateExperience,
 } from "@/services/experiences.service";
 import { getUsersList } from "@/services/users.service";
+import { getRegionsList } from "@/services/regions.service";
 
 const EXPERIENCE_CATEGORIES = [
   "Hiking",
@@ -50,6 +51,7 @@ type DraftExperience = {
   price: string;
   durationDays: string;
   region: string;
+  regionId: string;
   category: string;
   latitude: string;
   longitude: string;
@@ -72,6 +74,7 @@ const EMPTY: DraftExperience = {
   price: "",
   durationDays: "1",
   region: "",
+  regionId: "",
   category: EXPERIENCE_CATEGORIES[0] ?? "Culture",
   latitude: "35.7595",
   longitude: "-5.8340",
@@ -94,6 +97,10 @@ export function ExperiencesPanel() {
   const usersQuery = useQuery({
     queryKey: ["admin-users"],
     queryFn: getUsersList,
+  });
+  const regionsQuery = useQuery({
+    queryKey: ["admin-regions"],
+    queryFn: getRegionsList,
   });
 
   const createMutation = useMutation({
@@ -129,6 +136,7 @@ export function ExperiencesPanel() {
 
   const experiences = expQuery.data ?? [];
   const users = usersQuery.data ?? [];
+  const regions = regionsQuery.data ?? [];
 
   const ownerName = (id: string) =>
     users.find((u) => u.id === id)?.fullName ?? `Auteur #${id}`;
@@ -158,6 +166,7 @@ export function ExperiencesPanel() {
       price: String(e.price),
       durationDays: String(e.durationDays),
       region: e.region,
+      regionId: e.regionId,
       category: e.category,
       latitude: String(e.latitude),
       longitude: String(e.longitude),
@@ -239,6 +248,7 @@ export function ExperiencesPanel() {
       price: Number(draft.price) || 0,
       durationDays: Number(draft.durationDays) || 1,
       region: draft.region,
+      regionId: draft.regionId,
       category: draft.category,
       latitude: Number(draft.latitude) || 0,
       longitude: Number(draft.longitude) || 0,
@@ -261,6 +271,7 @@ export function ExperiencesPanel() {
   const busy =
     expQuery.isLoading ||
     usersQuery.isLoading ||
+    regionsQuery.isLoading ||
     createMutation.isPending ||
     updateMutation.isPending ||
     deleteMutation.isPending ||
@@ -436,14 +447,30 @@ export function ExperiencesPanel() {
             </select>
           </Field>
         </div>
-        <div className="grid gap-4 sm:grid-cols-3">
-          <Field label="Région / Ville">
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field label="Région">
+            <select
+              className={fieldCls}
+              value={draft.regionId}
+              onChange={(e) => setDraft({ ...draft, regionId: e.target.value })}
+            >
+              <option value="">Sélectionner…</option>
+              {regions.map((r) => (
+                <option key={r.id} value={r.id}>
+                  {r.name.fr}
+                </option>
+              ))}
+            </select>
+          </Field>
+          <Field label="Ville">
             <input
               className={fieldCls}
               value={draft.region}
               onChange={(e) => setDraft({ ...draft, region: e.target.value })}
             />
           </Field>
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Latitude">
             <input
               type="number"

@@ -9,6 +9,11 @@ export type DayProgram = {
 
 export type ExperienceStatus = "draft" | "published" | "archived";
 
+export type ApiRegionRef = {
+  id: number;
+  name: string; // RegionName enum value, e.g. "MARRAKECH_SAFI"
+};
+
 export type ApiExperience = {
   id: number;
   host: { id: number; name?: string };
@@ -19,6 +24,7 @@ export type ApiExperience = {
   category: string;
   status: ExperienceStatus;
   city: string;
+  region?: ApiRegionRef | null;
   latitude?: number | null;
   longitude?: number | null;
   coverImages?: string[];
@@ -40,6 +46,7 @@ export type ApiExperiencePayload = {
   category: string;
   status?: ExperienceStatus;
   city: string;
+  region?: { id: number } | null;
   latitude?: number | null;
   longitude?: number | null;
   coverImages?: string[];
@@ -60,6 +67,8 @@ export type FrontExperience = {
   price: number;
   durationDays: number;
   region: string;
+  regionId: string;
+  regionName?: string;
   category: string;
   latitude: number;
   longitude: number;
@@ -78,6 +87,8 @@ const toFront = (e: ApiExperience): FrontExperience => ({
   price: Number(e.price),
   durationDays: e.duration,
   region: e.city,
+  regionId: e.region ? String(e.region.id) : "",
+  regionName: e.region?.name,
   category: e.category,
   latitude: Number(e.latitude ?? 0),
   longitude: Number(e.longitude ?? 0),
@@ -101,6 +112,7 @@ const toPayload = (e: FrontExperience): ApiExperiencePayload => ({
   category: e.category,
   status: e.status,
   city: e.region,
+  region: e.regionId ? { id: Number(e.regionId) } : null,
   latitude: e.latitude ?? 0,
   longitude: e.longitude ?? 0,
   coverImages: e.images ?? [],
@@ -120,6 +132,11 @@ export async function getExperiencesList(): Promise<FrontExperience[]> {
 export async function getExperienceById(id: string): Promise<FrontExperience> {
   const { data } = await api.get<ApiExperience>(`/experiences/${id}`);
   return toFront(data);
+}
+
+export async function getExperiencesByRegion(regionId: string): Promise<FrontExperience[]> {
+  const { data } = await api.get<ApiExperience[]>(`/experiences/by-region/${regionId}`);
+  return data.map(toFront);
 }
 
 export type PagedExperiences = {

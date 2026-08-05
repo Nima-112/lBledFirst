@@ -13,4 +13,8 @@ public interface ExperienceRepository extends JpaRepository<Experience, Long> {
     Page<Experience> findByDeletedFalse(Pageable pageable);
 
     Page<Experience> findByDeletedFalseAndStatus(ma.lbledfirst.backend.domain.ExperienceStatus status, Pageable pageable);
+
+    long countByRegionIdAndStatusAndDeletedFalse(Long regionId, ma.lbledfirst.backend.domain.ExperienceStatus status);
+
+    List<Experience> findByRegionIdAndStatusAndDeletedFalse(Long regionId, ma.lbledfirst.backend.domain.ExperienceStatus status);
 }

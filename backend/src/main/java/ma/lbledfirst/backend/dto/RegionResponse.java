@@ -15,4 +15,5 @@ public class RegionResponse {
     private RegionName name;
     private BigDecimal latitude;
     private BigDecimal longitude;
+    private long experienceCount;
 }

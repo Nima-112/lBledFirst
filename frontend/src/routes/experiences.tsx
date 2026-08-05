@@ -10,16 +10,27 @@ import {
   MoreHorizontal,
   AlertTriangle,
   RefreshCw,
+  X,
 } from "lucide-react";
 import { Navbar } from "@/components/landing/Navbar";
 import { Footer } from "@/components/landing/Footer";
 import { ImageCarousel } from "@/components/experiences/ImageCarousel";
 import { useI18n } from "@/lib/i18n";
-import { getExperiencesPaged, type FrontExperience } from "@/services/experiences.service";
+import {
+  getExperiencesByRegion,
+  getExperiencesPaged,
+  type FrontExperience,
+} from "@/services/experiences.service";
+import { getRegionsList, type FrontRegion } from "@/services/regions.service";
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
 
+type ExperiencesSearch = { region?: string };
+
 export const Route = createFileRoute("/experiences")({
+  validateSearch: (search: Record<string, unknown>): ExperiencesSearch => ({
+    region: typeof search.region === "string" ? search.region : undefined,
+  }),
   head: () => ({
     meta: [
       { title: "Expériences — L'Bled First" },
@@ -42,9 +53,10 @@ export const Route = createFileRoute("/experiences")({
 const PAGE_SIZE = 30;
 
 function ExperiencesPage() {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const navigate = useNavigate();
   const matches = useMatches();
+  const { region: regionId } = Route.useSearch();
   const showingDetail = matches.some((match) => match.routeId === "/experiences/$id");
 
   const openExperience = (id: string) => {
@@ -55,6 +67,10 @@ function ExperiencesPage() {
     }
   };
 
+  const clearRegionFilter = () => {
+    navigate({ to: "/experiences", search: {} });
+  };
+
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -63,6 +79,20 @@ function ExperiencesPage() {
   const [totalElements, setTotalElements] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
   const [reloadKey, setReloadKey] = useState(0);
+  const [regions, setRegions] = useState<FrontRegion[]>([]);
+
+  useEffect(() => {
+    getRegionsList()
+      .then(setRegions)
+      .catch(() => setRegions([]));
+  }, []);
+
+  const activeRegion = regions.find((r) => r.id === regionId);
+
+  // Reset to page 0 whenever the region filter changes.
+  useEffect(() => {
+    setPage(0);
+  }, [regionId]);
 
   useEffect(() => {
     if (showingDetail) return;
@@ -71,11 +101,19 @@ function ExperiencesPage() {
       setLoading(true);
       setError(null);
       try {
-        const paged = await getExperiencesPaged(page, PAGE_SIZE);
-        if (cancelled) return;
-        setExperiences(paged.content);
-        setTotalElements(paged.totalElements);
-        setTotalPages(paged.totalPages);
+        if (regionId) {
+          const list = await getExperiencesByRegion(regionId);
+          if (cancelled) return;
+          setExperiences(list);
+          setTotalElements(list.length);
+          setTotalPages(1);
+        } else {
+          const paged = await getExperiencesPaged(page, PAGE_SIZE);
+          if (cancelled) return;
+          setExperiences(paged.content);
+          setTotalElements(paged.totalElements);
+          setTotalPages(paged.totalPages);
+        }
       } catch (err) {
         if (cancelled) return;
         const msg = err instanceof Error ? err.message : "Erreur de chargement";
@@ -90,7 +128,7 @@ function ExperiencesPage() {
     return () => {
       cancelled = true;
     };
-  }, [page, reloadKey, showingDetail]);
+  }, [page, reloadKey, showingDetail, regionId]);
 
   const filtered = useMemo(() => {
     if (!query.trim()) return experiences;
@@ -132,17 +170,39 @@ function ExperiencesPage() {
               </span>
             </span>
             <h1 className="mt-5 font-display text-4xl font-extrabold leading-[1.05] text-foreground sm:text-6xl">
-              Toutes nos{" "}
-              <span className="relative inline-block">
-                expériences
-                <span className="absolute -bottom-2 left-0 right-0 h-2 rounded-full bg-saffron/60" />
-              </span>
+              {activeRegion ? (
+                <>
+                  Expériences en{" "}
+                  <span className="relative inline-block">
+                    {activeRegion.name[lang]}
+                    <span className="absolute -bottom-2 left-0 right-0 h-2 rounded-full bg-saffron/60" />
+                  </span>
+                </>
+              ) : (
+                <>
+                  Toutes nos{" "}
+                  <span className="relative inline-block">
+                    expériences
+                    <span className="absolute -bottom-2 left-0 right-0 h-2 rounded-full bg-saffron/60" />
+                  </span>
+                </>
+              )}
             </h1>
             <p className="mt-5 max-w-2xl text-lg text-muted-foreground">
-              Randonnées dans l'Atlas, artisanat berbère, cuisine familiale, bivouacs dans le
-              désert, séjours chez l'habitant… Vivez le Maroc authentique avec des hôtes du
-              territoire.
+              {activeRegion
+                ? activeRegion.activity[lang]
+                : "Randonnées dans l'Atlas, artisanat berbère, cuisine familiale, bivouacs dans le désert, séjours chez l'habitant… Vivez le Maroc authentique avec des hôtes du territoire."}
             </p>
+            {regionId && (
+              <button
+                onClick={clearRegionFilter}
+                className="mt-4 inline-flex items-center gap-1.5 rounded-full border border-primary/40 bg-primary/5 px-3.5 py-1.5 text-sm font-semibold text-primary transition hover:bg-primary/10"
+              >
+                <MapPin className="h-3.5 w-3.5" />
+                {activeRegion ? activeRegion.name[lang] : "Région filtrée"}
+                <X className="h-3.5 w-3.5" />
+              </button>
+            )}
           </motion.div>
         </div>
       </section>

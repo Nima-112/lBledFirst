@@ -1,9 +1,11 @@
 package ma.lbledfirst.backend.service;
 
 import lombok.RequiredArgsConstructor;
+import ma.lbledfirst.backend.domain.ExperienceStatus;
 import ma.lbledfirst.backend.domain.Region;
 import ma.lbledfirst.backend.dto.RegionResponse;
 import ma.lbledfirst.backend.exception.NotFoundException;
+import ma.lbledfirst.backend.repository.ExperienceRepository;
 import ma.lbledfirst.backend.repository.RegionRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,18 +17,14 @@ import java.util.List;
 public class RegionService {
 
     private final RegionRepository regionRepository;
+    private final ExperienceRepository experienceRepository;
 
 //    GET - Get all regions
     @Transactional(readOnly = true)
     public List<RegionResponse> getAllRegions(){
         return regionRepository.findAll()
                 .stream()
-                .map(region -> new RegionResponse(
-                        region.getId(),
-                        region.getName(),
-                        region.getLatitude(),
-                        region.getLongitude()
-                ))
+                .map(this::toResponse)
                 .toList();
     }
 
@@ -36,8 +34,18 @@ public class RegionService {
         Region region = regionRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Region " + id + " non trouvée"));
 
-        return new RegionResponse(region.getId(), region.getName(), region.getLatitude(), region.getLongitude());
+        return toResponse(region);
     }
 
+    private RegionResponse toResponse(Region region) {
+        long count = experienceRepository.countByRegionIdAndStatusAndDeletedFalse(
+                region.getId(), ExperienceStatus.published);
+        return new RegionResponse(
+                region.getId(),
+                region.getName(),
+                region.getLatitude(),
+                region.getLongitude(),
+                count
+        );
+    }
 }
-

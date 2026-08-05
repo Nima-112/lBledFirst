@@ -1,16 +1,70 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { MapPin, ArrowRight, Film, Compass } from "lucide-react";
 
 import { Reveal, SectionHeading } from "./Reveal";
-import { regions } from "./regions";
 import { MOROCCO_PATH } from "./morocco-path";
 import { useI18n } from "@/lib/i18n";
+import { getRegionsList, type FrontRegion } from "@/services/regions.service";
 
-export function MoroccoMap({ onSelectRegion }: { onSelectRegion: () => void }) {
+export function MoroccoMap({ onSelectRegion }: { onSelectRegion: (regionId: string) => void }) {
   const { t, lang } = useI18n();
-  const [active, setActive] = useState<string>("imlil");
+  const [regions, setRegions] = useState<FrontRegion[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [active, setActive] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const all = await getRegionsList();
+        if (cancelled) return;
+        // Show every region on the map, even before it has any experience —
+        // markers just reflect real experience counts once hosts add them.
+        setRegions(all);
+        if (all.length > 0) {
+          setActive(all[0].id);
+        }
+      } catch {
+        // On error, show nothing on the map
+        setRegions([]);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const region = regions.find((r) => r.id === active) ?? regions[0];
+
+  if (loading) {
+    return (
+      <section id="map" className="relative overflow-hidden bg-secondary/5 py-20 sm:py-28">
+        <div className="relative mx-auto max-w-7xl px-4 sm:px-6">
+          <SectionHeading kicker={t("map.kicker")} title={t("map.title")} sub={t("map.sub")} />
+          <div className="mt-14 grid items-center gap-10 lg:grid-cols-[1.25fr_1fr]">
+            <div className="relative mx-auto aspect-square w-full max-w-2xl rounded-[2rem] border border-border/60 bg-card/40 p-4 shadow-card backdrop-blur-sm sm:p-8 animate-pulse" />
+            <div className="space-y-4">
+              <div className="relative overflow-hidden rounded-3xl border border-border bg-card shadow-card animate-pulse">
+                <div className="h-56 w-full bg-muted" />
+                <div className="p-5 space-y-3">
+                  <div className="h-4 w-1/3 rounded bg-muted" />
+                  <div className="h-6 w-2/3 rounded bg-muted" />
+                  <div className="h-4 w-full rounded bg-muted" />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  if (regions.length === 0 || !region) {
+    return null; // No regions with experiences — hide the section
+  }
 
   return (
     <section id="map" className="relative overflow-hidden bg-secondary/5 py-20 sm:py-28">
@@ -66,7 +120,7 @@ export function MoroccoMap({ onSelectRegion }: { onSelectRegion: () => void }) {
                       onMouseEnter={() => setActive(r.id)}
                       onClick={() => {
                         setActive(r.id);
-                        onSelectRegion();
+                        onSelectRegion(r.id);
                       }}
                       className="cursor-pointer"
                       role="button"
@@ -126,7 +180,7 @@ export function MoroccoMap({ onSelectRegion }: { onSelectRegion: () => void }) {
                       <div className="absolute inset-0 bg-gradient-to-t from-ink/80 via-ink/10 to-transparent" />
                       <span className="absolute left-4 top-4 inline-flex items-center gap-1.5 rounded-full bg-card/90 px-3 py-1 text-xs font-bold text-foreground backdrop-blur">
                         <Film className="h-3.5 w-3.5 text-primary" />
-                        {region.experiences} {t("map.experiences")}
+                        {region.experienceCount} {t("map.experiences")}
                       </span>
                       <div className="absolute bottom-3 left-4 right-4">
                         <span className="inline-flex items-center gap-1 rounded-full bg-primary/90 px-2.5 py-0.5 text-[11px] font-semibold text-primary-foreground backdrop-blur">
@@ -145,7 +199,7 @@ export function MoroccoMap({ onSelectRegion }: { onSelectRegion: () => void }) {
                         {region.activity[lang]}
                       </p>
                       <button
-                        onClick={onSelectRegion}
+                        onClick={() => onSelectRegion(region.id)}
                         className="mt-4 inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition-transform hover:scale-105"
                       >
                         {t("regions.cta")}

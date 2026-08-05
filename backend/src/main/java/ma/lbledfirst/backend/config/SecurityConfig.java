@@ -48,6 +48,8 @@ public class SecurityConfig {
                         // restent donc protégés par anyRequest().authenticated() ci-dessous.
                         .requestMatchers(HttpMethod.GET, "/api/formations", "/api/formations/*").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/experiences", "/api/experiences/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/regions", "/api/regions/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/activities", "/api/activities/**").permitAll()
                         // /me doit rester authentifié : il est placé AVANT la règle permitAll
                         // ci-dessous, l'ordre des règles déterminant la première qui matche.
                         .requestMatchers(HttpMethod.GET, "/api/reviews/me").authenticated()

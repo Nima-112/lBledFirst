@@ -30,10 +30,7 @@ export function Navbar({ onDiscover }: { onDiscover: () => void }) {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  const anchorLinks = [
-    { href: "#regions", label: t("nav.regions") },
-    { href: "#how", label: t("nav.how") },
-  ];
+  const anchorLinks = [{ href: "#how", label: t("nav.how") }];
 
   const isTourist = user?.role === "tourist";
 
@@ -65,6 +62,14 @@ export function Navbar({ onDiscover }: { onDiscover: () => void }) {
               {l.label}
             </a>
           ))}
+          <Link
+            to="/regions"
+            className={`story-link text-sm font-medium transition-colors ${
+              scrolled ? "text-foreground/80 hover:text-foreground" : "text-card/90 hover:text-card"
+            }`}
+          >
+            {t("nav.regions")}
+          </Link>
           <Link
             to="/experiences"
             className={`story-link text-sm font-medium transition-colors ${
@@ -137,6 +142,13 @@ export function Navbar({ onDiscover }: { onDiscover: () => void }) {
                 {l.label}
               </a>
             ))}
+            <Link
+              to="/regions"
+              onClick={() => setOpen(false)}
+              className="rounded-xl px-3 py-3 text-sm font-medium text-foreground hover:bg-muted"
+            >
+              {t("nav.regions")}
+            </Link>
             <Link
               to="/experiences"
               onClick={() => setOpen(false)}

@@ -5,12 +5,14 @@ import ma.lbledfirst.backend.domain.Region;
 import ma.lbledfirst.backend.domain.RegionName;
 import ma.lbledfirst.backend.repository.RegionRepository;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
 import java.util.List;
 
 @Component
+@Order(1) // doit tourner avant ExperienceSeeder/FormationSeeder (@Order(2)/(3)) qui référencent les régions
 @RequiredArgsConstructor
 public class RegionSeeder implements CommandLineRunner {
 

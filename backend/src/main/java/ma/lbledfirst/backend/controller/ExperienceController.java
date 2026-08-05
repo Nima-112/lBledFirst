@@ -53,6 +53,11 @@ public class ExperienceController {
         return service.findById(id);
     }
 
+    @GetMapping("/by-region/{regionId}")
+    public List<Experience> findByRegion(@PathVariable Long regionId) {
+        return service.findPublishedByRegion(regionId);
+    }
+
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
     public Experience create(@RequestBody Experience experience) {

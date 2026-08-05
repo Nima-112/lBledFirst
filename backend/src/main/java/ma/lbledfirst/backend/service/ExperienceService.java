@@ -55,6 +55,19 @@ public class ExperienceService extends AbstractCrudService<Experience, Long> {
     }
 
     @Transactional(readOnly = true)
+    public List<Experience> findPublishedByRegion(Long regionId) {
+        List<Experience> list = experienceRepository.findByRegionIdAndStatusAndDeletedFalse(
+                regionId, ExperienceStatus.published);
+        for (Experience e : list) {
+            Hibernate.initialize(e.getCoverImages());
+            Hibernate.initialize(e.getDayPrograms());
+            Hibernate.initialize(e.getHost());
+            if (e.getRegion() != null) Hibernate.initialize(e.getRegion());
+        }
+        return list;
+    }
+
+    @Transactional(readOnly = true)
     public Page<Experience> findAllPaged(Pageable pageable) {
         List<Experience> all = findAll();
         List<Experience> filtered = new java.util.ArrayList<>(all);
