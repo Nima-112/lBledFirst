@@ -57,20 +57,25 @@ export function IconBtn({
   onClick,
   label,
   danger,
+  disabled,
+  className,
 }: {
   children: ReactNode;
   onClick: () => void;
   label: string;
   danger?: boolean;
+  disabled?: boolean;
+  className?: string;
 }) {
   return (
     <button
       onClick={onClick}
+      disabled={disabled}
       aria-label={label}
       title={label}
       className={`inline-flex h-9 w-9 items-center justify-center rounded-lg border border-border transition ${
         danger ? "text-destructive hover:bg-destructive/10" : "text-foreground hover:bg-muted"
-      }`}
+      } ${disabled ? "opacity-50 cursor-not-allowed" : ""} ${className ?? ""}`}
     >
       {children}
     </button>

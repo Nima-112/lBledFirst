@@ -128,7 +128,7 @@ function ExperienceDetail({ exp }: { exp: FrontExperience }) {
     d.setDate(d.getDate() + 7);
     return d.toISOString().slice(0, 10);
   });
-  const [guests, setGuests] = useState(2);
+  const [guests, setGuests] = useState(1);
   const [confirmed, setConfirmed] = useState(false);
   const [booking, setBooking] = useState(false);
 

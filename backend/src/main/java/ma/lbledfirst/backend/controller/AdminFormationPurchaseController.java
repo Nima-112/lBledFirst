@@ -81,6 +81,9 @@ public class AdminFormationPurchaseController {
                 .purchasedAt(LocalDateTime.now())
                 .build();
         FormationPurchase saved = purchaseRepository.save(p);
+        // Auto-increment studentsCount on the formation
+        formation.setStudentsCount(formation.getStudentsCount() + 1);
+        formationRepository.save(formation);
         Hibernate.initialize(saved.getUser());
         initFormation(saved.getFormation());
         return saved;

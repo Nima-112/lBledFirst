@@ -1,3 +1,5 @@
+import { API_ORIGIN } from "@/lib/api";
+
 const LOVABLE_ASSET_ORIGIN = "https://bled-first-discovery.lovable.app";
 
 export function cdnAssetUrl(url: string) {
@@ -7,4 +9,14 @@ export function cdnAssetUrl(url: string) {
     return `${LOVABLE_ASSET_ORIGIN}${url}`;
   }
   return url;
+}
+
+/**
+ * Résout une URL d'upload backend (ex: /uploads/avatars/xxx.jpg)
+ * en URL absolue pointant vers le serveur API.
+ */
+export function resolveUploadUrl(url?: string | null): string | undefined {
+  if (!url) return undefined;
+  if (/^(https?:|data:|blob:)/.test(url)) return url;
+  return `${API_ORIGIN}${url}`;
 }

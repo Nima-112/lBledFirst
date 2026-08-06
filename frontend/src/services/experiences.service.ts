@@ -220,3 +220,12 @@ export async function publishExperience(id: string): Promise<FrontExperience> {
   const { data } = await api.put<ApiExperience>(`/experiences/${id}/publish`);
   return toFront(data);
 }
+
+export async function uploadImage(file: File): Promise<string> {
+  const formData = new FormData();
+  formData.append("file", file);
+  const { data } = await api.post<{ url: string }>("/upload/image", formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+  return data.url;
+}

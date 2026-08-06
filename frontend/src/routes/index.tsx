@@ -8,6 +8,7 @@ import { Experiences } from "@/components/landing/Experiences";
 import { HorizontalGallery } from "@/components/landing/HorizontalGallery";
 import { Timeline } from "@/components/landing/Timeline";
 import { Activities } from "@/components/landing/Activities";
+import { Training } from "@/components/landing/Training";
 import { Testimonials } from "@/components/landing/Testimonials";
 import { Footer } from "@/components/landing/Footer";
 
@@ -41,7 +42,7 @@ function Index() {
   const navigate = useNavigate();
   return (
     <div className="min-h-screen bg-background">
-      <Navbar onDiscover={() => scrollTo("map")} />
+      <Navbar hero onDiscover={() => scrollTo("map")} />
       <main>
         <Hero onDiscover={() => scrollTo("map")} />
         <WhatIs />
@@ -54,6 +55,7 @@ function Index() {
         <HorizontalGallery />
         <Timeline />
         <Activities />
+        <Training />
         <Testimonials />
       </main>
       <Footer />

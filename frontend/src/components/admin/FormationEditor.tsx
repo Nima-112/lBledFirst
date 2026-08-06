@@ -21,6 +21,7 @@ import {
   type Capsule,
 } from "@/lib/formations";
 import { uploadVideo } from "@/services/formations.service";
+import { uploadImage } from "@/services/experiences.service";
 import { useMemo, useState } from "react";
 
 type VideoMode = "url" | "upload";
@@ -313,36 +314,37 @@ export function FormationEditor({
               </span>
             </div>
           </Field>
-          <Field label={t("admin.formations.f.students")}>
-            <input
-              type="number"
-              min={0}
-              className={fieldCls}
-              value={draft.studentsCount}
-              onChange={(e) => patch({ studentsCount: Number(e.target.value) })}
-            />
-          </Field>
-          <Field label={t("admin.formations.f.rating")}>
-            <input
-              type="number"
-              step="0.1"
-              min="0"
-              max="5"
-              className={fieldCls}
-              value={draft.averageRating}
-              onChange={(e) => patch({ averageRating: Number(e.target.value) })}
-            />
-          </Field>
         </div>
 
         <div className="grid gap-4 sm:grid-cols-[1fr_220px]">
           <Field label={t("admin.formations.f.cover")}>
-            <input
-              className={fieldCls}
-              value={draft.coverImage}
-              onChange={(e) => patch({ coverImage: e.target.value })}
-              placeholder="https://… /images/cover.jpg"
-            />
+            <div className="flex gap-2">
+              <input
+                className={fieldCls}
+                value={draft.coverImage}
+                onChange={(e) => patch({ coverImage: e.target.value })}
+                placeholder="https://… /images/cover.jpg"
+              />
+              <label className="flex cursor-pointer items-center justify-center rounded-xl border border-border bg-muted px-4 text-xs font-semibold hover:bg-muted/80">
+                <Upload className="mr-2 h-4 w-4" /> Uploader
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    try {
+                      const url = await uploadImage(file);
+                      patch({ coverImage: url });
+                    } catch {
+                      alert("Erreur upload");
+                    }
+                    e.target.value = "";
+                  }}
+                />
+              </label>
+            </div>
             {draft.coverImage && (
               <p className="mt-1 flex items-center gap-1.5 text-[11px] text-muted-foreground">
                 <CheckCircle2 className="h-3 w-3 text-emerald-600" /> Image liée (clic externe pour vérifier)

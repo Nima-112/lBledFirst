@@ -1,6 +1,7 @@
 package ma.lbledfirst.backend.controller;
 
 import java.util.List;
+import java.util.Map;
 
 import ma.lbledfirst.backend.domain.User;
 import ma.lbledfirst.backend.repository.UserRepository;
@@ -8,6 +9,7 @@ import ma.lbledfirst.backend.service.UserService;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -25,10 +27,12 @@ public class UserController {
 
     private final UserService service;
     private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
 
-    public UserController(UserService service, UserRepository userRepository) {
+    public UserController(UserService service, UserRepository userRepository, PasswordEncoder passwordEncoder) {
         this.service = service;
         this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
     @PreAuthorize("hasRole('ADMIN')")
@@ -78,5 +82,22 @@ public class UserController {
         if (patch.getAvatar() != null) current.setAvatar(patch.getAvatar());
 
         return userRepository.save(current);
+    }
+
+    // Change password: any authenticated user can change their own password
+    @PatchMapping("/me/password")
+    public Map<String, String> changePassword(@RequestBody Map<String, String> body, Authentication authentication) {
+        if (authentication == null || authentication.getName() == null) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Not authenticated");
+        }
+        String newPassword = body.get("newPassword");
+        if (newPassword == null || newPassword.isBlank() || newPassword.length() < 6) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Password must be at least 6 characters");
+        }
+        User current = userRepository.findByEmail(authentication.getName())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not found"));
+        current.setPassword(passwordEncoder.encode(newPassword));
+        userRepository.save(current);
+        return Map.of("message", "Password updated");
     }
 }

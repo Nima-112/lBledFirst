@@ -46,10 +46,8 @@ export function Footer() {
               {t("foot.explore")}
             </h4>
             <ul className="mt-4 space-y-2.5 text-card/80">
-              <li><Link to="/regions" className="hover:text-saffron">{t("nav.regions")}</Link></li>
-              <li><a href="#experiences" className="hover:text-saffron">{t("nav.experiences")}</a></li>
-              <li><a href="#how" className="hover:text-saffron">{t("nav.how")}</a></li>
-              <li><a href="#host" className="hover:text-saffron">{t("nav.host")}</a></li>
+              <li><Link to="/experiences" className="hover:text-saffron">{t("nav.experiences")}</Link></li>
+              <li><Link to="/formations" className="hover:text-saffron">{t("nav.formations")}</Link></li>
             </ul>
           </div>
 

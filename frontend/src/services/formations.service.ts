@@ -17,6 +17,7 @@ export type ApiFormationSummary = {
   studentsCount: number;
   averageRating: number;
   reviewsCount: number;
+  createdAt?: string;
   instructor?: {
     name: string;
     specialty?: string | null;
@@ -194,7 +195,7 @@ const summaryToFront = (s: ApiFormationSummary): Formation => ({
     averageRating: s.instructor?.averageRating ?? 0,
     studentsTrained: s.instructor?.studentsTrained ?? 0,
   },
-  createdAt: new Date().toISOString(),
+  createdAt: s.createdAt ?? new Date().toISOString(),
 });
 
 const detailToFront = (d: ApiFormationDetail): Formation => ({

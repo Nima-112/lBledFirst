@@ -26,7 +26,7 @@ public class WebConfig implements WebMvcConfigurer {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(List.of(allowedOrigins));
-        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);
         configuration.setMaxAge(3600L);
@@ -43,6 +43,16 @@ public class WebConfig implements WebMvcConfigurer {
         String location = "file:" + uploadPath.toString().replace("\\", "/") + "/";
         registry.addResourceHandler("/uploads/videos/**")
                 .addResourceLocations(location)
+                .setCachePeriod(31536000);
+        Path avatarPath = Paths.get("/app/uploads/avatars").toAbsolutePath().normalize();
+        String avatarLocation = "file:" + avatarPath.toString().replace("\\", "/") + "/";
+        registry.addResourceHandler("/uploads/avatars/**")
+                .addResourceLocations(avatarLocation)
+                .setCachePeriod(31536000);
+        Path imagesPath = Paths.get("/app/uploads/images").toAbsolutePath().normalize();
+        String imagesLocation = "file:" + imagesPath.toString().replace("\\", "/") + "/";
+        registry.addResourceHandler("/uploads/images/**")
+                .addResourceLocations(imagesLocation)
                 .setCachePeriod(31536000);
     }
 }

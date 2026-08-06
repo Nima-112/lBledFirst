@@ -402,11 +402,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const users = getUsers();
     const existing = users.find((u) => u.email.toLowerCase() === backendUser.email.toLowerCase());
-    const syncedUser: MockUser = existing ?? {
+    const syncedUser: MockUser = existing
+      ? { ...existing, phone: backendUser.phone ?? existing.phone, avatar: backendUser.avatar ?? existing.avatar, country: backendUser.country ?? existing.country, nativeLanguage: backendUser.language ?? existing.nativeLanguage }
+      : {
       id: backendUser.id,
       fullName: backendUser.name,
       email: backendUser.email,
       password: "",
+      phone: backendUser.phone,
+      avatar: backendUser.avatar,
       country: backendUser.country ?? "",
       nativeLanguage: backendUser.language ?? "",
       role: backendUser.role,

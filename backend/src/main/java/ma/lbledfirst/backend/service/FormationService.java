@@ -452,7 +452,8 @@ public class FormationService {
                 f.getStudentsCount(),
                 f.getAverageRating(),
                 f.getReviewsCount(),
-                toInstructorDto(f.getInstructor())
+                toInstructorDto(f.getInstructor()),
+                f.getCreatedAt()
         );
     }
 

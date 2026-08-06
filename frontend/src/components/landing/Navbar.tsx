@@ -16,8 +16,9 @@ import { Logo } from "./Logo";
 import { LanguageSelector } from "./LanguageSelector";
 import { useI18n } from "@/lib/i18n";
 import { useAuth } from "@/lib/mock-auth";
+import { resolveUploadUrl } from "@/lib/asset-url";
 
-export function Navbar({ onDiscover }: { onDiscover: () => void }) {
+export function Navbar({ onDiscover, hero = false }: { onDiscover: () => void; hero?: boolean }) {
   const { t } = useI18n();
   const { user } = useAuth();
   const [scrolled, setScrolled] = useState(false);
@@ -30,7 +31,8 @@ export function Navbar({ onDiscover }: { onDiscover: () => void }) {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  const anchorLinks = [{ href: "#how", label: t("nav.how") }];
+  // On non-hero pages, always render the "solid" navbar (dark text + background)
+  const dark = hero ? scrolled : true;
 
   const isTourist = user?.role === "tourist";
 
@@ -40,40 +42,19 @@ export function Navbar({ onDiscover }: { onDiscover: () => void }) {
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.5, ease: "easeOut" }}
       className={`fixed inset-x-0 top-0 z-50 transition-colors duration-300 ${
-        scrolled ? "border-b border-border/60 bg-background/85 backdrop-blur-xl" : "bg-transparent"
+        dark ? "border-b border-border/60 bg-background/85 backdrop-blur-xl" : "bg-transparent"
       }`}
     >
       <nav className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3.5 sm:px-6">
-        <a href="#top" className={scrolled ? "text-foreground" : "text-card"}>
+        <a href={hero ? "#top" : "/"} className={dark ? "text-foreground" : "text-card"}>
           <Logo />
         </a>
 
         <div className="hidden items-center gap-7 lg:flex">
-          {anchorLinks.map((l) => (
-            <a
-              key={l.href}
-              href={l.href}
-              className={`story-link text-sm font-medium transition-colors ${
-                scrolled
-                  ? "text-foreground/80 hover:text-foreground"
-                  : "text-card/90 hover:text-card"
-              }`}
-            >
-              {l.label}
-            </a>
-          ))}
-          <Link
-            to="/regions"
-            className={`story-link text-sm font-medium transition-colors ${
-              scrolled ? "text-foreground/80 hover:text-foreground" : "text-card/90 hover:text-card"
-            }`}
-          >
-            {t("nav.regions")}
-          </Link>
           <Link
             to="/experiences"
             className={`story-link text-sm font-medium transition-colors ${
-              scrolled ? "text-foreground/80 hover:text-foreground" : "text-card/90 hover:text-card"
+              dark ? "text-foreground/80 hover:text-foreground" : "text-card/90 hover:text-card"
             }`}
           >
             {t("nav.experiences")}
@@ -81,7 +62,7 @@ export function Navbar({ onDiscover }: { onDiscover: () => void }) {
           <Link
             to="/formations"
             className={`story-link text-sm font-medium transition-colors ${
-              scrolled ? "text-foreground/80 hover:text-foreground" : "text-card/90 hover:text-card"
+              dark ? "text-foreground/80 hover:text-foreground" : "text-card/90 hover:text-card"
             }`}
           >
             {t("nav.formations")}
@@ -89,15 +70,15 @@ export function Navbar({ onDiscover }: { onDiscover: () => void }) {
         </div>
 
         <div className="flex items-center gap-2">
-          <LanguageSelector variant={scrolled ? "dark" : "light"} />
+          <LanguageSelector variant={dark ? "dark" : "light"} />
 
           {isTourist ? (
-            <TouristMenu scrolled={scrolled} />
+            <TouristMenu scrolled={dark} />
           ) : (
             <Link
               to="/auth"
               className={`hidden items-center gap-1.5 rounded-full border px-3.5 py-2 text-sm font-semibold transition-colors sm:inline-flex ${
-                scrolled
+                dark
                   ? "border-border text-foreground hover:bg-muted"
                   : "border-card/40 text-card hover:bg-card/15"
               }`}
@@ -115,7 +96,7 @@ export function Navbar({ onDiscover }: { onDiscover: () => void }) {
           </button>
           <button
             className={`inline-flex h-10 w-10 items-center justify-center rounded-full lg:hidden ${
-              scrolled ? "text-foreground" : "text-card"
+              dark ? "text-foreground" : "text-card"
             }`}
             onClick={() => setOpen((v) => !v)}
             aria-label="Menu"
@@ -132,23 +113,6 @@ export function Navbar({ onDiscover }: { onDiscover: () => void }) {
           className="border-t border-border bg-background/95 backdrop-blur-xl lg:hidden"
         >
           <div className="flex flex-col gap-1 px-4 py-3">
-            {anchorLinks.map((l) => (
-              <a
-                key={l.href}
-                href={l.href}
-                onClick={() => setOpen(false)}
-                className="rounded-xl px-3 py-3 text-sm font-medium text-foreground hover:bg-muted"
-              >
-                {l.label}
-              </a>
-            ))}
-            <Link
-              to="/regions"
-              onClick={() => setOpen(false)}
-              className="rounded-xl px-3 py-3 text-sm font-medium text-foreground hover:bg-muted"
-            >
-              {t("nav.regions")}
-            </Link>
             <Link
               to="/experiences"
               onClick={() => setOpen(false)}
@@ -223,7 +187,7 @@ function TouristMenu({ scrolled }: { scrolled: boolean }) {
         }`}
       >
         {user.avatar ? (
-          <img src={user.avatar} alt="" className="h-7 w-7 rounded-full object-cover" />
+          <img src={resolveUploadUrl(user.avatar)} alt="" className="h-7 w-7 rounded-full object-cover" />
         ) : (
           <span className="grid h-7 w-7 place-items-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
             {initial}

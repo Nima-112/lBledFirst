@@ -52,6 +52,18 @@ export const Route = createFileRoute("/experiences")({
 
 const PAGE_SIZE = 30;
 
+const CATEGORIES = [
+  "Hiking",
+  "Cuisine",
+  "Crafts",
+  "Homestays",
+  "Culture",
+  "Atelier",
+  "Nature",
+  "Visite",
+  "Détente",
+];
+
 function ExperiencesPage() {
   const { t, lang } = useI18n();
   const navigate = useNavigate();
@@ -72,6 +84,9 @@ function ExperiencesPage() {
   };
 
   const [query, setQuery] = useState("");
+  const [category, setCategory] = useState<string | null>(null);
+  const [maxPrice, setMaxPrice] = useState<number>(3000);
+  const [sort, setSort] = useState<string>("popular");
   const [page, setPage] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -131,16 +146,35 @@ function ExperiencesPage() {
   }, [page, reloadKey, showingDetail, regionId]);
 
   const filtered = useMemo(() => {
-    if (!query.trim()) return experiences;
-    const q = query.toLowerCase();
-    return experiences.filter(
-      (e) =>
-        e.title.toLowerCase().includes(q) ||
-        e.description.toLowerCase().includes(q) ||
-        e.region.toLowerCase().includes(q) ||
-        e.category.toLowerCase().includes(q),
-    );
-  }, [experiences, query]);
+    let list = [...experiences];
+    if (query.trim()) {
+      const q = query.toLowerCase();
+      list = list.filter(
+        (e) =>
+          e.title.toLowerCase().includes(q) ||
+          e.description.toLowerCase().includes(q) ||
+          e.region.toLowerCase().includes(q) ||
+          e.category.toLowerCase().includes(q),
+      );
+    }
+    if (category) list = list.filter((e) => e.category === category);
+    list = list.filter((e) => e.price <= maxPrice);
+
+    switch (sort) {
+      case "price-asc":
+        list.sort((a, b) => a.price - b.price);
+        break;
+      case "price-desc":
+        list.sort((a, b) => b.price - a.price);
+        break;
+      case "shortest":
+        list.sort((a, b) => a.durationDays - b.durationDays);
+        break;
+      default:
+        break;
+    }
+    return list;
+  }, [experiences, query, category, maxPrice, sort]);
 
   const count = totalElements;
 
@@ -219,10 +253,44 @@ function ExperiencesPage() {
               className="w-full rounded-full border border-border bg-card py-3 ps-10 pe-4 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
             />
           </div>
-          <div className="text-xs text-muted-foreground">
-            <span className="font-semibold text-foreground">{count}</span> expérience
-            {count > 1 ? "s" : ""} au total
+          <div className="flex flex-wrap items-center gap-2">
+            <Select
+              value={category ?? ""}
+              onChange={(v) => setCategory(v || null)}
+              options={[{ value: "", label: "Toutes catégories" }, ...CATEGORIES.map((c) => ({ value: c, label: c }))]}
+            />
+            <Select
+              value={sort}
+              onChange={(v) => setSort(v)}
+              options={[
+                { value: "popular", label: "Plus populaires" },
+                { value: "price-asc", label: "Prix ↑" },
+                { value: "price-desc", label: "Prix ↓" },
+                { value: "shortest", label: "Plus courtes" },
+              ]}
+            />
+            {category && (
+              <button
+                onClick={() => setCategory(null)}
+                className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-2 text-xs font-semibold text-muted-foreground transition hover:bg-muted"
+              >
+                <X className="h-3.5 w-3.5" /> Effacer
+              </button>
+            )}
           </div>
+        </div>
+        <div className="mx-auto mt-3 flex max-w-7xl items-center gap-3 px-4 text-xs text-muted-foreground sm:px-6">
+          <span className="font-semibold text-foreground">Prix max :</span>
+          <input
+            type="range"
+            min={200}
+            max={3000}
+            step={50}
+            value={maxPrice}
+            onChange={(e) => setMaxPrice(Number(e.target.value))}
+            className="h-1.5 flex-1 max-w-xs cursor-pointer accent-primary"
+          />
+          <span className="font-mono text-foreground">{maxPrice} MAD</span>
         </div>
       </section>
 
@@ -437,5 +505,29 @@ function ExperienceCard({
         </button>
       </div>
     </motion.article>
+  );
+}
+
+function Select({
+  value,
+  onChange,
+  options,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  options: { value: string; label: string }[];
+}) {
+  return (
+    <select
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      className="cursor-pointer rounded-full border border-border bg-card px-4 py-2.5 text-xs font-semibold text-foreground outline-none transition hover:border-primary/40 focus:border-primary focus:ring-2 focus:ring-primary/20"
+    >
+      {options.map((o) => (
+        <option key={o.value} value={o.value}>
+          {o.label}
+        </option>
+      ))}
+    </select>
   );
 }

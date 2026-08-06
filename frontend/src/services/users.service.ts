@@ -1,4 +1,4 @@
-import { api } from "@/lib/api";
+import { api, API_ORIGIN } from "@/lib/api";
 
 export type ApiUser = {
   id: number;
@@ -78,6 +78,19 @@ export async function patchUser(
     avatar: patch.avatar,
   });
   return toFront(data);
+}
+
+export async function uploadAvatar(file: File): Promise<string> {
+  const formData = new FormData();
+  formData.append("file", file);
+  const { data } = await api.post<{ url: string }>("/upload/avatar", formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+  return data.url;
+}
+
+export async function changePassword(newPassword: string): Promise<void> {
+  await api.patch("/users/me/password", { newPassword });
 }
 
 export async function createUser(u: FrontUser): Promise<FrontUser> {

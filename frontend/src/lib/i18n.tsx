@@ -217,6 +217,15 @@ const translations: Record<Lang, Dict> = {
     "acts.empty": "No published experience yet — the admin will add them soon.",
     "acts.dayShort": "d",
     "acts.viewProgram": "View program",
+    "acts.viewAll": "View all experiences",
+
+    "training.kicker": "L'Bled First Academy",
+    "training.title": "Learn traditional crafts",
+    "training.sub": "Video training programs filmed with master artisans. Learn at your own pace, from anywhere.",
+    "training.empty": "No training published yet — check back soon.",
+    "training.free": "Free",
+    "training.viewDetail": "View details",
+    "training.viewAll": "View all trainings",
 
     "nav.me.bookings": "My bookings",
     "nav.me.formations": "My trainings",
@@ -493,6 +502,15 @@ const translations: Record<Lang, Dict> = {
     "acts.empty": "Aucune expérience publiée pour l'instant.",
     "acts.dayShort": "j",
     "acts.viewProgram": "Voir le programme",
+    "acts.viewAll": "Voir toutes les expériences",
+
+    "training.kicker": "L'Bled First Academy",
+    "training.title": "Apprenez les métiers traditionnels",
+    "training.sub": "Des formations vidéo filmées avec des artisans maîtres. Apprenez à votre rythme, où que vous soyez.",
+    "training.empty": "Aucune formation publiée pour l'instant — revenez bientôt.",
+    "training.free": "Gratuit",
+    "training.viewDetail": "Voir les détails",
+    "training.viewAll": "Voir toutes les formations",
 
     "nav.me.bookings": "Mes réservations",
     "nav.me.formations": "Mes formations",
@@ -720,6 +738,15 @@ const translations: Record<Lang, Dict> = {
     "acts.a6.title": "Paseos por valles",
     "acts.a6.desc": "Recorre el Valle del Paraíso, Aït Bouguemez o los oasis del Drâa — palmerales, ríos y granjas ancestrales.",
     "acts.a6.cta": "Buscar paseo",
+    "acts.viewAll": "Ver todas las experiencias",
+
+    "training.kicker": "L'Bled First Academy",
+    "training.title": "Aprende oficios tradicionales",
+    "training.sub": "Formaciones en vídeo filmadas con maestros artesanos. Aprende a tu ritmo, desde cualquier lugar.",
+    "training.empty": "Ninguna formación publicada aún — vuelve pronto.",
+    "training.free": "Gratis",
+    "training.viewDetail": "Ver detalles",
+    "training.viewAll": "Ver todas las formaciones",
   },
 
   ar: {
@@ -871,6 +898,15 @@ const translations: Record<Lang, Dict> = {
     "acts.a6.title": "نزهات في الوديان",
     "acts.a6.desc": "استكشف وادي الجنة، آيت بوكماز، أو واحات درعة — واحات النخيل والأنهار والمزارع العتيقة.",
     "acts.a6.cta": "ابحث عن نزهة",
+    "acts.viewAll": "عرض جميع التجارب",
+
+    "training.kicker": "أكاديمية لبلاد فيرست",
+    "training.title": "تعلّم الحِرَف التقليدية",
+    "training.sub": "دورات تدريبية مصوّرة مع حرفيين متمكّنين. تعلّم بوتيرتك الخاصة من أي مكان.",
+    "training.empty": "لا توجد دورة منشورة حالياً — عُد قريباً.",
+    "training.free": "مجاني",
+    "training.viewDetail": "عرض التفاصيل",
+    "training.viewAll": "عرض جميع الدورات",
   },
 
 };

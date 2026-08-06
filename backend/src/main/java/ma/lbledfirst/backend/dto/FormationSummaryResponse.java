@@ -1,6 +1,7 @@
 package ma.lbledfirst.backend.dto;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -26,4 +27,5 @@ public class FormationSummaryResponse {
     private Double averageRating;
     private Integer reviewsCount;
     private InstructorDto instructor;
+    private LocalDateTime createdAt;
 }

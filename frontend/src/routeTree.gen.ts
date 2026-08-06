@@ -14,7 +14,6 @@ import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as ExperiencesRouteImport } from './routes/experiences'
 import { Route as FormationsRouteImport } from './routes/formations'
-import { Route as RegionsRouteImport } from './routes/regions'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as AdminIndexRouteImport } from './routes/admin/index'
 import { Route as AdminBookingsRouteImport } from './routes/admin/bookings'
@@ -32,7 +31,6 @@ import { Route as MeBookingsRouteImport } from './routes/me.bookings'
 import { Route as MeFormationsRouteImport } from './routes/me.formations'
 import { Route as MeProfileRouteImport } from './routes/me.profile'
 import { Route as MeReviewsRouteImport } from './routes/me.reviews'
-import { Route as RegionsIdRouteImport } from './routes/regions.$id'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -57,11 +55,6 @@ const ExperiencesRoute = ExperiencesRouteImport.update({
 const FormationsRoute = FormationsRouteImport.update({
   id: '/formations',
   path: '/formations',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const RegionsRoute = RegionsRouteImport.update({
-  id: '/regions',
-  path: '/regions',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
@@ -149,11 +142,6 @@ const MeReviewsRoute = MeReviewsRouteImport.update({
   path: '/me/reviews',
   getParentRoute: () => rootRouteImport,
 } as any)
-const RegionsIdRoute = RegionsIdRouteImport.update({
-  id: '/$id',
-  path: '/$id',
-  getParentRoute: () => RegionsRoute,
-} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -161,7 +149,6 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/experiences': typeof ExperiencesRouteWithChildren
   '/formations': typeof FormationsRouteWithChildren
-  '/regions': typeof RegionsRouteWithChildren
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/admin/bookings': typeof AdminBookingsRoute
   '/admin/dashboard': typeof AdminDashboardRoute
@@ -177,7 +164,6 @@ export interface FileRoutesByFullPath {
   '/me/formations': typeof MeFormationsRoute
   '/me/profile': typeof MeProfileRoute
   '/me/reviews': typeof MeReviewsRoute
-  '/regions/$id': typeof RegionsIdRoute
   '/admin/': typeof AdminIndexRoute
   '/me/': typeof MeIndexRoute
 }
@@ -186,7 +172,6 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/experiences': typeof ExperiencesRouteWithChildren
   '/formations': typeof FormationsRouteWithChildren
-  '/regions': typeof RegionsRouteWithChildren
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/admin/bookings': typeof AdminBookingsRoute
   '/admin/dashboard': typeof AdminDashboardRoute
@@ -202,7 +187,6 @@ export interface FileRoutesByTo {
   '/me/formations': typeof MeFormationsRoute
   '/me/profile': typeof MeProfileRoute
   '/me/reviews': typeof MeReviewsRoute
-  '/regions/$id': typeof RegionsIdRoute
   '/admin': typeof AdminIndexRoute
   '/me': typeof MeIndexRoute
 }
@@ -213,7 +197,6 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/experiences': typeof ExperiencesRouteWithChildren
   '/formations': typeof FormationsRouteWithChildren
-  '/regions': typeof RegionsRouteWithChildren
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/admin/bookings': typeof AdminBookingsRoute
   '/admin/dashboard': typeof AdminDashboardRoute
@@ -229,7 +212,6 @@ export interface FileRoutesById {
   '/me/formations': typeof MeFormationsRoute
   '/me/profile': typeof MeProfileRoute
   '/me/reviews': typeof MeReviewsRoute
-  '/regions/$id': typeof RegionsIdRoute
   '/admin/': typeof AdminIndexRoute
   '/me/': typeof MeIndexRoute
 }
@@ -241,7 +223,6 @@ export interface FileRouteTypes {
     | '/auth'
     | '/experiences'
     | '/formations'
-    | '/regions'
     | '/sitemap.xml'
     | '/admin/bookings'
     | '/admin/dashboard'
@@ -257,7 +238,6 @@ export interface FileRouteTypes {
     | '/me/formations'
     | '/me/profile'
     | '/me/reviews'
-    | '/regions/$id'
     | '/admin/'
     | '/me/'
   fileRoutesByTo: FileRoutesByTo
@@ -266,7 +246,6 @@ export interface FileRouteTypes {
     | '/auth'
     | '/experiences'
     | '/formations'
-    | '/regions'
     | '/sitemap.xml'
     | '/admin/bookings'
     | '/admin/dashboard'
@@ -282,7 +261,6 @@ export interface FileRouteTypes {
     | '/me/formations'
     | '/me/profile'
     | '/me/reviews'
-    | '/regions/$id'
     | '/admin'
     | '/me'
   id:
@@ -292,7 +270,6 @@ export interface FileRouteTypes {
     | '/auth'
     | '/experiences'
     | '/formations'
-    | '/regions'
     | '/sitemap.xml'
     | '/admin/bookings'
     | '/admin/dashboard'
@@ -308,7 +285,6 @@ export interface FileRouteTypes {
     | '/me/formations'
     | '/me/profile'
     | '/me/reviews'
-    | '/regions/$id'
     | '/admin/'
     | '/me/'
   fileRoutesById: FileRoutesById
@@ -319,7 +295,6 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   ExperiencesRoute: typeof ExperiencesRouteWithChildren
   FormationsRoute: typeof FormationsRouteWithChildren
-  RegionsRoute: typeof RegionsRouteWithChildren
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   MeBookingsRoute: typeof MeBookingsRoute
   MeFormationsRoute: typeof MeFormationsRoute
@@ -363,13 +338,6 @@ declare module '@tanstack/react-router' {
       path: '/formations'
       fullPath: '/formations'
       preLoaderRoute: typeof FormationsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/regions': {
-      id: '/regions'
-      path: '/regions'
-      fullPath: '/regions'
-      preLoaderRoute: typeof RegionsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/sitemap.xml': {
@@ -491,13 +459,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MeReviewsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/regions/$id': {
-      id: '/regions/$id'
-      path: '/$id'
-      fullPath: '/regions/$id'
-      preLoaderRoute: typeof RegionsIdRouteImport
-      parentRoute: typeof RegionsRoute
-    }
   }
 }
 
@@ -551,24 +512,12 @@ const FormationsRouteWithChildren = FormationsRoute._addFileChildren(
   FormationsRouteChildren,
 )
 
-interface RegionsRouteChildren {
-  RegionsIdRoute: typeof RegionsIdRoute
-}
-
-const RegionsRouteChildren: RegionsRouteChildren = {
-  RegionsIdRoute: RegionsIdRoute,
-}
-
-const RegionsRouteWithChildren =
-  RegionsRoute._addFileChildren(RegionsRouteChildren)
-
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRouteWithChildren,
   AuthRoute: AuthRoute,
   ExperiencesRoute: ExperiencesRouteWithChildren,
   FormationsRoute: FormationsRouteWithChildren,
-  RegionsRoute: RegionsRouteWithChildren,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   MeBookingsRoute: MeBookingsRoute,
   MeFormationsRoute: MeFormationsRoute,

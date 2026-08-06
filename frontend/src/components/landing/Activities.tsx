@@ -6,7 +6,7 @@ import { useI18n } from "@/lib/i18n";
 import { getExperiencesList, type FrontExperience } from "@/services/experiences.service";
 import { ImageCarousel } from "@/components/experiences/ImageCarousel";
 
-const MAX_DISPLAY = 9;
+const MAX_DISPLAY = 3;
 
 export function Activities() {
   const { t } = useI18n();
@@ -26,6 +26,8 @@ export function Activities() {
         const published = all.filter(
           (e) => (e.status as string) === "published" || !e.status || e.status === undefined,
         );
+        // Show the 3 most recently published experiences
+        published.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
         setExperiences(published.slice(0, MAX_DISPLAY));
       } catch (err) {
         if (cancelled) return;
@@ -86,6 +88,7 @@ export function Activities() {
             </button>
           </div>
         ) : (
+          <>
           <div className="mt-16 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {experiences.length === 0 && (
               <p className="col-span-full text-center text-sm text-muted-foreground">
@@ -142,6 +145,18 @@ export function Activities() {
               </motion.article>
             ))}
           </div>
+        
+          {/* CTA to see all experiences */}
+          <div className="mt-12 text-center">
+            <Link
+              to="/experiences"
+              className="inline-flex items-center gap-2 rounded-full bg-primary px-7 py-3 text-sm font-semibold text-primary-foreground shadow-warm transition-all hover:scale-105 hover:shadow-lg"
+            >
+              {t("acts.viewAll")}
+              <span className="transition-transform group-hover:translate-x-1">→</span>
+            </Link>
+          </div>
+          </>
         )}
       </div>
     </section>

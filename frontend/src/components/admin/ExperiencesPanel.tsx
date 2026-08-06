@@ -25,6 +25,7 @@ import {
   getExperiencesList,
   publishExperience,
   updateExperience,
+  uploadImage,
 } from "@/services/experiences.service";
 import { getUsersList } from "@/services/users.service";
 import { getRegionsList } from "@/services/regions.service";
@@ -196,7 +197,31 @@ export function ExperiencesPanel() {
   };
 
   const addImage = () => {
-    setDraft({ ...draft, images: [...draft.images, DEFAULT_IMAGE] });
+    setDraft({ ...draft, images: [...draft.images, ""] });
+  };
+
+  const handleCoverFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const url = await uploadImage(file);
+      setDraft({ ...draft, images: [...draft.images, url] });
+    } catch {
+      alert("Erreur lors de l'upload de l'image");
+    }
+    e.target.value = "";
+  };
+
+  const handleProgramFileUpload = async (idx: number, e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const url = await uploadImage(file);
+      updateProgram(idx, { images: [...(draft.program[idx].images ?? []), url] });
+    } catch {
+      alert("Erreur lors de l'upload de l'image");
+    }
+    e.target.value = "";
   };
   const setImage = (i: number, v: string) => {
     const next = [...draft.images];
@@ -224,7 +249,7 @@ export function ExperiencesPanel() {
   };
   const addProgramImage = (idx: number) => {
     updateProgram(idx, {
-      images: [...(draft.program[idx].images ?? []), DEFAULT_IMAGE],
+      images: [...(draft.program[idx].images ?? []), ""],
     });
   };
   const setProgramImage = (idx: number, i: number, v: string) => {
@@ -514,12 +539,15 @@ export function ExperiencesPanel() {
                 />
               </div>
             ))}
-            <button
-              onClick={addImage}
-              className="flex aspect-video flex-col items-center justify-center rounded-xl border-2 border-dashed border-border text-xs font-medium text-muted-foreground hover:text-foreground"
-            >
+            <label className="flex aspect-video cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-border text-xs font-medium text-muted-foreground hover:text-foreground">
               <Upload className="mb-1 h-4 w-4" /> Ajouter une image
-            </button>
+              <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleCoverFileUpload}
+              />
+            </label>
           </div>
         </Field>
         <Field label="Programme par jour">
@@ -580,12 +608,15 @@ export function ExperiencesPanel() {
                         />
                       </div>
                     ))}
-                    <button
-                      onClick={() => addProgramImage(idx)}
-                      className="flex aspect-square flex-col items-center justify-center rounded-lg border-2 border-dashed border-border text-[10px] font-medium text-muted-foreground hover:text-foreground"
-                    >
+                    <label className="flex aspect-square cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-border text-[10px] font-medium text-muted-foreground hover:text-foreground">
                       <Plus className="h-3.5 w-3.5" />
-                    </button>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => handleProgramFileUpload(idx, e)}
+                      />
+                    </label>
                   </div>
                 </div>
               </div>
