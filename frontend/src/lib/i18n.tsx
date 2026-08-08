@@ -920,28 +920,98 @@ type I18nContextValue = {
 
 const I18nContext = createContext<I18nContextValue | null>(null);
 
+function applyGoogleTranslate(targetLang: Lang) {
+  if (typeof window === "undefined") return;
+
+  const cookieVal = targetLang === "fr" ? "/fr/fr" : `/fr/${targetLang}`;
+
+  // Set google translate cookies
+  document.cookie = `googtrans=${cookieVal}; path=/; domain=${window.location.hostname}`;
+  document.cookie = `googtrans=${cookieVal}; path=/;`;
+
+  // Try to set select element if GT element exists
+  const combo = document.querySelector(".goog-te-combo") as HTMLSelectElement | null;
+  if (combo) {
+    if (combo.value !== targetLang) {
+      combo.value = targetLang;
+      combo.dispatchEvent(new Event("change"));
+    }
+  }
+}
+
 export function I18nProvider({ children }: { children: ReactNode }) {
-  const [lang, setLang] = useState<Lang>("en");
+  const [lang, setLangState] = useState<Lang>(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("lbled_lang") as Lang | null;
+      if (saved && ["fr", "en", "ar", "es"].includes(saved)) return saved;
+    }
+    return "fr";
+  });
+
   const dir = lang === "ar" ? "rtl" : "ltr";
+
+  const changeLang = (newLang: Lang) => {
+    setLangState(newLang);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("lbled_lang", newLang);
+      applyGoogleTranslate(newLang);
+    }
+  };
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    // Global callback for Google Translate Init
+    (window as any).googleTranslateElementInit = () => {
+      if ((window as any).google?.translate?.TranslateElement) {
+        new (window as any).google.translate.TranslateElement(
+          {
+            pageLanguage: "fr",
+            includedLanguages: "fr,en,ar,es",
+            autoDisplay: false,
+          },
+          "google_translate_element"
+        );
+        setTimeout(() => applyGoogleTranslate(lang), 300);
+      }
+    };
+
+    // Inject Google Translate script if not present
+    if (!document.getElementById("google-translate-script")) {
+      const script = document.createElement("script");
+      script.id = "google-translate-script";
+      script.src = "//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit";
+      script.async = true;
+      document.body.appendChild(script);
+    } else {
+      applyGoogleTranslate(lang);
+    }
+  }, []);
 
   useEffect(() => {
     if (typeof document !== "undefined") {
       document.documentElement.lang = lang;
       document.documentElement.dir = dir;
+      applyGoogleTranslate(lang);
     }
   }, [lang, dir]);
 
   const value = useMemo<I18nContextValue>(
     () => ({
       lang,
-      setLang,
+      setLang: changeLang,
       dir,
-      t: (key: string) => translations[lang][key] ?? translations.en[key] ?? key,
+      t: (key: string) => translations[lang]?.[key] ?? translations.en[key] ?? key,
     }),
     [lang, dir],
   );
 
-  return <I18nContext.Provider value={value}>{children}</I18nContext.Provider>;
+  return (
+    <I18nContext.Provider value={value}>
+      <div id="google_translate_element" style={{ display: "none" }} />
+      {children}
+    </I18nContext.Provider>
+  );
 }
 
 export function useI18n() {

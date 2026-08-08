@@ -140,8 +140,6 @@ public class ExperienceService extends AbstractCrudService<Experience, Long> {
         resolveRegion(experience);
         if (experience.getStatus() == null) {
             experience.setStatus(ExperienceStatus.draft);
-        } else {
-            experience.setStatus(ExperienceStatus.draft);
         }
         if (experience.getCreatedAt() == null) {
             experience.setCreatedAt(LocalDateTime.now());
@@ -173,6 +171,8 @@ public class ExperienceService extends AbstractCrudService<Experience, Long> {
                 Region region = regionRepository.findById(experience.getRegion().getId())
                         .orElseThrow(() -> new ResponseStatusException(BAD_REQUEST, "Region not found"));
                 existing.setRegion(region);
+                existing.setLatitude(region.getLatitude());
+                existing.setLongitude(region.getLongitude());
             }
         }
 
@@ -183,8 +183,6 @@ public class ExperienceService extends AbstractCrudService<Experience, Long> {
         if (experience.getCategory() != null) existing.setCategory(experience.getCategory());
         if (experience.getStatus() != null) existing.setStatus(experience.getStatus());
         if (experience.getCity() != null) existing.setCity(experience.getCity());
-        if (experience.getLatitude() != null) existing.setLatitude(experience.getLatitude());
-        if (experience.getLongitude() != null) existing.setLongitude(experience.getLongitude());
         if (experience.getCoverImages() != null) existing.setCoverImages(experience.getCoverImages());
         if (experience.getDayPrograms() != null) existing.setDayPrograms(experience.getDayPrograms());
 
@@ -224,6 +222,8 @@ public class ExperienceService extends AbstractCrudService<Experience, Long> {
             Region region = regionRepository.findById(experience.getRegion().getId())
                     .orElseThrow(() -> new ResponseStatusException(BAD_REQUEST, "Region not found"));
             experience.setRegion(region);
+            experience.setLatitude(region.getLatitude());
+            experience.setLongitude(region.getLongitude());
         }
     }
 

@@ -10,4 +10,5 @@ public interface FormationPurchaseRepository extends JpaRepository<FormationPurc
     boolean existsByUserIdAndFormationId(Long userId, Long formationId);
     Optional<FormationPurchase> findByUserIdAndFormationId(Long userId, Long formationId);
     List<FormationPurchase> findByUserId(Long userId);
+    void deleteByFormationId(Long formationId);
 }

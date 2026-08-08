@@ -47,8 +47,6 @@ export type ApiExperiencePayload = {
   status?: ExperienceStatus;
   city: string;
   region?: { id: number } | null;
-  latitude?: number | null;
-  longitude?: number | null;
   coverImages?: string[];
   dayPrograms?: Array<{
     dayNumber: number;
@@ -113,8 +111,6 @@ const toPayload = (e: FrontExperience): ApiExperiencePayload => ({
   status: e.status,
   city: e.region,
   region: e.regionId ? { id: Number(e.regionId) } : null,
-  latitude: e.latitude ?? 0,
-  longitude: e.longitude ?? 0,
   coverImages: e.images ?? [],
   dayPrograms: (e.program ?? []).map((d, idx) => ({
     dayNumber: idx + 1,

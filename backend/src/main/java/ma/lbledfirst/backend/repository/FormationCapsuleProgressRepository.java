@@ -10,4 +10,5 @@ public interface FormationCapsuleProgressRepository extends JpaRepository<Format
     Optional<FormationCapsuleProgress> findByUserIdAndCapsuleId(Long userId, Long capsuleId);
     List<FormationCapsuleProgress> findByUserIdAndCapsule_Chapter_Formation_Id(Long userId, Long formationId);
     void deleteByCapsuleId(Long capsuleId);
+    void deleteByCapsule_Chapter_Formation_Id(Long formationId);
 }

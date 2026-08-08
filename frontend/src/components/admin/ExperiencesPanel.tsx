@@ -7,6 +7,7 @@ import {
   Upload,
   X,
 } from "lucide-react";
+import { resolveUploadUrl } from "@/lib/asset-url";
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -54,8 +55,6 @@ type DraftExperience = {
   region: string;
   regionId: string;
   category: string;
-  latitude: string;
-  longitude: string;
   images: string[];
   program: DayProgram[];
   status: "draft" | "published" | "archived";
@@ -77,8 +76,6 @@ const EMPTY: DraftExperience = {
   region: "",
   regionId: "",
   category: EXPERIENCE_CATEGORIES[0] ?? "Culture",
-  latitude: "35.7595",
-  longitude: "-5.8340",
   images: [],
   program: [emptyProgram(1)],
   status: "draft",
@@ -169,8 +166,6 @@ export function ExperiencesPanel() {
       region: e.region,
       regionId: e.regionId,
       category: e.category,
-      latitude: String(e.latitude),
-      longitude: String(e.longitude),
       images: [...e.images],
       program: e.program.length
         ? e.program.map((p) => ({
@@ -245,7 +240,11 @@ export function ExperiencesPanel() {
     setDraft({ ...draft, program: next });
   };
   const removeProgram = (i: number) => {
-    setDraft({ ...draft, program: draft.program.filter((_, k) => k !== i) });
+    const newProgram = draft.program
+      .filter((_, k) => k !== i)
+      .map((p, idx) => ({ ...p, day: idx + 1 }));
+    const newDuration = String(newProgram.length || 1);
+    setDraft({ ...draft, program: newProgram, durationDays: newDuration });
   };
   const addProgramImage = (idx: number) => {
     updateProgram(idx, {
@@ -275,8 +274,8 @@ export function ExperiencesPanel() {
       region: draft.region,
       regionId: draft.regionId,
       category: draft.category,
-      latitude: Number(draft.latitude) || 0,
-      longitude: Number(draft.longitude) || 0,
+      latitude: 0,
+      longitude: 0,
       images: draft.images,
       program: draft.program,
       status: draft.status,
@@ -326,7 +325,7 @@ export function ExperiencesPanel() {
           </p>
         )}
         {filtered.map((e) => {
-          const cover = e.images?.[0] ?? DEFAULT_IMAGE;
+          const cover = resolveUploadUrl(e.images?.[0]) ?? DEFAULT_IMAGE;
           return (
             <article
               key={e.id}
@@ -455,7 +454,24 @@ export function ExperiencesPanel() {
               min={1}
               className={fieldCls}
               value={draft.durationDays}
-              onChange={(e) => setDraft({ ...draft, durationDays: e.target.value })}
+              onChange={(e) => {
+                const newDuration = Math.max(1, Number(e.target.value) || 1);
+                const currentProgram = [...draft.program];
+                let newProgram: DayProgram[];
+                if (newDuration > currentProgram.length) {
+                  // Add empty days
+                  newProgram = [...currentProgram];
+                  for (let d = currentProgram.length + 1; d <= newDuration; d++) {
+                    newProgram.push(emptyProgram(d));
+                  }
+                } else if (newDuration < currentProgram.length) {
+                  // Truncate extra days
+                  newProgram = currentProgram.slice(0, newDuration);
+                } else {
+                  newProgram = currentProgram;
+                }
+                setDraft({ ...draft, durationDays: e.target.value, program: newProgram });
+              }}
             />
           </Field>
           <Field label="Catégorie">
@@ -495,32 +511,13 @@ export function ExperiencesPanel() {
             />
           </Field>
         </div>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="Latitude">
-            <input
-              type="number"
-              step="any"
-              className={fieldCls}
-              value={draft.latitude}
-              onChange={(e) => setDraft({ ...draft, latitude: e.target.value })}
-            />
-          </Field>
-          <Field label="Longitude">
-            <input
-              type="number"
-              step="any"
-              className={fieldCls}
-              value={draft.longitude}
-              onChange={(e) => setDraft({ ...draft, longitude: e.target.value })}
-            />
-          </Field>
-        </div>
+
         <Field label="Images de couverture">
           <div className="grid gap-3 sm:grid-cols-3">
             {draft.images.map((img, i) => (
               <div key={i} className="relative">
                 <img
-                  src={img}
+                  src={resolveUploadUrl(img) || img}
                   alt=""
                   className="aspect-video w-full rounded-xl border border-border object-cover"
                 />
@@ -589,7 +586,7 @@ export function ExperiencesPanel() {
                     {(p.images ?? []).map((img, i) => (
                       <div key={i} className="relative">
                         <img
-                          src={img}
+                          src={resolveUploadUrl(img) || img}
                           alt=""
                           className="aspect-square w-full rounded-lg border border-border object-cover"
                         />
@@ -621,12 +618,19 @@ export function ExperiencesPanel() {
                 </div>
               </div>
             ))}
-            <button
-              onClick={addProgram}
-              className="w-full rounded-xl border-2 border-dashed border-border py-3 text-xs font-medium text-muted-foreground hover:text-foreground"
-            >
-              + Ajouter un jour
-            </button>
+            {draft.program.length < (Number(draft.durationDays) || 1) && (
+              <button
+                onClick={addProgram}
+                className="w-full rounded-xl border-2 border-dashed border-border py-3 text-xs font-medium text-muted-foreground hover:text-foreground"
+              >
+                + Ajouter un jour ({draft.program.length}/{draft.durationDays})
+              </button>
+            )}
+            {draft.program.length >= (Number(draft.durationDays) || 1) && (
+              <p className="text-center text-xs text-muted-foreground py-2">
+                Programme complet ({draft.program.length}/{draft.durationDays} jours)
+              </p>
+            )}
           </div>
         </Field>
         <Field label="Statut">

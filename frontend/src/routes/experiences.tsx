@@ -18,6 +18,7 @@ import { ImageCarousel } from "@/components/experiences/ImageCarousel";
 import { useI18n } from "@/lib/i18n";
 import {
   getExperiencesByRegion,
+  getExperiencesList,
   getExperiencesPaged,
   type FrontExperience,
 } from "@/services/experiences.service";
@@ -25,11 +26,12 @@ import { getRegionsList, type FrontRegion } from "@/services/regions.service";
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
 
-type ExperiencesSearch = { region?: string };
+type ExperiencesSearch = { region?: string; category?: string };
 
 export const Route = createFileRoute("/experiences")({
   validateSearch: (search: Record<string, unknown>): ExperiencesSearch => ({
     region: typeof search.region === "string" ? search.region : undefined,
+    category: typeof search.category === "string" ? search.category : undefined,
   }),
   head: () => ({
     meta: [
@@ -68,7 +70,7 @@ function ExperiencesPage() {
   const { t, lang } = useI18n();
   const navigate = useNavigate();
   const matches = useMatches();
-  const { region: regionId } = Route.useSearch();
+  const { region: regionId, category: categoryParam } = Route.useSearch();
   const showingDetail = matches.some((match) => match.routeId === "/experiences/$id");
 
   const openExperience = (id: string) => {
@@ -80,11 +82,29 @@ function ExperiencesPage() {
   };
 
   const clearRegionFilter = () => {
-    navigate({ to: "/experiences", search: {} });
+    navigate({ to: "/experiences", search: (prev) => ({ ...prev, region: undefined }) });
+  };
+
+  const clearCategoryFilter = () => {
+    setCategory(null);
+    navigate({ to: "/experiences", search: (prev) => ({ ...prev, category: undefined }) });
   };
 
   const [query, setQuery] = useState("");
-  const [category, setCategory] = useState<string | null>(null);
+  const [category, setCategory] = useState<string | null>(categoryParam ?? null);
+
+  useEffect(() => {
+    setCategory(categoryParam ?? null);
+  }, [categoryParam]);
+
+  const changeCategory = (cat: string | null) => {
+    setCategory(cat);
+    navigate({
+      to: "/experiences",
+      search: (prev) => ({ ...prev, category: cat ?? undefined }),
+    });
+  };
+
   const [maxPrice, setMaxPrice] = useState<number>(3000);
   const [sort, setSort] = useState<string>("popular");
   const [page, setPage] = useState(0);
@@ -104,10 +124,10 @@ function ExperiencesPage() {
 
   const activeRegion = regions.find((r) => r.id === regionId);
 
-  // Reset to page 0 whenever the region filter changes.
+  // Reset to page 0 whenever the region or category filter changes.
   useEffect(() => {
     setPage(0);
-  }, [regionId]);
+  }, [regionId, category]);
 
   useEffect(() => {
     if (showingDetail) return;
@@ -118,6 +138,12 @@ function ExperiencesPage() {
       try {
         if (regionId) {
           const list = await getExperiencesByRegion(regionId);
+          if (cancelled) return;
+          setExperiences(list);
+          setTotalElements(list.length);
+          setTotalPages(1);
+        } else if (category) {
+          const list = await getExperiencesList();
           if (cancelled) return;
           setExperiences(list);
           setTotalElements(list.length);
@@ -143,7 +169,7 @@ function ExperiencesPage() {
     return () => {
       cancelled = true;
     };
-  }, [page, reloadKey, showingDetail, regionId]);
+  }, [page, reloadKey, showingDetail, regionId, category]);
 
   const filtered = useMemo(() => {
     let list = [...experiences];
@@ -151,14 +177,17 @@ function ExperiencesPage() {
       const q = query.toLowerCase();
       list = list.filter(
         (e) =>
-          e.title.toLowerCase().includes(q) ||
-          e.description.toLowerCase().includes(q) ||
-          e.region.toLowerCase().includes(q) ||
-          e.category.toLowerCase().includes(q),
+          (e.title || "").toLowerCase().includes(q) ||
+          (e.description || "").toLowerCase().includes(q) ||
+          (e.region || "").toLowerCase().includes(q) ||
+          (e.category || "").toLowerCase().includes(q),
       );
     }
-    if (category) list = list.filter((e) => e.category === category);
-    list = list.filter((e) => e.price <= maxPrice);
+    if (category) {
+      const catLower = category.toLowerCase().trim();
+      list = list.filter((e) => (e.category || "").toLowerCase().trim() === catLower);
+    }
+    list = list.filter((e) => (e.price ?? 0) <= maxPrice);
 
     switch (sort) {
       case "price-asc":
@@ -227,16 +256,27 @@ function ExperiencesPage() {
                 ? activeRegion.activity[lang]
                 : "Randonnées dans l'Atlas, artisanat berbère, cuisine familiale, bivouacs dans le désert, séjours chez l'habitant… Vivez le Maroc authentique avec des hôtes du territoire."}
             </p>
-            {regionId && (
-              <button
-                onClick={clearRegionFilter}
-                className="mt-4 inline-flex items-center gap-1.5 rounded-full border border-primary/40 bg-primary/5 px-3.5 py-1.5 text-sm font-semibold text-primary transition hover:bg-primary/10"
-              >
-                <MapPin className="h-3.5 w-3.5" />
-                {activeRegion ? activeRegion.name[lang] : "Région filtrée"}
-                <X className="h-3.5 w-3.5" />
-              </button>
-            )}
+            <div className="mt-4 flex flex-wrap gap-2">
+              {regionId && (
+                <button
+                  onClick={clearRegionFilter}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-primary/40 bg-primary/5 px-3.5 py-1.5 text-sm font-semibold text-primary transition hover:bg-primary/10"
+                >
+                  <MapPin className="h-3.5 w-3.5" />
+                  {activeRegion ? activeRegion.name[lang] : "Région filtrée"}
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              )}
+              {category && (
+                <button
+                  onClick={clearCategoryFilter}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-primary/40 bg-primary/5 px-3.5 py-1.5 text-sm font-semibold text-primary transition hover:bg-primary/10"
+                >
+                  Catégorie : {category}
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              )}
+            </div>
           </motion.div>
         </div>
       </section>
@@ -256,7 +296,7 @@ function ExperiencesPage() {
           <div className="flex flex-wrap items-center gap-2">
             <Select
               value={category ?? ""}
-              onChange={(v) => setCategory(v || null)}
+              onChange={(v) => changeCategory(v || null)}
               options={[{ value: "", label: "Toutes catégories" }, ...CATEGORIES.map((c) => ({ value: c, label: c }))]}
             />
             <Select
@@ -271,7 +311,7 @@ function ExperiencesPage() {
             />
             {category && (
               <button
-                onClick={() => setCategory(null)}
+                onClick={clearCategoryFilter}
                 className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-2 text-xs font-semibold text-muted-foreground transition hover:bg-muted"
               >
                 <X className="h-3.5 w-3.5" /> Effacer

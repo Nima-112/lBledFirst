@@ -121,6 +121,11 @@ public class FormationService {
     @Transactional
     public void deleteFormation(String slug) {
         Formation formation = findBySlugOrThrow(slug);
+        Long id = formation.getId();
+        progressRepository.deleteByCapsule_Chapter_Formation_Id(id);
+        favoriteRepository.deleteByFormationId(id);
+        purchaseRepository.deleteByFormationId(id);
+        reviewRepository.deleteByFormationId(id);
         formationRepository.delete(formation);
     }
 

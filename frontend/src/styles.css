@@ -203,3 +203,26 @@
 @utility animate-kenburns {
   animation: kenburns 24s ease-out infinite alternate;
 }
+
+/* Hide Google Translate top banner, tooltips, frames, and branding */
+.goog-te-banner-frame,
+.goog-te-banner,
+.skiptranslate,
+#goog-gt-tt,
+.goog-te-balloon-frame,
+.VIpgJd-yDsffb-Lg2W8d,
+.goog-te-spinner-pos {
+  display: none !important;
+  visibility: hidden !important;
+}
+
+body {
+  top: 0px !important;
+  position: static !important;
+}
+
+.goog-text-highlight {
+  background-color: transparent !important;
+  box-shadow: none !important;
+}
+

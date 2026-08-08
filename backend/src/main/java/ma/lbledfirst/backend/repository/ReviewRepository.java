@@ -12,4 +12,5 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
     List<Review> findByTouristId(Long touristId);
     Optional<Review> findByTouristIdAndFormationId(Long touristId, Long formationId);
     Optional<Review> findByTouristIdAndExperienceId(Long touristId, Long experienceId);
+    void deleteByFormationId(Long formationId);
 }
