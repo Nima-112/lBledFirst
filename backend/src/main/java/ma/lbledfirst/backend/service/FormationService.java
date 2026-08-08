@@ -56,8 +56,6 @@ public class FormationService {
     private final CapsuleProcessingService capsuleProcessingService;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    // ---- Catalogue (public) ------------------------------------------------
-
     @Transactional(readOnly = true)
     public List<FormationSummaryResponse> getAllFormations() {
         return formationRepository.findAll().stream()
@@ -80,38 +78,31 @@ public class FormationService {
             }
         }
 
-        return toDetail(formati
-            
-            n, purchased, completed, reviewed);
+        return toDetail(formation, purchased, completed, reviewed);
     }
 
     @Transactional(readOnly = true)
     public FormationDetailResponse getFormationForEdit(String slug) {
         Formation formation = findBySlugOrThrow(slug);
-        // Admins editing a formation must see the real video URLs regardless
-        // of purchase status — purchased=true here only controls DTO video
-        // visibility, it does not mean "this admin bought this formation."
-        return toDetail(formation, true, false, false);
+        Formation f = formation;
+        return toDetail(f, true, false, false);
     }
 
     private boolean isFormationCompleted(Formation formation, Long userId) {
         int totalCapsules = formation.getChapters().stream()
                 .mapToInt(ch -> ch.getCapsules().size())
                 .sum();
-        if (totalCapsules == 0)
-            return false;
+        if (totalCapsules == 0) return false;
         long completedCapsules = progressRepository
                 .findByUserIdAndCapsule_Chapter_Formation_Id(userId, formation.getId())
                 .size();
         return completedCapsules >= totalCapsules;
     }
 
-    // ---- Administration (admin uniquement, cf. FormationController) -------
-
     @Transactional
     public FormationDetailResponse createFormation(FormationRequest req) {
         if (formationRepository.existsBySlug(req.getSlug())) {
-            throw new FormationAlreadyExistsException("Une formation avec ce slug existe déjà");
+            throw new FormationAlreadyExistsException("Une formation avec ce slug existe deja");
         }
 
         Formation formation = Formation.builder()
@@ -129,7 +120,7 @@ public class FormationService {
         Formation formation = findBySlugOrThrow(slug);
 
         if (!formation.getSlug().equals(req.getSlug()) && formationRepository.existsBySlug(req.getSlug())) {
-            throw new FormationAlreadyExistsException("Une formation avec ce slug existe déjà");
+            throw new FormationAlreadyExistsException("Une formation avec ce slug existe deja");
         }
         formation.setSlug(req.getSlug());
         applyRequestForUpdate(formation, req);
@@ -149,8 +140,6 @@ public class FormationService {
         reviewRepository.deleteByFormationId(id);
         formationRepository.delete(formation);
     }
-
-    // ---- Achat --------------------------------------------------------------
 
     @Transactional
     public void purchase(String slug, String email) {
@@ -174,9 +163,6 @@ public class FormationService {
                 .toList();
     }
 
-    // ---- Progression -----------------------------
-    -----------------------------
-
     @Transactional(readOnly = true)
     public List<Long> getProgress(String slug, String email) {
         Formation formation = findBySlugOrThrow(slug);
@@ -193,14 +179,13 @@ public class FormationService {
         User user = findUserOrThrow(email);
 
         if (!isPurchased(formation, email)) {
-            throw new FormationNotPurchasedException(
-                    "Vous devez acheter cette formation pour suivre votre progression");
+            throw new FormationNotPurchasedException("Vous devez acheter cette formation pour suivre votre progression");
         }
 
         Capsule capsule = capsuleRepository.findById(capsuleId)
-                .orElseThrow(() -> new NotFoundException("Capsule " + capsuleId + " non trouvée"));
+                .orElseThrow(() -> new NotFoundException("Capsule " + capsuleId + " non trouvee"));
         if (!capsule.getChapter().getFormation().getId().equals(formation.getId())) {
-            throw new NotFoundException("Cette capsule n'appartient pas à cette formation");
+            throw new NotFoundException("Cette capsule n'appartient pas a cette formation");
         }
 
         var existing = progressRepository.findByUserIdAndCapsuleId(user.getId(), capsuleId);
@@ -220,13 +205,13 @@ public class FormationService {
         Formation formation = findBySlugOrThrow(slug);
 
         if (email == null || !isPurchased(formation, email)) {
-            throw new FormationNotPurchasedException("Vous devez acheter cette formation pour accéder aux sous-titres");
+            throw new FormationNotPurchasedException("Vous devez acheter cette formation pour acceder aux sous-titres");
         }
 
         Capsule capsule = capsuleRepository.findById(capsuleId)
-                .orElseThrow(() -> new NotFoundException("Capsule " + capsuleId + " non trouvée"));
+                .orElseThrow(() -> new NotFoundException("Capsule " + capsuleId + " non trouvee"));
         if (!capsule.getChapter().getFormation().getId().equals(formation.getId())) {
-            throw new NotFoundException("Cette capsule n'appartient pas à cette formation");
+            throw new NotFoundException("Cette capsule n'appartient pas a cette formation");
         }
         if (!"DONE".equals(capsule.getProcessingStatus())) {
             throw new NotFoundException("Les sous-titres de cette capsule ne sont pas encore disponibles");
@@ -238,8 +223,6 @@ public class FormationService {
             throw new RuntimeException("Impossible de lire les sous-titres pour la capsule " + capsuleId, e);
         }
     }
-
-    // ---- Favoris ------------------------------------------------------------
 
     @Transactional
     public boolean toggleFavorite(String slug, String email) {
@@ -266,15 +249,12 @@ public class FormationService {
                 .toList();
     }
 
-    // ---- Helpers --------------------------------------------------------------
-
     private Formation findBySlugOrThrow(String slug) {
         return formationRepository.findBySlug(slug)
-                .orElseThrow(() -> new NotFoundException("Formation \"" + slug + "\" non trouvée"));
+                .orElseThrow(() -> new NotFoundException("Formation \"" + slug + "\" non trouvee"));
     }
 
-    private User findUserOrThrow(St
-                ring email) {
+    private User findUserOrThrow(String email) {
         return userRepository.findByEmail(email)
                 .orElseThrow(() -> new InvalidCredentialsException("Utilisateur introuvable"));
     }
@@ -296,9 +276,6 @@ public class FormationService {
         formation.setCoverImage(req.getCoverImage());
         formation.setPreviewVideo(req.getPreviewVideo());
         formation.setStudentsCount(req.getStudentsCount() != null ? req.getStudentsCount() : 0);
-        // averageRating / reviewsCount ne sont plus saisis à la main : ils sont
-        // calculés par ReviewService à partir des avis réels (cf. bug corrigé —
-        // ces champs étaient auparavant complètement déconnectés des avis).
         formation.setObjectives(req.getObjectives() != null ? req.getObjectives() : new ArrayList<>());
         formation.setSkills(req.getSkills() != null ? req.getSkills() : new ArrayList<>());
         formation.setPrerequisites(req.getPrerequisites() != null ? req.getPrerequisites() : new ArrayList<>());
@@ -316,20 +293,16 @@ public class FormationService {
         formation.setPrice(req.getPrice());
         formation.setCoverImage(req.getCoverImage());
         formation.setPreviewVideo(req.getPreviewVideo());
-        formation.setStud
-            ntsCount(req.getStudentsCount() != null ? req.getStudentsCount() : formation.getStudentsCount());
-        // averageRating / reviewsCount : idem, jamais écrasés par un edit admin.
+        formation.setStudentsCount(req.getStudentsCount() != null ? req.getStudentsCount() : formation.getStudentsCount());
         formation.setObjectives(req.getObjectives() != null ? req.getObjectives() : new ArrayList<>());
         formation.setSkills(req.getSkills() != null ? req.getSkills() : new ArrayList<>());
-        formation.setPrer
-            quisites(req.getPrerequisites() != null ? req.getPrerequisites() : new ArrayList<>());
+        formation.setPrerequisites(req.getPrerequisites() != null ? req.getPrerequisites() : new ArrayList<>());
         formation.setInstructor(toInstructor(req.getInstructor()));
         mergeChapters(formation, req.getChapters());
     }
 
     private void mergeChapters(Formation formation, List<ChapterDto> dtos) {
-        if (dtos == null)
-            dtos = new ArrayList<>();
+        if (dtos == null) dtos = new ArrayList<>();
         Map<Long, Chapter> existingChapters = new java.util.HashMap<>();
         for (Chapter ch : formation.getChapters()) {
             existingChapters.put(ch.getId(), ch);
@@ -364,9 +337,7 @@ public class FormationService {
         formation.getChapters().addAll(merged);
     }
 
-    private void mergeCap
-
-    ules(Chapter chapter, List<CapsuleDto> dtos) {
+    private void mergeCapsules(Chapter chapter, List<CapsuleDto> dtos) {
         if (dtos == null) dtos = new ArrayList<>();
         Map<Long, Capsule> existingCaps = new java.util.HashMap<>();
         for (Capsule c : chapter.getCapsules()) {
@@ -377,17 +348,13 @@ public class FormationService {
         for (CapsuleDto dto : dtos) {
             Capsule cap;
             if (dto.getId() != null && existingCaps.containsKey(dto.getId())) {
-                cap = exi
-            tingCaps.remove(dto.getId());
+                cap = existingCaps.remove(dto.getId());
                 boolean videoChanged = dto.getVideoUrl() != null && !dto.getVideoUrl().equals(cap.getVideoUrl());
                 cap.setOrder(dto.getOrder());
                 cap.setTitle(dto.getTitle());
                 cap.setDescription(dto.getDescription());
                 cap.setDuration(dto.getDuration());
-                cap.setTh
-            mbnail(dto.getThumbnail());
-                // Never overwrite an existing video with null — null here means "the
-                // editor didn't have this field," not "the admin wants to delete it."
+                cap.setThumbnail(dto.getThumbnail());
                 if (dto.getVideoUrl() != null) {
                     cap.setVideoUrl(dto.getVideoUrl());
                 }
@@ -424,8 +391,7 @@ public class FormationService {
                     .order(capDto.getOrder())
                     .title(capDto.getTitle())
                     .description(capDto.getDescription())
-                    .duration(capDto.getDuratio
-                    n())
+                    .duration(capDto.getDuration())
                     .thumbnail(capDto.getThumbnail())
                     .videoUrl(capDto.getVideoUrl())
                     .chapter(chapter)
@@ -436,13 +402,11 @@ public class FormationService {
 
     private List<Chapter> toChapters(List<ChapterDto> dtos, Formation formation) {
         List<Chapter> chapters = new ArrayList<>();
-        if (dtos == null)
-            return chapters;
+        if (dtos == null) return chapters;
 
         for (ChapterDto dto : dtos) {
             Chapter chapter = Chapter.builder()
                     .order(dto.getOrder())
-
                     .title(dto.getTitle())
                     .formation(formation)
                     .build();
@@ -473,7 +437,8 @@ public class FormationService {
                 .specialty(dto.getSpecialty())
                 .experienceYears(dto.getExperienceYears())
                 .bio(dto.getBio())
-                .photo(dto.getPhoto()).totalFormations
+                .photo(dto.getPhoto())
+                .totalFormations(dto.getTotalFormations() != null ? dto.getTotalFormations() : 0)
                 .averageRating(dto.getAverageRating() != null ? dto.getAverageRating() : 0.0)
                 .studentsTrained(dto.getStudentsTrained() != null ? dto.getStudentsTrained() : 0)
                 .build();
@@ -483,8 +448,7 @@ public class FormationService {
         try {
             return FormationLevel.valueOf(value.trim().toLowerCase());
         } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException(
-                    "Niveau invalide : \"" + value + "\" (attendu : debutant, intermediaire, avance)");
+            throw new IllegalArgumentException("Niveau invalide : \"" + value + "\"");
         }
     }
 
@@ -492,20 +456,21 @@ public class FormationService {
         try {
             return FormationLanguage.valueOf(value.trim().toLowerCase());
         } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException(
-                    "Langue invalide : \"" + value + "\" (attendu : francais, arabe, anglais, espagnol)");
+            throw new IllegalArgumentException("Langue invalide : \"" + value + "\"");
         }
     }
 
-rmation formation)
-    {
-        return formation.getChapters().stream().flatMap(ch -> ch.getCapsules().stream())
+    private int totalDuration(Formation formation) {
+        return formation.getChapters().stream()
+                .flatMap(ch -> ch.getCapsules().stream())
                 .mapToInt(Capsule::getDuration)
                 .sum();
     }
 
-    private FormationSummaryResponse toSummary(Formation f) {tChapters().size();
-        int capsulesCount = f.getChapters().stream().mapToInt
+    private FormationSummaryResponse toSummary(Formation f) {
+        int chaptersCount = f.getChapters().size();
+        int capsulesCount = f.getChapters().stream().mapToInt(ch -> ch.getCapsules().size()).sum();
+
         return new FormationSummaryResponse(
                 f.getId(),
                 f.getSlug(),
@@ -527,31 +492,30 @@ rmation formation)
         );
     }
 
-ate FormationDetailResponse
-
-    toDetail(Formation f, boolean purchased, boolean completed, boolean reviewed) {
+    private FormationDetailResponse toDetail(Formation f, boolean purchased, boolean completed, boolean reviewed) {
         Hibernate.initialize(f.getObjectives());
         Hibernate.initialize(f.getSkills());
         Hibernate.initialize(f.getPrerequisites());
-        Hibernate.init
-            alize(f.getChapters());
-        if (f.getChapter    for (Chapter ch : f.getChapters()) {
+        Hibernate.initialize(f.getChapters());
+        if (f.getChapters() != null) {
+            for (Chapter ch : f.getChapters()) {
                 Hibernate.initialize(ch.getCapsules());
             }
         }
 
-    List<ChapterDto> chapters = f.getChapters().stream()
+        List<ChapterDto> chapters = f.getChapters().stream()
                 .map(ch -> new ChapterDto(
-                        ch.getId(),                ch.getOrder(),
+                        ch.getId(),
+                        ch.getOrder(),
                         ch.getTitle(),
                         ch.getCapsules().stream()
                                 .map(c -> new CapsuleDto(
                                         c.getId(),
-                                                                      c.getTitle(),
+                                        c.getOrder(),
+                                        c.getTitle(),
                                         c.getDescription(),
                                         c.getDuration(),
                                         c.getThumbnail(),
-                                        // la vidéo n'est exposée qu'après achat
                                         purchased ? c.getVideoUrl() : null,
                                         c.getProcessingStatus()
                                 ))
@@ -559,7 +523,32 @@ ate FormationDetailResponse
                 ))
                 .toList();
 
-    return new FormationDetailResponse(f.getId(),f.getSlug(),f.getTitle(),f.getShortDescription(),f.getLongDescription(),f.getCategory(),f.getLevel().name(),f.getLanguage().name(),f.getPrice(),f.getCoverImage(),f.getPreviewVideo(),totalDuration(f),f.getStudentsCount(),f.getAverageRating(),f.getReviewsCount(),f.getObjectives(),f.getSkills(),f.getPrerequisites(),chapters,toInstructorDto(f.getInstructor()),f.getCreatedAt(),purchased,completed,reviewed);
+        return new FormationDetailResponse(
+                f.getId(),
+                f.getSlug(),
+                f.getTitle(),
+                f.getShortDescription(),
+                f.getLongDescription(),
+                f.getCategory(),
+                f.getLevel().name(),
+                f.getLanguage().name(),
+                f.getPrice(),
+                f.getCoverImage(),
+                f.getPreviewVideo(),
+                totalDuration(f),
+                f.getStudentsCount(),
+                f.getAverageRating(),
+                f.getReviewsCount(),
+                f.getObjectives(),
+                f.getSkills(),
+                f.getPrerequisites(),
+                chapters,
+                toInstructorDto(f.getInstructor()),
+                f.getCreatedAt(),
+                purchased,
+                completed,
+                reviewed
+        );
     }
 
     private InstructorDto toInstructorDto(Instructor i) {
@@ -577,13 +566,6 @@ ate FormationDetailResponse
     }
 
     private void triggerCapsuleProcessing(Formation formation) {
-        // Collect the capsule IDs to process now, while `formation` is still
-        // attached to the current persistence context — but do NOT fire the
-        // @Async job yet. If we call processAsync() here, the async thread can
-        // fetch its own copy of the Capsule BEFORE this transaction commits,
-        // getting the pre-edit row, and later overwrite the just-saved
-        // title/videoUrl with stale data. Deferring to afterCommit guarantees
-        // the edit is durable before any async fetch can happen.
         List<Long> toProcess = new ArrayList<>();
         for (Chapter ch : formation.getChapters()) {
             for (Capsule cap : ch.getCapsules()) {
