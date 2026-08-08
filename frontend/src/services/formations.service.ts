@@ -61,6 +61,7 @@ export type ApiFormationDetail = ApiFormationSummary & {
       duration: number;
       thumbnail?: string | null;
       videoUrl?: string | null;
+      processingStatus?: string | null;
     }[];
   }[];
 };
@@ -110,7 +111,11 @@ export type ApiFormationPayload = {
 
 type UploadResult = { url: string; name: string; size: number; contentType: string };
 
-const strip = (s: string) => s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+const strip = (s: string) =>
+  s
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
 
 const LEVEL_MAP: Record<string, Formation["level"]> = {
   debutant: "Débutant",
@@ -162,6 +167,7 @@ const detailChapterToFront = (ch: ApiFormationDetail["chapters"][number]): Chapt
     duration: c.duration,
     thumbnail: c.thumbnail ?? "",
     videoUrl: c.videoUrl ?? undefined,
+    processingStatus: (c.processingStatus as Capsule["processingStatus"]) ?? undefined,
   })),
 });
 
@@ -265,6 +271,11 @@ export async function getFormationDetail(slug: string): Promise<Formation> {
   return detailToFront(data);
 }
 
+export async function getFormationForEditApi(slug: string): Promise<Formation> {
+  const { data } = await api.get<ApiFormationDetail>(`/formations/${slug}/edit`);
+  return detailToFront(data);
+}
+
 export async function createFormation(f: Formation): Promise<Formation> {
   const payload = formationToPayload(f);
   const { data } = await api.post<ApiFormationDetail>("/formations", payload);
@@ -310,8 +321,13 @@ export async function getFormationProgressApi(slug: string): Promise<string[]> {
   return data.map(String);
 }
 
-export async function toggleCapsuleCompletionApi(slug: string, capsuleId: string): Promise<boolean> {
-  const { data } = await api.post<{ completed: boolean }>(`/formations/${slug}/capsules/${capsuleId}/toggle`);
+export async function toggleCapsuleCompletionApi(
+  slug: string,
+  capsuleId: string,
+): Promise<boolean> {
+  const { data } = await api.post<{ completed: boolean }>(
+    `/formations/${slug}/capsules/${capsuleId}/toggle`,
+  );
   return data.completed;
 }
 

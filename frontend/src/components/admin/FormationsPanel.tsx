@@ -1,13 +1,22 @@
 import { IconBtn, PanelHeader } from "@/components/dashboard/ui";
 import { emptyFormation, formatDuration, Formation, totalCapsules } from "@/lib/formations";
 import { useI18n } from "@/lib/i18n";
-import { Clock, ExternalLink, GraduationCap, Link, Loader2, Pencil, Trash2, Users } from "lucide-react";
+import {
+  Clock,
+  ExternalLink,
+  GraduationCap,
+  Link,
+  Loader2,
+  Pencil,
+  Trash2,
+  Users,
+} from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { FormationEditor } from "./FormationEditor";
 import {
   createFormation,
   deleteFormation,
-  getFormationDetail,
+  getFormationForEditApi,
   getFormationsList,
   updateFormation,
 } from "@/services/formations.service";
@@ -37,8 +46,7 @@ export function FormationsPanel() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ slug, data }: { slug: string; data: Formation }) =>
-      updateFormation(slug, data),
+    mutationFn: ({ slug, data }: { slug: string; data: Formation }) => updateFormation(slug, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-formations"] });
       setEditing(null);
@@ -87,7 +95,10 @@ export function FormationsPanel() {
     setDraft(emptyFormation());
     setLoadDetailError(null);
     try {
-      const full = await getFormationDetail(f.slug);
+      // Admin-only endpoint: always returns real capsule videoUrls, unlike
+      // the tourist-facing getFormationDetail which nulls them out unless
+      // the requester has purchased the formation (admins never have).
+      const full = await getFormationForEditApi(f.slug);
       setDraft(full);
     } catch (err: any) {
       setLoadDetailError(err?.message ?? "Impossible de charger la formation");
@@ -202,10 +213,10 @@ export function FormationsPanel() {
                 loadDetailError ??
                 (listQuery.error instanceof Error
                   ? listQuery.error.message
-                  : (createMutation.error as Error)?.message ??
+                  : ((createMutation.error as Error)?.message ??
                     (updateMutation.error as Error)?.message ??
                     (deleteMutation.error as Error)?.message ??
-                    "Erreur inconnue")}
+                    "Erreur inconnue"))}
             </span>
           )}
         </div>

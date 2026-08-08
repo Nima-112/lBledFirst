@@ -15,6 +15,11 @@ export type Capsule = {
   duration: number; // minutes
   thumbnail: string;
   videoUrl?: string; // real content — only served after purchase in a real backend
+  // "PENDING" | "PROCESSING" | "DONE" | "FAILED" — lets the UI show a
+  // "translation in progress" state instead of silently failing. Populated
+  // by the AI transcription/translation pipeline (CapsuleProcessingService
+  // on the backend).
+  processingStatus?: "PENDING" | "PROCESSING" | "DONE" | "FAILED";
 };
 
 export type Chapter = {
@@ -61,7 +66,7 @@ export type Formation = {
   // renseigné uniquement par l'API (le détail d'une formation) : true si
   // l'utilisateur courant a acheté cette formation
   purchased?: boolean;
-   // true si l'utilisateur courant a terminé toutes les capsules — condition
+  // true si l'utilisateur courant a terminé toutes les capsules — condition
   // pour pouvoir publier un avis
   completed?: boolean;
   // true si l'utilisateur courant a déjà publié un avis sur cette formation
@@ -77,7 +82,8 @@ const INSTRUCTORS: Record<string, Instructor> = {
     specialty: "Maalema — Tarz Fassi",
     experienceYears: 32,
     bio: "Héritière d'une lignée de brodeuses de la médina de Fès, Lalla Fatima transmet depuis trois décennies l'art du Tarz Fassi à de nouvelles générations. Ses œuvres ont été exposées à Paris, Marrakech et Dubaï.",
-    photo: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=400&q=80",
+    photo:
+      "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=400&q=80",
     totalFormations: 3,
     averageRating: 4.9,
     studentsTrained: 1240,
@@ -88,7 +94,8 @@ const INSTRUCTORS: Record<string, Instructor> = {
     specialty: "Maître Zelligeur",
     experienceYears: 25,
     bio: "Maalem zelligeur de la médina de Fès, formé à l'école traditionnelle depuis l'âge de 12 ans. Il a participé à la restauration de plusieurs riads classés patrimoine.",
-    photo: "https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=400&q=80",
+    photo:
+      "https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=400&q=80",
     totalFormations: 2,
     averageRating: 4.8,
     studentsTrained: 860,
@@ -99,7 +106,8 @@ const INSTRUCTORS: Record<string, Instructor> = {
     specialty: "Tisseuse de tapis berbères",
     experienceYears: 28,
     bio: "Membre d'une coopérative féminine du Moyen Atlas, Aïcha maîtrise les motifs Beni Ourain et Boucherouite transmis par ses aïeules.",
-    photo: "https://images.unsplash.com/photo-1531123897727-8f129e1688ce?auto=format&fit=crop&w=400&q=80",
+    photo:
+      "https://images.unsplash.com/photo-1531123897727-8f129e1688ce?auto=format&fit=crop&w=400&q=80",
     totalFormations: 2,
     averageRating: 4.9,
     studentsTrained: 920,
@@ -110,7 +118,8 @@ const INSTRUCTORS: Record<string, Instructor> = {
     specialty: "Potier de Safi",
     experienceYears: 30,
     bio: "Potier de la colline des potiers de Safi, spécialiste des émaux polychromes traditionnels marocains.",
-    photo: "https://images.unsplash.com/photo-1568602471122-7832951cc4c5?auto=format&fit=crop&w=400&q=80",
+    photo:
+      "https://images.unsplash.com/photo-1568602471122-7832951cc4c5?auto=format&fit=crop&w=400&q=80",
     totalFormations: 2,
     averageRating: 4.7,
     studentsTrained: 610,
@@ -121,7 +130,8 @@ const INSTRUCTORS: Record<string, Instructor> = {
     specialty: "Maître calligraphe",
     experienceYears: 22,
     bio: "Calligraphe diplômé de l'Académie de calligraphie arabe d'Istanbul. Il enseigne les styles Maghrébi, Thuluth et Diwani.",
-    photo: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=400&q=80",
+    photo:
+      "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=400&q=80",
     totalFormations: 4,
     averageRating: 4.9,
     studentsTrained: 1580,
@@ -132,7 +142,8 @@ const INSTRUCTORS: Record<string, Instructor> = {
     specialty: "Cuisine traditionnelle marocaine",
     experienceYears: 18,
     bio: "Ancienne cheffe d'un riad étoilé à Marrakech, Nadia partage les recettes de sa grand-mère de Chefchaouen.",
-    photo: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=400&q=80",
+    photo:
+      "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=400&q=80",
     totalFormations: 5,
     averageRating: 4.8,
     studentsTrained: 2340,
@@ -143,7 +154,8 @@ const INSTRUCTORS: Record<string, Instructor> = {
     specialty: "Maroquinier de Fès",
     experienceYears: 27,
     bio: "Artisan des tanneries Chouara, il perpétue le tannage végétal traditionnel et la couture main du cuir marocain.",
-    photo: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80",
+    photo:
+      "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80",
     totalFormations: 2,
     averageRating: 4.7,
     studentsTrained: 540,
@@ -154,7 +166,8 @@ const INSTRUCTORS: Record<string, Instructor> = {
     specialty: "Couturière de caftans",
     experienceYears: 24,
     bio: "Styliste-couturière basée à Rabat, Saida a habillé plusieurs stars pour la Semaine du Caftan.",
-    photo: "https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=400&q=80",
+    photo:
+      "https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=400&q=80",
     totalFormations: 3,
     averageRating: 4.9,
     studentsTrained: 1120,
@@ -218,8 +231,20 @@ export const FORMATIONS: Formation[] = [
         order: 1,
         title: "Introduction & histoire",
         capsules: [
-          cap(1, "Bienvenue et présentation de la formation", 8, "Découverte du parcours et du matériel.", "https://images.unsplash.com/photo-1590736969955-71cc94901144?auto=format&fit=crop&w=600&q=80"),
-          cap(2, "Histoire du Tarz Fassi", 14, "Des palais andalous à la médina de Fès.", "https://images.unsplash.com/photo-1553913861-c0fddf2619ee?auto=format&fit=crop&w=600&q=80"),
+          cap(
+            1,
+            "Bienvenue et présentation de la formation",
+            8,
+            "Découverte du parcours et du matériel.",
+            "https://images.unsplash.com/photo-1590736969955-71cc94901144?auto=format&fit=crop&w=600&q=80",
+          ),
+          cap(
+            2,
+            "Histoire du Tarz Fassi",
+            14,
+            "Des palais andalous à la médina de Fès.",
+            "https://images.unsplash.com/photo-1553913861-c0fddf2619ee?auto=format&fit=crop&w=600&q=80",
+          ),
         ],
       },
       {
@@ -227,8 +252,20 @@ export const FORMATIONS: Formation[] = [
         order: 2,
         title: "Matériaux & outils",
         capsules: [
-          cap(3, "Choisir son tissu et ses fils", 18, "Toile, coton égyptien et soie naturelle.", "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?auto=format&fit=crop&w=600&q=80"),
-          cap(4, "Préparer le tambour et l'aiguille", 12, "Tension parfaite pour un point régulier.", "https://images.unsplash.com/photo-1610030006870-cbc4d1cca3c6?auto=format&fit=crop&w=600&q=80"),
+          cap(
+            3,
+            "Choisir son tissu et ses fils",
+            18,
+            "Toile, coton égyptien et soie naturelle.",
+            "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?auto=format&fit=crop&w=600&q=80",
+          ),
+          cap(
+            4,
+            "Préparer le tambour et l'aiguille",
+            12,
+            "Tension parfaite pour un point régulier.",
+            "https://images.unsplash.com/photo-1610030006870-cbc4d1cca3c6?auto=format&fit=crop&w=600&q=80",
+          ),
         ],
       },
       {
@@ -236,9 +273,27 @@ export const FORMATIONS: Formation[] = [
         order: 3,
         title: "Les 5 points fondamentaux",
         capsules: [
-          cap(5, "Le point de croix marocain", 22, "La base de toutes les compositions.", "https://images.unsplash.com/photo-1589998059171-988d887df646?auto=format&fit=crop&w=600&q=80"),
-          cap(6, "Le point de tige", 16, "Contours nets et courbes fluides.", "https://images.unsplash.com/photo-1610030006870-cbc4d1cca3c6?auto=format&fit=crop&w=600&q=80"),
-          cap(7, "Le remplissage plat", 20, "Aplats colorés et surfaces régulières.", "https://images.unsplash.com/photo-1591129841117-3adfd313e34f?auto=format&fit=crop&w=600&q=80"),
+          cap(
+            5,
+            "Le point de croix marocain",
+            22,
+            "La base de toutes les compositions.",
+            "https://images.unsplash.com/photo-1589998059171-988d887df646?auto=format&fit=crop&w=600&q=80",
+          ),
+          cap(
+            6,
+            "Le point de tige",
+            16,
+            "Contours nets et courbes fluides.",
+            "https://images.unsplash.com/photo-1610030006870-cbc4d1cca3c6?auto=format&fit=crop&w=600&q=80",
+          ),
+          cap(
+            7,
+            "Le remplissage plat",
+            20,
+            "Aplats colorés et surfaces régulières.",
+            "https://images.unsplash.com/photo-1591129841117-3adfd313e34f?auto=format&fit=crop&w=600&q=80",
+          ),
         ],
       },
       {
@@ -246,8 +301,20 @@ export const FORMATIONS: Formation[] = [
         order: 4,
         title: "Démonstration guidée",
         capsules: [
-          cap(8, "Réaliser un motif étoile complet", 32, "Suivez la maalema pas à pas.", "https://images.unsplash.com/photo-1590736969955-71cc94901144?auto=format&fit=crop&w=600&q=80"),
-          cap(9, "Composition d'une bordure", 28, "Assembler plusieurs motifs.", "https://images.unsplash.com/photo-1589998059171-988d887df646?auto=format&fit=crop&w=600&q=80"),
+          cap(
+            8,
+            "Réaliser un motif étoile complet",
+            32,
+            "Suivez la maalema pas à pas.",
+            "https://images.unsplash.com/photo-1590736969955-71cc94901144?auto=format&fit=crop&w=600&q=80",
+          ),
+          cap(
+            9,
+            "Composition d'une bordure",
+            28,
+            "Assembler plusieurs motifs.",
+            "https://images.unsplash.com/photo-1589998059171-988d887df646?auto=format&fit=crop&w=600&q=80",
+          ),
         ],
       },
       {
@@ -255,8 +322,20 @@ export const FORMATIONS: Formation[] = [
         order: 5,
         title: "Projet final",
         capsules: [
-          cap(10, "Concevoir votre pièce personnelle", 24, "Croquis, palette et plan de broderie.", "https://images.unsplash.com/photo-1610030006870-cbc4d1cca3c6?auto=format&fit=crop&w=600&q=80"),
-          cap(11, "Finitions et présentation", 20, "Repassage, doublure, encadrement.", "https://images.unsplash.com/photo-1594736797933-d0a501ba2fe6?auto=format&fit=crop&w=600&q=80"),
+          cap(
+            10,
+            "Concevoir votre pièce personnelle",
+            24,
+            "Croquis, palette et plan de broderie.",
+            "https://images.unsplash.com/photo-1610030006870-cbc4d1cca3c6?auto=format&fit=crop&w=600&q=80",
+          ),
+          cap(
+            11,
+            "Finitions et présentation",
+            20,
+            "Repassage, doublure, encadrement.",
+            "https://images.unsplash.com/photo-1594736797933-d0a501ba2fe6?auto=format&fit=crop&w=600&q=80",
+          ),
         ],
       },
     ],
@@ -294,7 +373,13 @@ export const FORMATIONS: Formation[] = [
         order: 1,
         title: "Introduction au zellige",
         capsules: [
-          cap(1, "Histoire et symbolique", 12, "Des Mérinides à aujourd'hui.", "https://images.unsplash.com/photo-1548013146-72479768bada?auto=format&fit=crop&w=600&q=80"),
+          cap(
+            1,
+            "Histoire et symbolique",
+            12,
+            "Des Mérinides à aujourd'hui.",
+            "https://images.unsplash.com/photo-1548013146-72479768bada?auto=format&fit=crop&w=600&q=80",
+          ),
         ],
       },
       {
@@ -302,7 +387,13 @@ export const FORMATIONS: Formation[] = [
         order: 2,
         title: "Matériaux et outils",
         capsules: [
-          cap(2, "Argile, émaux et menqach", 20, "Le matériel du maalem.", "https://images.unsplash.com/photo-1615529162924-f8605388461d?auto=format&fit=crop&w=600&q=80"),
+          cap(
+            2,
+            "Argile, émaux et menqach",
+            20,
+            "Le matériel du maalem.",
+            "https://images.unsplash.com/photo-1615529162924-f8605388461d?auto=format&fit=crop&w=600&q=80",
+          ),
         ],
       },
       {
@@ -310,8 +401,20 @@ export const FORMATIONS: Formation[] = [
         order: 3,
         title: "Taille des tesselles",
         capsules: [
-          cap(3, "Le geste du maalem", 30, "Précision et rythme.", "https://images.unsplash.com/photo-1580537659466-0a9bfa916a54?auto=format&fit=crop&w=600&q=80"),
-          cap(4, "Formes de base — carré, triangle, losange", 24, "Répertoire fondamental.", "https://images.unsplash.com/photo-1548013146-72479768bada?auto=format&fit=crop&w=600&q=80"),
+          cap(
+            3,
+            "Le geste du maalem",
+            30,
+            "Précision et rythme.",
+            "https://images.unsplash.com/photo-1580537659466-0a9bfa916a54?auto=format&fit=crop&w=600&q=80",
+          ),
+          cap(
+            4,
+            "Formes de base — carré, triangle, losange",
+            24,
+            "Répertoire fondamental.",
+            "https://images.unsplash.com/photo-1548013146-72479768bada?auto=format&fit=crop&w=600&q=80",
+          ),
         ],
       },
       {
@@ -319,8 +422,20 @@ export const FORMATIONS: Formation[] = [
         order: 4,
         title: "Composition d'un panneau",
         capsules: [
-          cap(5, "Motif de l'étoile à 8 branches", 36, "Le khatem sulaimani.", "https://images.unsplash.com/photo-1548013146-72479768bada?auto=format&fit=crop&w=600&q=80"),
-          cap(6, "Frises et bordures", 22, "Assembler un ensemble cohérent.", "https://images.unsplash.com/photo-1615529162924-f8605388461d?auto=format&fit=crop&w=600&q=80"),
+          cap(
+            5,
+            "Motif de l'étoile à 8 branches",
+            36,
+            "Le khatem sulaimani.",
+            "https://images.unsplash.com/photo-1548013146-72479768bada?auto=format&fit=crop&w=600&q=80",
+          ),
+          cap(
+            6,
+            "Frises et bordures",
+            22,
+            "Assembler un ensemble cohérent.",
+            "https://images.unsplash.com/photo-1615529162924-f8605388461d?auto=format&fit=crop&w=600&q=80",
+          ),
         ],
       },
       {
@@ -328,7 +443,13 @@ export const FORMATIONS: Formation[] = [
         order: 5,
         title: "Projet final",
         capsules: [
-          cap(7, "Réaliser une table basse en zellige", 40, "Du croquis à la pose.", "https://images.unsplash.com/photo-1548013146-72479768bada?auto=format&fit=crop&w=600&q=80"),
+          cap(
+            7,
+            "Réaliser une table basse en zellige",
+            40,
+            "Du croquis à la pose.",
+            "https://images.unsplash.com/photo-1548013146-72479768bada?auto=format&fit=crop&w=600&q=80",
+          ),
         ],
       },
     ],
@@ -338,8 +459,7 @@ export const FORMATIONS: Formation[] = [
   {
     slug: "tapis-berbere",
     title: "Tissage du tapis berbère Beni Ourain",
-    shortDescription:
-      "Tissez votre premier tapis berbère à motifs symboliques du Moyen Atlas.",
+    shortDescription: "Tissez votre premier tapis berbère à motifs symboliques du Moyen Atlas.",
     longDescription:
       "Chaque tapis berbère raconte une histoire. Apprenez à monter votre métier, préparer la laine et tisser un authentique Beni Ourain aux motifs ancestraux.",
     category: "Tissage",
@@ -365,7 +485,13 @@ export const FORMATIONS: Formation[] = [
         order: 1,
         title: "Introduction",
         capsules: [
-          cap(1, "L'univers du tapis berbère", 14, "Beni Ourain, Boucherouite, Azilal.", "https://images.unsplash.com/photo-1600298881974-6be191ceeda1?auto=format&fit=crop&w=600&q=80"),
+          cap(
+            1,
+            "L'univers du tapis berbère",
+            14,
+            "Beni Ourain, Boucherouite, Azilal.",
+            "https://images.unsplash.com/photo-1600298881974-6be191ceeda1?auto=format&fit=crop&w=600&q=80",
+          ),
         ],
       },
       {
@@ -373,8 +499,20 @@ export const FORMATIONS: Formation[] = [
         order: 2,
         title: "Matériaux",
         capsules: [
-          cap(2, "Choisir sa laine", 16, "Laine de mouton du Moyen Atlas.", "https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=600&q=80"),
-          cap(3, "Teinture végétale", 22, "Henné, safran, indigo.", "https://images.unsplash.com/photo-1502741338009-cac2772e18bc?auto=format&fit=crop&w=600&q=80"),
+          cap(
+            2,
+            "Choisir sa laine",
+            16,
+            "Laine de mouton du Moyen Atlas.",
+            "https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=600&q=80",
+          ),
+          cap(
+            3,
+            "Teinture végétale",
+            22,
+            "Henné, safran, indigo.",
+            "https://images.unsplash.com/photo-1502741338009-cac2772e18bc?auto=format&fit=crop&w=600&q=80",
+          ),
         ],
       },
       {
@@ -382,7 +520,13 @@ export const FORMATIONS: Formation[] = [
         order: 3,
         title: "Le métier à tisser",
         capsules: [
-          cap(4, "Monter le métier vertical", 28, "Structure, tension et chaîne.", "https://images.unsplash.com/photo-1600298881974-6be191ceeda1?auto=format&fit=crop&w=600&q=80"),
+          cap(
+            4,
+            "Monter le métier vertical",
+            28,
+            "Structure, tension et chaîne.",
+            "https://images.unsplash.com/photo-1600298881974-6be191ceeda1?auto=format&fit=crop&w=600&q=80",
+          ),
         ],
       },
       {
@@ -390,8 +534,20 @@ export const FORMATIONS: Formation[] = [
         order: 4,
         title: "Tissage",
         capsules: [
-          cap(5, "Nœud berbère et rangée simple", 32, "Le geste fondamental.", "https://images.unsplash.com/photo-1600298881974-6be191ceeda1?auto=format&fit=crop&w=600&q=80"),
-          cap(6, "Motifs et symboles", 26, "Losanges, chevrons et étoiles.", "https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=600&q=80"),
+          cap(
+            5,
+            "Nœud berbère et rangée simple",
+            32,
+            "Le geste fondamental.",
+            "https://images.unsplash.com/photo-1600298881974-6be191ceeda1?auto=format&fit=crop&w=600&q=80",
+          ),
+          cap(
+            6,
+            "Motifs et symboles",
+            26,
+            "Losanges, chevrons et étoiles.",
+            "https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=600&q=80",
+          ),
         ],
       },
       {
@@ -399,7 +555,13 @@ export const FORMATIONS: Formation[] = [
         order: 5,
         title: "Projet final",
         capsules: [
-          cap(7, "Votre premier tapis (60×90 cm)", 42, "Du projet aux finitions.", "https://images.unsplash.com/photo-1600298881974-6be191ceeda1?auto=format&fit=crop&w=600&q=80"),
+          cap(
+            7,
+            "Votre premier tapis (60×90 cm)",
+            42,
+            "Du projet aux finitions.",
+            "https://images.unsplash.com/photo-1600298881974-6be191ceeda1?auto=format&fit=crop&w=600&q=80",
+          ),
         ],
       },
     ],
@@ -436,7 +598,13 @@ export const FORMATIONS: Formation[] = [
         order: 1,
         title: "Introduction",
         capsules: [
-          cap(1, "Bienvenue sur la colline des potiers", 10, "Découverte de Safi.", "https://images.unsplash.com/photo-1493106641515-6b5631de4bb9?auto=format&fit=crop&w=600&q=80"),
+          cap(
+            1,
+            "Bienvenue sur la colline des potiers",
+            10,
+            "Découverte de Safi.",
+            "https://images.unsplash.com/photo-1493106641515-6b5631de4bb9?auto=format&fit=crop&w=600&q=80",
+          ),
         ],
       },
       {
@@ -444,7 +612,13 @@ export const FORMATIONS: Formation[] = [
         order: 2,
         title: "Matériaux",
         capsules: [
-          cap(2, "L'argile rouge de Safi", 14, "Extraction et préparation.", "https://images.unsplash.com/photo-1516534775068-ba3e7458af70?auto=format&fit=crop&w=600&q=80"),
+          cap(
+            2,
+            "L'argile rouge de Safi",
+            14,
+            "Extraction et préparation.",
+            "https://images.unsplash.com/photo-1516534775068-ba3e7458af70?auto=format&fit=crop&w=600&q=80",
+          ),
         ],
       },
       {
@@ -452,7 +626,13 @@ export const FORMATIONS: Formation[] = [
         order: 3,
         title: "Outils du potier",
         capsules: [
-          cap(3, "Le tour, les mirettes, les éponges", 12, "Tour d'horizon.", "https://images.unsplash.com/photo-1493106641515-6b5631de4bb9?auto=format&fit=crop&w=600&q=80"),
+          cap(
+            3,
+            "Le tour, les mirettes, les éponges",
+            12,
+            "Tour d'horizon.",
+            "https://images.unsplash.com/photo-1493106641515-6b5631de4bb9?auto=format&fit=crop&w=600&q=80",
+          ),
         ],
       },
       {
@@ -460,8 +640,20 @@ export const FORMATIONS: Formation[] = [
         order: 4,
         title: "Démonstration",
         capsules: [
-          cap(4, "Centrer et monter un bol", 28, "Le premier geste.", "https://images.unsplash.com/photo-1493106641515-6b5631de4bb9?auto=format&fit=crop&w=600&q=80"),
-          cap(5, "Émaillage aux couleurs de Safi", 24, "Bleu, jaune, vert.", "https://images.unsplash.com/photo-1567538096631-e0c55bd6374c?auto=format&fit=crop&w=600&q=80"),
+          cap(
+            4,
+            "Centrer et monter un bol",
+            28,
+            "Le premier geste.",
+            "https://images.unsplash.com/photo-1493106641515-6b5631de4bb9?auto=format&fit=crop&w=600&q=80",
+          ),
+          cap(
+            5,
+            "Émaillage aux couleurs de Safi",
+            24,
+            "Bleu, jaune, vert.",
+            "https://images.unsplash.com/photo-1567538096631-e0c55bd6374c?auto=format&fit=crop&w=600&q=80",
+          ),
         ],
       },
       {
@@ -469,7 +661,13 @@ export const FORMATIONS: Formation[] = [
         order: 5,
         title: "Projet final",
         capsules: [
-          cap(6, "Un plat traditionnel Safi", 36, "Du tournage à la cuisson.", "https://images.unsplash.com/photo-1493106641515-6b5631de4bb9?auto=format&fit=crop&w=600&q=80"),
+          cap(
+            6,
+            "Un plat traditionnel Safi",
+            36,
+            "Du tournage à la cuisson.",
+            "https://images.unsplash.com/photo-1493106641515-6b5631de4bb9?auto=format&fit=crop&w=600&q=80",
+          ),
         ],
       },
     ],
@@ -506,7 +704,13 @@ export const FORMATIONS: Formation[] = [
         order: 1,
         title: "Introduction",
         capsules: [
-          cap(1, "Histoire de la calligraphie arabe", 15, "Des huit styles au Maghrébi.", "https://images.unsplash.com/photo-1519074002996-a69e7ac46a42?auto=format&fit=crop&w=600&q=80"),
+          cap(
+            1,
+            "Histoire de la calligraphie arabe",
+            15,
+            "Des huit styles au Maghrébi.",
+            "https://images.unsplash.com/photo-1519074002996-a69e7ac46a42?auto=format&fit=crop&w=600&q=80",
+          ),
         ],
       },
       {
@@ -514,7 +718,13 @@ export const FORMATIONS: Formation[] = [
         order: 2,
         title: "Matériaux",
         capsules: [
-          cap(2, "Papier, encre et qalam", 18, "Le trio du calligraphe.", "https://images.unsplash.com/photo-1516738901171-8eb4fc13bd20?auto=format&fit=crop&w=600&q=80"),
+          cap(
+            2,
+            "Papier, encre et qalam",
+            18,
+            "Le trio du calligraphe.",
+            "https://images.unsplash.com/photo-1516738901171-8eb4fc13bd20?auto=format&fit=crop&w=600&q=80",
+          ),
         ],
       },
       {
@@ -522,8 +732,20 @@ export const FORMATIONS: Formation[] = [
         order: 3,
         title: "Les lettres isolées",
         capsules: [
-          cap(3, "Les 6 lettres de base", 26, "Alif, Bâ', Râ'…", "https://images.unsplash.com/photo-1519074002996-a69e7ac46a42?auto=format&fit=crop&w=600&q=80"),
-          cap(4, "Les lettres à boucle", 22, "Wâw, Nûn, Yâ'.", "https://images.unsplash.com/photo-1519074002996-a69e7ac46a42?auto=format&fit=crop&w=600&q=80"),
+          cap(
+            3,
+            "Les 6 lettres de base",
+            26,
+            "Alif, Bâ', Râ'…",
+            "https://images.unsplash.com/photo-1519074002996-a69e7ac46a42?auto=format&fit=crop&w=600&q=80",
+          ),
+          cap(
+            4,
+            "Les lettres à boucle",
+            22,
+            "Wâw, Nûn, Yâ'.",
+            "https://images.unsplash.com/photo-1519074002996-a69e7ac46a42?auto=format&fit=crop&w=600&q=80",
+          ),
         ],
       },
       {
@@ -531,7 +753,13 @@ export const FORMATIONS: Formation[] = [
         order: 4,
         title: "Démonstration",
         capsules: [
-          cap(5, "Liaison des lettres et rythme", 24, "Fluidité et cadence.", "https://images.unsplash.com/photo-1519074002996-a69e7ac46a42?auto=format&fit=crop&w=600&q=80"),
+          cap(
+            5,
+            "Liaison des lettres et rythme",
+            24,
+            "Fluidité et cadence.",
+            "https://images.unsplash.com/photo-1519074002996-a69e7ac46a42?auto=format&fit=crop&w=600&q=80",
+          ),
         ],
       },
       {
@@ -539,7 +767,13 @@ export const FORMATIONS: Formation[] = [
         order: 5,
         title: "Projet final",
         capsules: [
-          cap(6, "Composer votre propre calligramme", 30, "De l'idée au tableau.", "https://images.unsplash.com/photo-1519074002996-a69e7ac46a42?auto=format&fit=crop&w=600&q=80"),
+          cap(
+            6,
+            "Composer votre propre calligramme",
+            30,
+            "De l'idée au tableau.",
+            "https://images.unsplash.com/photo-1519074002996-a69e7ac46a42?auto=format&fit=crop&w=600&q=80",
+          ),
         ],
       },
     ],
@@ -589,8 +823,20 @@ export const FORMATIONS: Formation[] = [
         order: 1,
         title: "Introduction & culture culinaire",
         capsules: [
-          cap(1, "Bienvenue dans la cuisine de Chef Nadia", 8, "Présentation du parcours, du matériel et de l'esprit de la formation.", "https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?auto=format&fit=crop&w=600&q=80"),
-          cap(2, "Histoire de la cuisine marocaine", 14, "Des influences berbères, andalouses, arabes et juives qui ont façonné la gastronomie du Royaume.", "https://images.unsplash.com/photo-1541544181051-e46607bc22a4?auto=format&fit=crop&w=600&q=80"),
+          cap(
+            1,
+            "Bienvenue dans la cuisine de Chef Nadia",
+            8,
+            "Présentation du parcours, du matériel et de l'esprit de la formation.",
+            "https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?auto=format&fit=crop&w=600&q=80",
+          ),
+          cap(
+            2,
+            "Histoire de la cuisine marocaine",
+            14,
+            "Des influences berbères, andalouses, arabes et juives qui ont façonné la gastronomie du Royaume.",
+            "https://images.unsplash.com/photo-1541544181051-e46607bc22a4?auto=format&fit=crop&w=600&q=80",
+          ),
         ],
       },
       {
@@ -598,9 +844,27 @@ export const FORMATIONS: Formation[] = [
         order: 2,
         title: "Les épices & le garde-manger",
         capsules: [
-          cap(3, "Le tour des 12 épices essentielles", 22, "Cumin, gingembre, curcuma, safran, cannelle : identifier, sentir, doser.", "https://images.unsplash.com/photo-1596040033229-a9821ebd058d?auto=format&fit=crop&w=600&q=80"),
-          cap(4, "Composer son ras el hanout maison", 18, "La recette de famille de Chef Nadia, avec ses 27 épices équilibrées.", "https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=600&q=80"),
-          cap(5, "Herbes fraîches et condiments", 14, "Coriandre, persil plat, olives, citrons confits, smen.", "https://images.unsplash.com/photo-1615485500704-8e990f9900e3?auto=format&fit=crop&w=600&q=80"),
+          cap(
+            3,
+            "Le tour des 12 épices essentielles",
+            22,
+            "Cumin, gingembre, curcuma, safran, cannelle : identifier, sentir, doser.",
+            "https://images.unsplash.com/photo-1596040033229-a9821ebd058d?auto=format&fit=crop&w=600&q=80",
+          ),
+          cap(
+            4,
+            "Composer son ras el hanout maison",
+            18,
+            "La recette de famille de Chef Nadia, avec ses 27 épices équilibrées.",
+            "https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=600&q=80",
+          ),
+          cap(
+            5,
+            "Herbes fraîches et condiments",
+            14,
+            "Coriandre, persil plat, olives, citrons confits, smen.",
+            "https://images.unsplash.com/photo-1615485500704-8e990f9900e3?auto=format&fit=crop&w=600&q=80",
+          ),
         ],
       },
       {
@@ -608,8 +872,20 @@ export const FORMATIONS: Formation[] = [
         order: 3,
         title: "Les outils traditionnels",
         capsules: [
-          cap(6, "Le tajine : choix, culottage, entretien", 16, "En terre de Salé, en fonte ou émaillé : lequel choisir ?", "https://images.unsplash.com/photo-1547573854-74d2a71d0826?auto=format&fit=crop&w=600&q=80"),
-          cap(7, "Le couscoussier et la gsaa", 12, "Les ustensiles incontournables du couscous du vendredi.", "https://images.unsplash.com/photo-1600891964092-4316c288032e?auto=format&fit=crop&w=600&q=80"),
+          cap(
+            6,
+            "Le tajine : choix, culottage, entretien",
+            16,
+            "En terre de Salé, en fonte ou émaillé : lequel choisir ?",
+            "https://images.unsplash.com/photo-1547573854-74d2a71d0826?auto=format&fit=crop&w=600&q=80",
+          ),
+          cap(
+            7,
+            "Le couscoussier et la gsaa",
+            12,
+            "Les ustensiles incontournables du couscous du vendredi.",
+            "https://images.unsplash.com/photo-1600891964092-4316c288032e?auto=format&fit=crop&w=600&q=80",
+          ),
         ],
       },
       {
@@ -617,12 +893,48 @@ export const FORMATIONS: Formation[] = [
         order: 4,
         title: "Démonstrations des grandes recettes",
         capsules: [
-          cap(8, "Tajine poulet - citron confit - olives", 32, "La recette étoile, expliquée geste par geste.", "https://images.unsplash.com/photo-1541544181051-e46607bc22a4?auto=format&fit=crop&w=600&q=80"),
-          cap(9, "Tajine kefta aux œufs", 24, "Une variante rapide et savoureuse pour les soirs de semaine.", "https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=600&q=80"),
-          cap(10, "Couscous du vendredi aux 7 légumes", 38, "La recette familiale, avec le roulage traditionnel de la semoule.", "https://images.unsplash.com/photo-1600891964092-4316c288032e?auto=format&fit=crop&w=600&q=80"),
-          cap(11, "Pastilla au poulet aux amandes", 34, "Le sucré-salé raffiné hérité d'Al-Andalus.", "https://images.unsplash.com/photo-1631452180519-c014fe946bc7?auto=format&fit=crop&w=600&q=80"),
-          cap(12, "Harira — la soupe du Ramadan", 22, "La soupe onctueuse aux légumineuses et à la coriandre.", "https://images.unsplash.com/photo-1547592180-85f173990554?auto=format&fit=crop&w=600&q=80"),
-          cap(13, "Msemen & thé à la menthe", 26, "Le pain feuilleté du petit-déjeuner, servi avec le rituel du thé.", "https://images.unsplash.com/photo-1590301157890-4810ed352733?auto=format&fit=crop&w=600&q=80"),
+          cap(
+            8,
+            "Tajine poulet - citron confit - olives",
+            32,
+            "La recette étoile, expliquée geste par geste.",
+            "https://images.unsplash.com/photo-1541544181051-e46607bc22a4?auto=format&fit=crop&w=600&q=80",
+          ),
+          cap(
+            9,
+            "Tajine kefta aux œufs",
+            24,
+            "Une variante rapide et savoureuse pour les soirs de semaine.",
+            "https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=600&q=80",
+          ),
+          cap(
+            10,
+            "Couscous du vendredi aux 7 légumes",
+            38,
+            "La recette familiale, avec le roulage traditionnel de la semoule.",
+            "https://images.unsplash.com/photo-1600891964092-4316c288032e?auto=format&fit=crop&w=600&q=80",
+          ),
+          cap(
+            11,
+            "Pastilla au poulet aux amandes",
+            34,
+            "Le sucré-salé raffiné hérité d'Al-Andalus.",
+            "https://images.unsplash.com/photo-1631452180519-c014fe946bc7?auto=format&fit=crop&w=600&q=80",
+          ),
+          cap(
+            12,
+            "Harira — la soupe du Ramadan",
+            22,
+            "La soupe onctueuse aux légumineuses et à la coriandre.",
+            "https://images.unsplash.com/photo-1547592180-85f173990554?auto=format&fit=crop&w=600&q=80",
+          ),
+          cap(
+            13,
+            "Msemen & thé à la menthe",
+            26,
+            "Le pain feuilleté du petit-déjeuner, servi avec le rituel du thé.",
+            "https://images.unsplash.com/photo-1590301157890-4810ed352733?auto=format&fit=crop&w=600&q=80",
+          ),
         ],
       },
       {
@@ -630,8 +942,20 @@ export const FORMATIONS: Formation[] = [
         order: 5,
         title: "Projet final — recevoir à la marocaine",
         capsules: [
-          cap(14, "Composer un menu complet en 3 services", 28, "Entrée, plat principal, dessert : équilibre et harmonie.", "https://images.unsplash.com/photo-1541544181051-e46607bc22a4?auto=format&fit=crop&w=600&q=80"),
-          cap(15, "Dressage & art de la table marocaine", 22, "De la nappe brodée au service du thé, l'accueil à la marocaine.", "https://images.unsplash.com/photo-1567337710282-00832b415979?auto=format&fit=crop&w=600&q=80"),
+          cap(
+            14,
+            "Composer un menu complet en 3 services",
+            28,
+            "Entrée, plat principal, dessert : équilibre et harmonie.",
+            "https://images.unsplash.com/photo-1541544181051-e46607bc22a4?auto=format&fit=crop&w=600&q=80",
+          ),
+          cap(
+            15,
+            "Dressage & art de la table marocaine",
+            22,
+            "De la nappe brodée au service du thé, l'accueil à la marocaine.",
+            "https://images.unsplash.com/photo-1567337710282-00832b415979?auto=format&fit=crop&w=600&q=80",
+          ),
         ],
       },
     ],
@@ -666,23 +990,82 @@ export const FORMATIONS: Formation[] = [
     skills: ["Tannage", "Teinture", "Couture main"],
     prerequisites: ["Aucun"],
     chapters: [
-      { id: "ch-1", order: 1, title: "Introduction",
-        capsules: [ cap(1, "Les tanneries Chouara", 14, "Un patrimoine vivant.", "https://images.unsplash.com/photo-1519415387722-a1c3bbef716c?auto=format&fit=crop&w=600&q=80") ],
-      },
-      { id: "ch-2", order: 2, title: "Matériaux",
-        capsules: [ cap(2, "Cuirs et fils de lin", 18, "Sélection et découpe.", "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?auto=format&fit=crop&w=600&q=80") ],
-      },
-      { id: "ch-3", order: 3, title: "Outils",
-        capsules: [ cap(3, "Alêne, tranchet, rifloir", 12, "L'atelier du maalem.", "https://images.unsplash.com/photo-1519415387722-a1c3bbef716c?auto=format&fit=crop&w=600&q=80") ],
-      },
-      { id: "ch-4", order: 4, title: "Démonstration",
+      {
+        id: "ch-1",
+        order: 1,
+        title: "Introduction",
         capsules: [
-          cap(4, "Teinture aux pigments végétaux", 24, "Grenade, indigo, safran.", "https://images.unsplash.com/photo-1519415387722-a1c3bbef716c?auto=format&fit=crop&w=600&q=80"),
-          cap(5, "Couture sellier au fil de lin", 30, "La couture inaltérable.", "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?auto=format&fit=crop&w=600&q=80"),
+          cap(
+            1,
+            "Les tanneries Chouara",
+            14,
+            "Un patrimoine vivant.",
+            "https://images.unsplash.com/photo-1519415387722-a1c3bbef716c?auto=format&fit=crop&w=600&q=80",
+          ),
         ],
       },
-      { id: "ch-5", order: 5, title: "Projet final",
-        capsules: [ cap(6, "Réaliser un porte-monnaie en cuir de Fès", 36, "Du patron au produit fini.", "https://images.unsplash.com/photo-1519415387722-a1c3bbef716c?auto=format&fit=crop&w=600&q=80") ],
+      {
+        id: "ch-2",
+        order: 2,
+        title: "Matériaux",
+        capsules: [
+          cap(
+            2,
+            "Cuirs et fils de lin",
+            18,
+            "Sélection et découpe.",
+            "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?auto=format&fit=crop&w=600&q=80",
+          ),
+        ],
+      },
+      {
+        id: "ch-3",
+        order: 3,
+        title: "Outils",
+        capsules: [
+          cap(
+            3,
+            "Alêne, tranchet, rifloir",
+            12,
+            "L'atelier du maalem.",
+            "https://images.unsplash.com/photo-1519415387722-a1c3bbef716c?auto=format&fit=crop&w=600&q=80",
+          ),
+        ],
+      },
+      {
+        id: "ch-4",
+        order: 4,
+        title: "Démonstration",
+        capsules: [
+          cap(
+            4,
+            "Teinture aux pigments végétaux",
+            24,
+            "Grenade, indigo, safran.",
+            "https://images.unsplash.com/photo-1519415387722-a1c3bbef716c?auto=format&fit=crop&w=600&q=80",
+          ),
+          cap(
+            5,
+            "Couture sellier au fil de lin",
+            30,
+            "La couture inaltérable.",
+            "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?auto=format&fit=crop&w=600&q=80",
+          ),
+        ],
+      },
+      {
+        id: "ch-5",
+        order: 5,
+        title: "Projet final",
+        capsules: [
+          cap(
+            6,
+            "Réaliser un porte-monnaie en cuir de Fès",
+            36,
+            "Du patron au produit fini.",
+            "https://images.unsplash.com/photo-1519415387722-a1c3bbef716c?auto=format&fit=crop&w=600&q=80",
+          ),
+        ],
       },
     ],
     instructor: INSTRUCTORS.omar,
@@ -691,8 +1074,7 @@ export const FORMATIONS: Formation[] = [
   {
     slug: "caftan-marocain",
     title: "Couture du caftan marocain moderne",
-    shortDescription:
-      "Créez un caftan sur mesure — patronage, montage, broderie et finitions.",
+    shortDescription: "Créez un caftan sur mesure — patronage, montage, broderie et finitions.",
     longDescription:
       "Le caftan marocain est l'un des plus beaux vêtements du monde. Cette formation vous accompagne dans la création complète d'un caftan sur mesure.",
     category: "Couture",
@@ -714,26 +1096,89 @@ export const FORMATIONS: Formation[] = [
     skills: ["Patronage", "Montage", "Sfifa", "Broderie main"],
     prerequisites: ["Bases de couture machine et main"],
     chapters: [
-      { id: "ch-1", order: 1, title: "Introduction",
-        capsules: [ cap(1, "L'univers du caftan", 12, "Du Takchita au caftan moderne.", "https://images.unsplash.com/photo-1583912086096-8c60d75a53f9?auto=format&fit=crop&w=600&q=80") ],
-      },
-      { id: "ch-2", order: 2, title: "Matériaux",
-        capsules: [ cap(2, "Tissus, doublures et akaad", 20, "Sélection premium.", "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?auto=format&fit=crop&w=600&q=80") ],
-      },
-      { id: "ch-3", order: 3, title: "Patronage",
+      {
+        id: "ch-1",
+        order: 1,
+        title: "Introduction",
         capsules: [
-          cap(3, "Prendre les mesures", 18, "Précision et confort.", "https://images.unsplash.com/photo-1583912086096-8c60d75a53f9?auto=format&fit=crop&w=600&q=80"),
-          cap(4, "Tracer le patron", 26, "Buste, manches, jupe.", "https://images.unsplash.com/photo-1583912086096-8c60d75a53f9?auto=format&fit=crop&w=600&q=80"),
+          cap(
+            1,
+            "L'univers du caftan",
+            12,
+            "Du Takchita au caftan moderne.",
+            "https://images.unsplash.com/photo-1583912086096-8c60d75a53f9?auto=format&fit=crop&w=600&q=80",
+          ),
         ],
       },
-      { id: "ch-4", order: 4, title: "Démonstration",
+      {
+        id: "ch-2",
+        order: 2,
+        title: "Matériaux",
         capsules: [
-          cap(5, "Montage du caftan", 40, "Assemblage étape par étape.", "https://images.unsplash.com/photo-1583912086096-8c60d75a53f9?auto=format&fit=crop&w=600&q=80"),
-          cap(6, "Sfifa et akaad — les finitions", 30, "L'identité du caftan.", "https://images.unsplash.com/photo-1583912086096-8c60d75a53f9?auto=format&fit=crop&w=600&q=80"),
+          cap(
+            2,
+            "Tissus, doublures et akaad",
+            20,
+            "Sélection premium.",
+            "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?auto=format&fit=crop&w=600&q=80",
+          ),
         ],
       },
-      { id: "ch-5", order: 5, title: "Projet final",
-        capsules: [ cap(7, "Votre caftan personnel", 50, "De la coupe au défilé.", "https://images.unsplash.com/photo-1583912086096-8c60d75a53f9?auto=format&fit=crop&w=600&q=80") ],
+      {
+        id: "ch-3",
+        order: 3,
+        title: "Patronage",
+        capsules: [
+          cap(
+            3,
+            "Prendre les mesures",
+            18,
+            "Précision et confort.",
+            "https://images.unsplash.com/photo-1583912086096-8c60d75a53f9?auto=format&fit=crop&w=600&q=80",
+          ),
+          cap(
+            4,
+            "Tracer le patron",
+            26,
+            "Buste, manches, jupe.",
+            "https://images.unsplash.com/photo-1583912086096-8c60d75a53f9?auto=format&fit=crop&w=600&q=80",
+          ),
+        ],
+      },
+      {
+        id: "ch-4",
+        order: 4,
+        title: "Démonstration",
+        capsules: [
+          cap(
+            5,
+            "Montage du caftan",
+            40,
+            "Assemblage étape par étape.",
+            "https://images.unsplash.com/photo-1583912086096-8c60d75a53f9?auto=format&fit=crop&w=600&q=80",
+          ),
+          cap(
+            6,
+            "Sfifa et akaad — les finitions",
+            30,
+            "L'identité du caftan.",
+            "https://images.unsplash.com/photo-1583912086096-8c60d75a53f9?auto=format&fit=crop&w=600&q=80",
+          ),
+        ],
+      },
+      {
+        id: "ch-5",
+        order: 5,
+        title: "Projet final",
+        capsules: [
+          cap(
+            7,
+            "Votre caftan personnel",
+            50,
+            "De la coupe au défilé.",
+            "https://images.unsplash.com/photo-1583912086096-8c60d75a53f9?auto=format&fit=crop&w=600&q=80",
+          ),
+        ],
       },
     ],
     instructor: INSTRUCTORS.saida,
@@ -835,8 +1280,7 @@ export function saveFormations(list: Formation[]) {
   }
 }
 
-export const findFormation = (slug: string) =>
-  getFormations().find((f) => f.slug === slug);
+export const findFormation = (slug: string) => getFormations().find((f) => f.slug === slug);
 
 export const CATEGORIES = Array.from(new Set(FORMATIONS.map((f) => f.category))).sort();
 export const LEVELS: Level[] = ["Débutant", "Intermédiaire", "Avancé"];
@@ -877,4 +1321,3 @@ export function emptyFormation(): Formation {
     createdAt: new Date().toISOString(),
   };
 }
-
