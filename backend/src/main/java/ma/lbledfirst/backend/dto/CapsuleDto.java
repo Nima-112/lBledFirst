@@ -11,24 +11,24 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class CapsuleDto {
-
     // null pour une capsule pas encore créée
     private Long id;
-
     @NotNull(message = "L'ordre de la capsule est obligatoire")
     private Integer order;
-
     @NotBlank(message = "Le titre de la capsule est obligatoire")
     private String title;
-
     private String description;
-
     @NotNull(message = "La durée de la capsule est obligatoire")
     @Positive(message = "La durée doit être positive")
     private Integer duration;
-
     private String thumbnail;
-
     // n'est renvoyée au client que si l'utilisateur a acheté la formation
     private String videoUrl;
+
+    // "PENDING" | "PROCESSING" | "DONE" | "FAILED" — lets the frontend show a
+    // "translation in progress" state instead of silently failing. Only
+    // meaningful for capsules going through the AI transcription/translation
+    // pipeline (CapsuleProcessingService) — absent from the base dev branch,
+    // which doesn't have that pipeline.
+    private String processingStatus;
 }

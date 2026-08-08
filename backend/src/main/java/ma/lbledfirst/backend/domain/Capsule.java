@@ -23,29 +23,35 @@ import lombok.Setter;
 @AllArgsConstructor
 @Builder
 public class Capsule {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
     @Column(name = "position", nullable = false)
     private Integer order;
-
     @Column(nullable = false)
     private String title;
-
     @Column(columnDefinition = "TEXT")
     private String description;
-
     // en minutes
     @Column(nullable = false)
     private Integer duration;
-
     private String thumbnail;
-
     // URL réelle de la vidéo — ne devrait être exposée qu'aux utilisateurs
     // ayant acheté la formation (cf. FormationService)
     private String videoUrl;
+
+    @Column(columnDefinition = "TEXT")
+    private String transcript;
+
+    @Column(name = "translation_json", columnDefinition = "json")
+    private String translationJson; // stored as raw JSON string, parsed/built via Jackson in the service
+
+    @Column(name = "original_language", length = 10)
+    private String originalLanguage;
+
+    @Builder.Default
+    @Column(name = "processing_status", nullable = false, length = 20)
+    private String processingStatus = "PENDING";
 
     @JsonIgnore
     @ManyToOne(optional = false)
