@@ -67,7 +67,7 @@ export function MoroccoMap({ onSelectRegion }: { onSelectRegion: (regionId: stri
   }
 
   return (
-    <section id="map" className="relative overflow-hidden bg-secondary/5 py-20 sm:py-28">
+    <section id="map" className="relative overflow-hidden bg-secondary/5 py-20 sm:py-28 notranslate">
       {/* soft decorative glows */}
       <div className="pointer-events-none absolute -left-24 top-1/3 h-72 w-72 rounded-full bg-primary/10 blur-3xl" />
       <div className="pointer-events-none absolute -right-24 bottom-1/4 h-72 w-72 rounded-full bg-secondary/10 blur-3xl" />

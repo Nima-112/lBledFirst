@@ -17,7 +17,7 @@ export function Footer() {
   };
 
   return (
-    <footer className="bg-ink text-card">
+    <footer className="bg-ink text-card notranslate">
       <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6">
         <div className="grid gap-12 lg:grid-cols-[1.4fr_1fr_1.6fr]">
           {/* Brand */}
@@ -46,8 +46,8 @@ export function Footer() {
               {t("foot.explore")}
             </h4>
             <ul className="mt-4 space-y-2.5 text-card/80">
-              <li><Link to="/experiences" className="hover:text-saffron">{t("nav.experiences")}</Link></li>
-              <li><Link to="/formations" className="hover:text-saffron">{t("nav.formations")}</Link></li>
+              <li><a href="/experiences" className="hover:text-saffron">{t("nav.experiences")}</a></li>
+              <li><a href="/formations" className="hover:text-saffron">{t("nav.formations")}</a></li>
             </ul>
           </div>
 

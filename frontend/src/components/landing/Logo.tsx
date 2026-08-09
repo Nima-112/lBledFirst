@@ -7,7 +7,7 @@ type LogoProps = {
 
 export function Logo({ className, showText = true }: LogoProps) {
   return (
-    <span className={`inline-flex items-center gap-2.5 ${className ?? ""}`}>
+    <span className={`inline-flex items-center gap-2.5 notranslate ${className ?? ""}`}>
       <img
         src={logoMark}
         alt="L'Bled First fingerprint logo"

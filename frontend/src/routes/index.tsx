@@ -47,9 +47,9 @@ function Index() {
         <Hero onDiscover={() => scrollTo("map")} />
         <WhatIs />
         <MoroccoMap
-          onSelectRegion={(regionId) =>
-            navigate({ to: "/experiences", search: { region: regionId } })
-          }
+          onSelectRegion={(regionId) => {
+            window.location.href = `/experiences?region=${encodeURIComponent(regionId)}`;
+          }}
         />
         <Experiences />
         <HorizontalGallery />

@@ -29,10 +29,14 @@ import { buttonVariants } from "@/components/ui/button";
 type ExperiencesSearch = { region?: string; category?: string };
 
 export const Route = createFileRoute("/experiences")({
-  validateSearch: (search: Record<string, unknown>): ExperiencesSearch => ({
-    region: typeof search.region === "string" ? search.region : undefined,
-    category: typeof search.category === "string" ? search.category : undefined,
-  }),
+  validateSearch: (search: Record<string, unknown>): ExperiencesSearch => {
+    const r = search?.region;
+    const c = search?.category;
+    return {
+      region: r != null && r !== "" ? String(r) : undefined,
+      category: c != null && c !== "" ? String(c) : undefined,
+    };
+  },
   head: () => ({
     meta: [
       { title: "Expériences — L'Bled First" },
@@ -122,7 +126,7 @@ function ExperiencesPage() {
       .catch(() => setRegions([]));
   }, []);
 
-  const activeRegion = regions.find((r) => r.id === regionId);
+  const activeRegion = regions.find((r) => r.id === regionId || r.enumName === regionId);
 
   // Reset to page 0 whenever the region or category filter changes.
   useEffect(() => {
@@ -137,7 +141,9 @@ function ExperiencesPage() {
       setError(null);
       try {
         if (regionId) {
-          const list = await getExperiencesByRegion(regionId);
+          const matched = regions.find((r) => r.id === regionId || r.enumName === regionId);
+          const targetRegionId = matched ? matched.id : regionId;
+          const list = await getExperiencesByRegion(targetRegionId);
           if (cancelled) return;
           setExperiences(list);
           setTotalElements(list.length);
@@ -169,7 +175,7 @@ function ExperiencesPage() {
     return () => {
       cancelled = true;
     };
-  }, [page, reloadKey, showingDetail, regionId, category]);
+  }, [page, reloadKey, showingDetail, regionId, category, regions]);
 
   const filtered = useMemo(() => {
     let list = [...experiences];

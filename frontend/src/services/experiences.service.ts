@@ -78,27 +78,27 @@ export type FrontExperience = {
 
 const toFront = (e: ApiExperience): FrontExperience => ({
   id: String(e.id),
-  hostId: String(e.host.id),
-  hostName: e.host.name,
-  title: e.title,
-  description: e.description,
-  price: Number(e.price),
-  durationDays: e.duration,
-  region: e.city,
-  regionId: e.region ? String(e.region.id) : "",
-  regionName: e.region?.name,
-  category: e.category,
-  latitude: Number(e.latitude ?? 0),
-  longitude: Number(e.longitude ?? 0),
-  status: e.status,
-  images: e.coverImages ?? [],
-  program: (e.dayPrograms ?? []).map((d) => ({
+  hostId: String(e?.host?.id ?? 0),
+  hostName: e?.host?.name ?? "",
+  title: e?.title ?? "",
+  description: e?.description ?? "",
+  price: Number(e?.price ?? 0),
+  durationDays: e?.duration ?? 1,
+  region: e?.city ?? "",
+  regionId: e?.region ? String(e.region.id) : "",
+  regionName: e?.region?.name ?? "",
+  category: e?.category ?? "",
+  latitude: Number(e?.latitude ?? 0),
+  longitude: Number(e?.longitude ?? 0),
+  status: e?.status ?? "published",
+  images: e?.coverImages ?? [],
+  program: (e?.dayPrograms ?? []).map((d) => ({
     day: d.dayNumber,
-    title: d.title,
+    title: d.title ?? "",
     description: d.description ?? "",
     images: d.imagesCsv ? d.imagesCsv.split(",").filter(Boolean) : [],
   })),
-  createdAt: e.createdAt,
+  createdAt: e?.createdAt ?? new Date().toISOString(),
 });
 
 const toPayload = (e: FrontExperience): ApiExperiencePayload => ({
@@ -131,8 +131,18 @@ export async function getExperienceById(id: string): Promise<FrontExperience> {
 }
 
 export async function getExperiencesByRegion(regionId: string): Promise<FrontExperience[]> {
-  const { data } = await api.get<ApiExperience[]>(`/experiences/by-region/${regionId}`);
-  return data.map(toFront);
+  try {
+    const { data } = await api.get<ApiExperience[]>(`/experiences/by-region/${regionId}`);
+    return data.map(toFront);
+  } catch {
+    const all = await getExperiencesList();
+    return all.filter(
+      (e) =>
+        e.regionId === regionId ||
+        (e.regionName || "").toLowerCase() === regionId.toLowerCase() ||
+        (e.region || "").toLowerCase() === regionId.toLowerCase(),
+    );
+  }
 }
 
 export type PagedExperiences = {

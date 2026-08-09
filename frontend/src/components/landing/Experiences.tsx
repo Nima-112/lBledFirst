@@ -96,14 +96,7 @@ export function Experiences() {
   };
 
   const handleActivityClick = (actName: string) => {
-    try {
-      navigate({
-        to: "/experiences",
-        search: { category: actName },
-      });
-    } catch {
-      window.location.href = `/experiences?category=${encodeURIComponent(actName)}`;
-    }
+    window.location.href = `/experiences?category=${encodeURIComponent(actName)}`;
   };
 
   return (

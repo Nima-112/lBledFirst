@@ -173,13 +173,13 @@ export function Training() {
 
             {/* CTA to see all formations */}
             <div className="mt-12 text-center">
-              <Link
-                to="/formations"
+              <a
+                href="/formations"
                 className="inline-flex items-center gap-2 rounded-full bg-primary px-7 py-3 text-sm font-semibold text-primary-foreground shadow-warm transition-all hover:scale-105 hover:shadow-lg"
               >
                 {t("training.viewAll")}
                 <span className="transition-transform group-hover:translate-x-1">→</span>
-              </Link>
+              </a>
             </div>
           </>
         )}

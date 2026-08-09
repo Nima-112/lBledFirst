@@ -41,7 +41,7 @@ export function Navbar({ onDiscover, hero = false }: { onDiscover: () => void; h
       initial={{ y: -80, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.5, ease: "easeOut" }}
-      className={`fixed inset-x-0 top-0 z-50 transition-colors duration-300 ${
+      className={`fixed inset-x-0 top-0 z-50 transition-colors duration-300 notranslate ${
         dark ? "border-b border-border/60 bg-background/85 backdrop-blur-xl" : "bg-transparent"
       }`}
     >
@@ -51,22 +51,22 @@ export function Navbar({ onDiscover, hero = false }: { onDiscover: () => void; h
         </a>
 
         <div className="hidden items-center gap-7 lg:flex">
-          <Link
-            to="/experiences"
+          <a
+            href="/experiences"
             className={`story-link text-sm font-medium transition-colors ${
               dark ? "text-foreground/80 hover:text-foreground" : "text-card/90 hover:text-card"
             }`}
           >
             {t("nav.experiences")}
-          </Link>
-          <Link
-            to="/formations"
+          </a>
+          <a
+            href="/formations"
             className={`story-link text-sm font-medium transition-colors ${
               dark ? "text-foreground/80 hover:text-foreground" : "text-card/90 hover:text-card"
             }`}
           >
             {t("nav.formations")}
-          </Link>
+          </a>
         </div>
 
         <div className="flex items-center gap-2">
@@ -113,20 +113,18 @@ export function Navbar({ onDiscover, hero = false }: { onDiscover: () => void; h
           className="border-t border-border bg-background/95 backdrop-blur-xl lg:hidden"
         >
           <div className="flex flex-col gap-1 px-4 py-3">
-            <Link
-              to="/experiences"
-              onClick={() => setOpen(false)}
+            <a
+              href="/experiences"
               className="rounded-xl px-3 py-3 text-sm font-medium text-foreground hover:bg-muted"
             >
               {t("nav.experiences")}
-            </Link>
-            <Link
-              to="/formations"
-              onClick={() => setOpen(false)}
+            </a>
+            <a
+              href="/formations"
               className="rounded-xl px-3 py-3 text-sm font-medium text-foreground hover:bg-muted"
             >
               {t("nav.formations")}
-            </Link>
+            </a>
 
             {isTourist ? (
               <MobileTouristLinks onClose={() => setOpen(false)} />
