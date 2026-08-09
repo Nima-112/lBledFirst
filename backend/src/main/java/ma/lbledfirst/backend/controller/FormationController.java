@@ -34,6 +34,12 @@ public class FormationController {
         return formationService.getFormationBySlug(slug, email);
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping("/{slug}/edit")
+    public FormationDetailResponse getFormationForEdit(@PathVariable String slug) {
+        return formationService.getFormationForEdit(slug);
+    }
+
     // ---- Administration (admin uniquement) ----------------------------------
 
     @PreAuthorize("hasRole('ADMIN')")
@@ -86,10 +92,20 @@ public class FormationController {
         return ResponseEntity.ok(Map.of("completed", completed));
     }
 
+    @GetMapping("/{slug}/capsules/{capsuleId}/captions")
+    public ResponseEntity<com.fasterxml.jackson.databind.JsonNode> getCapsuleCaptions(
+            @PathVariable String slug,
+            @PathVariable Long capsuleId,
+            Authentication authentication) {
+        String email = authentication != null ? authentication.getName() : null;
+        return ResponseEntity.ok(formationService.getCapsuleCaptions(slug, capsuleId, email));
+    }
+
     // ---- Favoris (utilisateur courant) ----------------------------------------
 
     @PostMapping("/{slug}/favorite")
-    public ResponseEntity<Map<String, Boolean>> toggleFavorite(@PathVariable String slug, Authentication authentication) {
+    public ResponseEntity<Map<String, Boolean>> toggleFavorite(@PathVariable String slug,
+            Authentication authentication) {
         boolean favorited = formationService.toggleFavorite(slug, authentication.getName());
         return ResponseEntity.ok(Map.of("favorited", favorited));
     }

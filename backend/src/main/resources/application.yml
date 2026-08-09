@@ -32,11 +32,7 @@ server:
   port: 8080
 
 cors:
-  allowed-origins:
-    - http://localhost:3000
-    - http://localhost:8081
-    - http://localhost:8082
-    - https://tondomaine.com
+  allowed-origins: http://localhost:3000,http://localhost:8081,http://localhost:8082,https://tondomaine.com
 
 springdoc:
   swagger-ui:

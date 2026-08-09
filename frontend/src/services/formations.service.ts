@@ -331,6 +331,14 @@ export async function toggleCapsuleCompletionApi(
   return data.completed;
 }
 
+export type CaptionSegment = { start: number; end: number; text: string };
+export type CaptionsMap = Record<string, CaptionSegment[]>;
+
+export async function getCapsuleCaptionsApi(slug: string, capsuleId: string): Promise<CaptionsMap> {
+  const { data } = await api.get<CaptionsMap>(`/formations/${slug}/capsules/${capsuleId}/captions`);
+  return data;
+}
+
 export async function toggleFormationFavoriteApi(slug: string): Promise<boolean> {
   const { data } = await api.post<{ favorited: boolean }>(`/formations/${slug}/favorite`);
   return data.favorited;

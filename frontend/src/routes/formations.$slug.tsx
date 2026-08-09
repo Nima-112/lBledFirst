@@ -18,18 +18,15 @@ import {
   Users,
   X,
 } from "lucide-react";
-import {
-  formatDuration,
-  totalCapsules,
-  type Formation,
-  type Capsule,
-} from "@/lib/formations";
+import { formatDuration, totalCapsules, type Formation, type Capsule } from "@/lib/formations";
 import {
   getFormationDetail,
   purchaseFormationApi,
   getFormationProgressApi,
   toggleCapsuleCompletionApi,
+  getCapsuleCaptionsApi,
 } from "@/services/formations.service";
+import { CaptionedVideoPlayer } from "@/components/formations/CaptionedVideoPlayer";
 import {
   getReviewsForFormation,
   createFormationReview,
@@ -124,7 +121,11 @@ function FormationDetail() {
       setCheckoutOpen(true);
       setCheckoutTrigger(false);
       if (typeof window !== "undefined") {
-        try { window.history.replaceState(null, "", window.location.pathname); } catch { /* ignore */ }
+        try {
+          window.history.replaceState(null, "", window.location.pathname);
+        } catch {
+          /* ignore */
+        }
       }
     }
   }, [authReady, f, purchased, user, checkoutTrigger, navigate]);
@@ -171,7 +172,6 @@ function FormationDetail() {
       </div>
     );
   }
-
 
   return (
     <div className="bg-grain min-h-screen bg-background">
@@ -225,7 +225,8 @@ function FormationDetail() {
                   <Clock className="h-4 w-4" /> {formatDuration(f.totalDuration)}
                 </span>
                 <span className="inline-flex items-center gap-1.5">
-                  <BookOpen className="h-4 w-4" /> {capsuleCount} capsules · {f.chapters.length} chapitres
+                  <BookOpen className="h-4 w-4" /> {capsuleCount} capsules · {f.chapters.length}{" "}
+                  chapitres
                 </span>
               </div>
             </motion.div>
@@ -361,7 +362,9 @@ function FormationDetail() {
                           </p>
                           <p className="text-xs text-muted-foreground">
                             {ch.capsules.length} capsules ·{" "}
-                            {formatDuration(ch.capsules.reduce((s: number, c: Capsule) => s + c.duration, 0))}
+                            {formatDuration(
+                              ch.capsules.reduce((s: number, c: Capsule) => s + c.duration, 0),
+                            )}
                           </p>
                         </div>
                         <ChevronDown
@@ -522,6 +525,7 @@ function FormationDetail() {
 
       {/* Video player modal */}
       <VideoModal
+        slug={slug}
         capsule={activeCapsule}
         onClose={() => setActiveCapsule(null)}
         onComplete={(id) => {
@@ -546,12 +550,20 @@ function SectionKicker({ children, small }: { children: React.ReactNode; small?:
       <span className="font-hand text-primary" style={{ fontSize: small ? "1.25rem" : "1.75rem" }}>
         {children}
       </span>
-      <div className={`mt-1 h-1 rounded-full bg-gradient-to-r from-primary to-saffron ${small ? "w-10" : "w-16"}`} />
+      <div
+        className={`mt-1 h-1 rounded-full bg-gradient-to-r from-primary to-saffron ${small ? "w-10" : "w-16"}`}
+      />
     </div>
   );
 }
 
-function BannerChip({ children, tone = "default" }: { children: React.ReactNode; tone?: "default" | "saffron" }) {
+function BannerChip({
+  children,
+  tone = "default",
+}: {
+  children: React.ReactNode;
+  tone?: "default" | "saffron";
+}) {
   const cls =
     tone === "saffron"
       ? "bg-saffron text-ink"
@@ -747,8 +759,8 @@ function CheckoutModal({
                 )}
                 {method === "wire" && (
                   <p className="rounded-xl border border-dashed border-border bg-background p-4 text-xs text-muted-foreground">
-                    Les coordonnées bancaires vous seront envoyées par email. L'accès
-                    sera débloqué à réception du virement.
+                    Les coordonnées bancaires vous seront envoyées par email. L'accès sera débloqué
+                    à réception du virement.
                   </p>
                 )}
 
@@ -773,16 +785,27 @@ function CheckoutModal({
 }
 
 function VideoModal({
+  slug,
   capsule,
   onClose,
   onComplete,
   isDone,
 }: {
+  slug: string;
   capsule: Capsule | null;
   onClose: () => void;
   onComplete: (id: string) => void;
   isDone: (id: string) => boolean;
 }) {
+  // Captions are only available once the AI pipeline has finished processing
+  // this capsule's video (processingStatus === "DONE"). Fetching earlier
+  // would 404 or return an empty translation_json.
+  const captionsQuery = useQuery({
+    queryKey: ["formations", slug, "capsules", capsule?.id, "captions"],
+    queryFn: () => getCapsuleCaptionsApi(slug, capsule!.id),
+    enabled: !!capsule && capsule.processingStatus === "DONE",
+  });
+
   return (
     <AnimatePresence>
       {capsule && (
@@ -802,12 +825,10 @@ function VideoModal({
           >
             <div className="relative aspect-video bg-ink">
               {capsule.videoUrl ? (
-                <video
+                <CaptionedVideoPlayer
                   src={capsule.videoUrl}
-                  controls
-                  autoPlay
-                  className="h-full w-full"
                   poster={capsule.thumbnail || undefined}
+                  captions={captionsQuery.data}
                 />
               ) : (
                 <>
@@ -872,7 +893,8 @@ function CertificateModal({
   formation: Formation;
 }) {
   const code = useMemo(
-    () => `LBF-${formation.slug.slice(0, 4).toUpperCase()}-${Date.now().toString(36).slice(-6).toUpperCase()}`,
+    () =>
+      `LBF-${formation.slug.slice(0, 4).toUpperCase()}-${Date.now().toString(36).slice(-6).toUpperCase()}`,
     [formation.slug, open],
   );
   const today = new Date().toLocaleDateString("fr-FR", {
@@ -906,7 +928,8 @@ function CertificateModal({
               <X className="h-5 w-5" />
             </button>
 
-            <div className="absolute inset-0 -z-10 opacity-[0.06]"
+            <div
+              className="absolute inset-0 -z-10 opacity-[0.06]"
               style={{
                 backgroundImage:
                   "radial-gradient(circle at 20% 30%, currentColor 0, transparent 40%), radial-gradient(circle at 80% 70%, currentColor 0, transparent 40%)",
@@ -936,7 +959,8 @@ function CertificateModal({
                 « {formation.title} »
               </p>
               <p className="mt-3 text-sm text-muted-foreground">
-                animée par <span className="font-semibold text-foreground">{formation.instructor.name}</span>
+                animée par{" "}
+                <span className="font-semibold text-foreground">{formation.instructor.name}</span>
               </p>
 
               <div className="mt-8 flex items-end justify-between gap-4 border-t border-border/60 pt-6 text-left">
@@ -1047,8 +1071,8 @@ function FormationReviews({
           )}
           {isLoggedIn && !completed && (
             <p className="mt-2 text-sm text-muted-foreground">
-              Vous pourrez publier un avis une fois que vous aurez terminé toutes les capsules de
-              la formation.
+              Vous pourrez publier un avis une fois que vous aurez terminé toutes les capsules de la
+              formation.
             </p>
           )}
           {isLoggedIn && completed && alreadyReviewed && (
@@ -1072,9 +1096,7 @@ function FormationReviews({
                 >
                   <Star
                     className={`h-6 w-6 transition ${
-                      n <= (hoverRating || rating)
-                        ? "fill-saffron text-saffron"
-                        : "text-muted"
+                      n <= (hoverRating || rating) ? "fill-saffron text-saffron" : "text-muted"
                     }`}
                   />
                 </button>
