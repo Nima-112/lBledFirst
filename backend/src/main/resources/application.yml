@@ -65,3 +65,4 @@ openai:
   api-key: ${OPENAI_API_KEY:changeme}
   model-transcription: whisper-1
   model-translation: gpt-4o-mini
+  # whisper-language: ar

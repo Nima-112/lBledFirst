@@ -29,6 +29,12 @@ public class FileUploadController {
     private static final Pattern SAFE_NAME = Pattern.compile("[^A-Za-z0-9._-]");
     private static final long MAX_VIDEO_BYTES = 500L * 1024L * 1024L;
 
+    private final ma.lbledfirst.backend.service.VideoMetadataService videoMetadataService;
+
+    public FileUploadController(ma.lbledfirst.backend.service.VideoMetadataService videoMetadataService) {
+        this.videoMetadataService = videoMetadataService;
+    }
+
     @Value("${app.upload.dir:/app/uploads/videos}")
     private String uploadDir;
 
@@ -74,7 +80,8 @@ public class FileUploadController {
         String original = file.getOriginalFilename() == null ? "video.mp4" : file.getOriginalFilename();
         String ext = extractExtension(original);
         String safe = SAFE_NAME.matcher(original.replaceAll("\\.[^.]+$", "")).replaceAll("_");
-        if (safe.isBlank()) safe = "video";
+        if (safe.isBlank())
+            safe = "video";
         String fileName = UUID.randomUUID() + "_" + safe + "." + ext;
 
         Path dest = uploadPath.resolve(fileName).normalize();
@@ -84,21 +91,65 @@ public class FileUploadController {
         try (var in = file.getInputStream()) {
             Files.copy(in, dest, StandardCopyOption.REPLACE_EXISTING);
         }
+
+        // Remux (NOT re-encode) into "faststart" MP4: moves the metadata (moov atom)
+        // to the front of the file so the browser can read duration/seek info from
+        // the first few KB instead of buffering toward the end first. This is what
+        // was causing playback to sit at 00:00/00:00 on a static thumbnail for
+        // several seconds. -c copy means no re-encoding — fast (seconds) and lossless.
+        try {
+            remuxForFastStart(dest);
+        } catch (Exception e) {
+            log.warn("Remux faststart échoué pour {} — la vidéo reste utilisable mais peut démarrer lentement : {}",
+                    fileName, e.getMessage());
+        }
+
         String url = "/uploads/videos/" + fileName;
         log.info("Vidéo uploadée par admin: {} ({} octets) → {}", original, file.getSize(), url);
-        return ResponseEntity.ok(Map.of(
+
+        // Best-effort duration detection via ffprobe: if it fails for any reason
+        // (corrupt file, ffprobe not on PATH, unusual codec), don't fail the whole
+        // upload — the admin can still enter the duration manually in the editor.
+        java.util.HashMap<String, Object> response = new java.util.HashMap<>(Map.of(
                 "url", url,
                 "name", original,
                 "size", file.getSize(),
-                "contentType", contentType
-        ));
+                "contentType", contentType));
+        try {
+            int durationMinutes = videoMetadataService.getDurationMinutes(dest.toString());
+            response.put("durationMinutes", durationMinutes);
+        } catch (Exception e) {
+            log.warn("Impossible de détecter la durée de la vidéo {} : {}", fileName, e.getMessage());
+        }
+        return ResponseEntity.ok(response);
+    }
+
+    private void remuxForFastStart(Path videoPath) throws java.io.IOException, InterruptedException {
+        Path tempOutput = videoPath.resolveSibling(videoPath.getFileName() + ".faststart.mp4");
+        ProcessBuilder pb = new ProcessBuilder(
+                "ffmpeg", "-y", "-i", videoPath.toString(),
+                "-c", "copy", "-movflags", "+faststart",
+                tempOutput.toString());
+        pb.redirectErrorStream(true);
+        Process process = pb.start();
+        try (var reader = process.inputReader()) {
+            reader.lines().forEach(line -> log.debug("ffmpeg faststart: {}", line));
+        }
+        int exitCode = process.waitFor();
+        if (exitCode != 0 || !Files.exists(tempOutput) || Files.size(tempOutput) == 0) {
+            Files.deleteIfExists(tempOutput);
+            throw new RuntimeException("ffmpeg remux a échoué avec le code " + exitCode);
+        }
+        Files.move(tempOutput, videoPath, StandardCopyOption.REPLACE_EXISTING);
     }
 
     private String extractExtension(String name) {
         int i = name.lastIndexOf('.');
-        if (i < 0 || i == name.length() - 1) return "mp4";
+        if (i < 0 || i == name.length() - 1)
+            return "mp4";
         String ext = name.substring(i + 1).toLowerCase();
-        if (ext.isBlank() || SAFE_NAME.matcher(ext).find()) return "mp4";
+        if (ext.isBlank() || SAFE_NAME.matcher(ext).find())
+            return "mp4";
         return ext;
     }
 
@@ -125,7 +176,8 @@ public class FileUploadController {
         String original = file.getOriginalFilename() == null ? "avatar.jpg" : file.getOriginalFilename();
         String ext = extractAvatarExtension(original);
         String safe = SAFE_NAME.matcher(original.replaceAll("\\.[^.]+$", "")).replaceAll("_");
-        if (safe.isBlank()) safe = "avatar";
+        if (safe.isBlank())
+            safe = "avatar";
         String fileName = UUID.randomUUID() + "_" + safe + "." + ext;
 
         Path dest = avatarPath.resolve(fileName).normalize();
@@ -142,13 +194,16 @@ public class FileUploadController {
 
     private String extractAvatarExtension(String name) {
         int i = name.lastIndexOf('.');
-        if (i < 0 || i == name.length() - 1) return "jpg";
+        if (i < 0 || i == name.length() - 1)
+            return "jpg";
         String ext = name.substring(i + 1).toLowerCase();
-        if (ext.isBlank() || SAFE_NAME.matcher(ext).find()) return "jpg";
+        if (ext.isBlank() || SAFE_NAME.matcher(ext).find())
+            return "jpg";
         return ext;
     }
 
-    // General image upload: admin only (for experience covers, formation covers, etc.)
+    // General image upload: admin only (for experience covers, formation covers,
+    // etc.)
     private static final long MAX_IMAGE_BYTES = 10L * 1024L * 1024L; // 10 MB
 
     @PreAuthorize("hasRole('ADMIN')")
@@ -167,7 +222,8 @@ public class FileUploadController {
         String original = file.getOriginalFilename() == null ? "image.jpg" : file.getOriginalFilename();
         String ext = extractAvatarExtension(original);
         String safe = SAFE_NAME.matcher(original.replaceAll("\\.[^.]+$", "")).replaceAll("_");
-        if (safe.isBlank()) safe = "image";
+        if (safe.isBlank())
+            safe = "image";
         String fileName = UUID.randomUUID() + "_" + safe + "." + ext;
 
         Path dest = imagesPath.resolve(fileName).normalize();

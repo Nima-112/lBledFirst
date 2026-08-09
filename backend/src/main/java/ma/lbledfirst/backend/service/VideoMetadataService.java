@@ -17,7 +17,7 @@ public class VideoMetadataService {
         ProcessBuilder pb = new ProcessBuilder(
                 "ffprobe", "-v", "error",
                 "-show_entries", "format=duration",
-                "-of", "default=noprint_wrapper=1:nokey=1",
+                "-of", "default=noprint_wrappers=1:nokey=1",
                 videoFilePath);
         pb.redirectErrorStream(true);
         Process process = pb.start();

@@ -53,7 +53,8 @@ export function FormationEditor({
   const capKey = (i: number, j: number) => `${i}-${j}`;
   const [videoMode, setVideoMode] = useState<Record<string, VideoMode>>({});
   const capMode = (i: number, j: number): VideoMode =>
-    videoMode[capKey(i, j)] ?? (draft.chapters[i]?.capsules[j]?.videoUrl?.startsWith("http") ? "url" : "url");
+    videoMode[capKey(i, j)] ??
+    (draft.chapters[i]?.capsules[j]?.videoUrl?.startsWith("http") ? "url" : "url");
   const setCapMode = (i: number, j: number, m: VideoMode) =>
     setVideoMode((prev) => ({ ...prev, [capKey(i, j)]: m }));
 
@@ -122,7 +123,12 @@ export function FormationEditor({
     setUploadOk((p) => ({ ...p, [k]: false }));
     try {
       const result = await uploadVideo(file);
-      updateCapsule(chIdx, capIdx, { videoUrl: result.url });
+      updateCapsule(chIdx, capIdx, {
+        videoUrl: result.url,
+        // Only overwrite duration if ffprobe actually returned one — if it
+        // failed server-side, keep whatever the admin already had entered.
+        ...(result.durationMinutes ? { duration: result.durationMinutes } : {}),
+      });
       setUploadOk((p) => ({ ...p, [k]: true }));
       setTimeout(() => setUploadOk((p) => ({ ...p, [k]: false })), 3500);
     } catch (err: any) {
@@ -200,7 +206,9 @@ export function FormationEditor({
           <div>
             <p className="font-semibold">Impossible de charger les chapitres et capsules</p>
             <p className="mt-0.5 opacity-90">{loadDetailError}</p>
-            <p className="mt-1 opacity-80">Les modifications écraseront les champs non chargés. Fermez et réessayez.</p>
+            <p className="mt-1 opacity-80">
+              Les modifications écraseront les champs non chargés. Fermez et réessayez.
+            </p>
           </div>
         </div>
       )}
@@ -347,7 +355,8 @@ export function FormationEditor({
             </div>
             {draft.coverImage && (
               <p className="mt-1 flex items-center gap-1.5 text-[11px] text-muted-foreground">
-                <CheckCircle2 className="h-3 w-3 text-emerald-600" /> Image liée (clic externe pour vérifier)
+                <CheckCircle2 className="h-3 w-3 text-emerald-600" /> Image liée (clic externe pour
+                vérifier)
               </p>
             )}
           </Field>
@@ -521,9 +530,7 @@ export function FormationEditor({
                               <input
                                 className={fieldCls}
                                 value={c.thumbnail ?? ""}
-                                onChange={(e) =>
-                                  updateCapsule(i, j, { thumbnail: e.target.value })
-                                }
+                                onChange={(e) => updateCapsule(i, j, { thumbnail: e.target.value })}
                                 placeholder="https://…miniature.jpg"
                               />
                             </div>
@@ -589,7 +596,10 @@ export function FormationEditor({
                                   {c.videoUrl && !urlLooksHttps(c.videoUrl) && (
                                     <p className="flex items-start gap-1.5 rounded-md bg-amber-50 px-2.5 py-1.5 text-[11px] text-amber-700">
                                       <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                                      Le lien doit commencer par <code className="mx-0.5 rounded bg-amber-100 px-1 font-mono">https://</code>
+                                      Le lien doit commencer par{" "}
+                                      <code className="mx-0.5 rounded bg-amber-100 px-1 font-mono">
+                                        https://
+                                      </code>
                                     </p>
                                   )}
                                 </div>
@@ -616,7 +626,8 @@ export function FormationEditor({
                                   <div className="flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
                                     {busy && (
                                       <span className="inline-flex items-center gap-1.5 rounded-md bg-primary/10 px-2.5 py-1 font-semibold text-primary">
-                                        <Loader2 className="h-3.5 w-3.5 animate-spin" /> Téléversement en cours…
+                                        <Loader2 className="h-3.5 w-3.5 animate-spin" />{" "}
+                                        Téléversement en cours…
                                       </span>
                                     )}
                                     {ok && (

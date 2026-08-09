@@ -69,21 +69,24 @@ public class CapsuleProcessingService {
         StringBuilder fullText = new StringBuilder();
         String detectedLanguage = null;
         double timeOffset = 0.0;
+        // Passed to Whisper as context for the NEXT chunk, so a sentence or term
+        // spanning a chunk boundary keeps consistent spelling/continuity instead
+        // of each chunk being transcribed as if it were the very start of the video.
+        String continuationPrompt = null;
 
         for (String chunkPath : audioChunks) {
-            // Measure the chunk's real duration BEFORE transcribing/deleting it.
-            // ffmpeg's segment muxer does not produce exact 600.000s chunks (it
-            // cuts on the nearest audio frame boundary, and the final chunk is
-            // whatever remains) — assuming a flat SEGMENT_SECONDS per chunk
-            // compounds a small timing error on every chunk, which is why sync
-            // drift gets worse the further into a long video you go.
             double actualChunkDuration = audioExtractionService.getAudioDuration(chunkPath);
 
-            var result = transcriptionService.transcribeWithTimestamps(chunkPath);
+            var result = transcriptionService.transcribeWithTimestamps(chunkPath, continuationPrompt);
+
+            // Language is now forced via openai.whisper-language, so every chunk
+            // reports the same language — no more "best chunk" guessing needed.
             if (detectedLanguage == null) {
                 detectedLanguage = result.getLanguage();
             }
-            if (fullText.length() > 0) fullText.append(" ");
+
+            if (fullText.length() > 0)
+                fullText.append(" ");
             fullText.append(result.getText());
 
             for (var seg : result.getSegments()) {
@@ -91,6 +94,8 @@ public class CapsuleProcessingService {
                         seg.getStart() + timeOffset, seg.getEnd() + timeOffset, seg.getText()));
             }
             timeOffset += actualChunkDuration;
+
+            continuationPrompt = result.getText();
 
             try {
                 Files.deleteIfExists(Path.of(chunkPath));
@@ -109,11 +114,9 @@ public class CapsuleProcessingService {
         for (var entry : TranslationService.TARGET_LANGUAGES.entrySet()) {
             String code = entry.getKey();
             String name = entry.getValue();
-            // Whisper's verbose_json returns the full language name (e.g. "arabic"),
-            // not an ISO code, so compare against the target language's name, not its code.
             List<String> translatedTexts = name.equalsIgnoreCase(detectedLanguage)
                     ? originalTexts
-                    : translationService.translateBatch(originalTexts, name);
+                    : translationService.translateBatchSafe(originalTexts, name);
             captions.put(code, toSegmentMaps(allSegments, translatedTexts));
         }
 
@@ -121,13 +124,6 @@ public class CapsuleProcessingService {
         String languageResult = detectedLanguage;
         String translationJsonResult = objectMapper.writeValueAsString(captions);
 
-        // Re-fetch immediately before the final save instead of reusing the
-        // `capsule` reference we've held since the start of process(). Transcription
-        // + translation can take minutes, during which an admin edit may have
-        // committed new title/videoUrl/description values. Saving the stale
-        // in-memory `capsule` here would silently overwrite that edit. Loading
-        // fresh and only touching the fields this pipeline owns keeps admin
-        // edits and AI-pipeline writes from clobbering each other either way.
         Capsule fresh = capsuleRepository.findById(capsuleId)
                 .orElseThrow(() -> new IllegalArgumentException("Capsule " + capsuleId + " introuvable"));
         fresh.setTranscript(transcriptResult);

@@ -1,11 +1,4 @@
-import {
-  createContext,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-  type ReactNode,
-} from "react";
+import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 
 export type Lang = "fr" | "en" | "ar" | "es";
 
@@ -32,20 +25,25 @@ const translations: Record<Lang, Dict> = {
     "hero.kicker": "Morocco's first authentic rural tourism platform",
     "hero.title1": "Meet the real",
     "hero.title2": "Morocco",
-    "hero.sub": "Filmed experiences with rural hosts, auto-translated into your language, bookable in two taps. No clichés — just raw beauty and human connection.",
+    "hero.sub":
+      "Filmed experiences with rural hosts, auto-translated into your language, bookable in two taps. No clichés — just raw beauty and human connection.",
     "hero.cta": "Discover Your Region",
     "hero.secondary": "Watch the stories",
     "hero.scroll": "Scroll to explore",
 
     "what.kicker": "What is L'Bled First?",
     "what.title": "A bridge between travelers and rural Morocco",
-    "what.sub": "We film real hosts in their villages, translate everything into your language, and let you book instantly.",
+    "what.sub":
+      "We film real hosts in their villages, translate everything into your language, and let you book instantly.",
     "what.discover.t": "Discover",
-    "what.discover.d": "Browse professionally filmed video experiences from the Atlas, the Sahara, the Rif and beyond.",
+    "what.discover.d":
+      "Browse professionally filmed video experiences from the Atlas, the Sahara, the Rif and beyond.",
     "what.book.t": "Book",
-    "what.book.d": "Reserve homestays, meals and activities online — secure, instant, no middlemen.",
+    "what.book.d":
+      "Reserve homestays, meals and activities online — secure, instant, no middlemen.",
     "what.experience.t": "Experience",
-    "what.experience.d": "Live a real day with a rural family, understood in your own language thanks to AI translation.",
+    "what.experience.d":
+      "Live a real day with a rural family, understood in your own language thanks to AI translation.",
 
     "map.kicker": "Interactive map",
     "map.title": "Explore Morocco's rural regions",
@@ -65,11 +63,14 @@ const translations: Record<Lang, Dict> = {
     "story.kicker": "A day in the bled",
     "story.title": "Follow a traveler's journey",
     "story.sunrise.t": "Sunrise in the Atlas",
-    "story.sunrise.d": "Wake to mint tea and mountain silence, then trek hidden Berber trails with a local guide.",
+    "story.sunrise.d":
+      "Wake to mint tea and mountain silence, then trek hidden Berber trails with a local guide.",
     "story.souk.t": "Midday at the souk",
-    "story.souk.d": "Wander a rural market, taste warm bread, learn to bargain and share laughs with artisans.",
+    "story.souk.d":
+      "Wander a rural market, taste warm bread, learn to bargain and share laughs with artisans.",
     "story.dinner.t": "Dinner in the Sahara",
-    "story.dinner.d": "Watch the dunes turn gold, then gather around a tagine under a sky thick with stars.",
+    "story.dinner.d":
+      "Watch the dunes turn gold, then gather around a tagine under a sky thick with stars.",
 
     "how.kicker": "How it works",
     "how.title": "Three steps to the real thing",
@@ -84,7 +85,8 @@ const translations: Record<Lang, Dict> = {
     "regions.title": "Where will you wake up?",
     "regions.cta": "Explore region",
     "regions.page.title": "Explore our regions",
-    "regions.page.sub": "Discover the Moroccan regions with real experiences to live, filmed with local hosts.",
+    "regions.page.sub":
+      "Discover the Moroccan regions with real experiences to live, filmed with local hosts.",
     "regions.page.empty": "No region with experiences yet.",
     "regions.detail.back": "All regions",
     "regions.detail.empty": "No experience published in this region yet.",
@@ -95,7 +97,8 @@ const translations: Record<Lang, Dict> = {
 
     "host.kicker": "For rural hosts",
     "host.title": "Share your culture, welcome the world",
-    "host.sub": "Turn your home, your craft and your table into an income — we film, translate and bring guests to you.",
+    "host.sub":
+      "Turn your home, your craft and your table into an income — we film, translate and bring guests to you.",
     "host.cta": "Become a host",
 
     "foot.tagline": "Authentic rural Morocco, in your language.",
@@ -162,13 +165,16 @@ const translations: Record<Lang, Dict> = {
     "gallery.outro": "Come be welcomed.",
     "gallery.s1.headline": "Discover",
     "gallery.s1.subline": "Rural Morocco",
-    "gallery.s1.body": "Beyond the medinas and riads lies a Morocco few travelers ever see — villages where time moves with the sun and hospitality is sacred.",
+    "gallery.s1.body":
+      "Beyond the medinas and riads lies a Morocco few travelers ever see — villages where time moves with the sun and hospitality is sacred.",
     "gallery.s2.headline": "Where",
     "gallery.s2.subline": "Doors Stay Open",
-    "gallery.s2.body": "In these valleys, strangers are welcomed with mint tea and warm bread. Every home is an invitation. Every meal is shared.",
+    "gallery.s2.body":
+      "In these valleys, strangers are welcomed with mint tea and warm bread. Every home is an invitation. Every meal is shared.",
     "gallery.s3.headline": "A Land",
     "gallery.s3.subline": "Of Rituals",
-    "gallery.s3.body": "From the first pour of tea to the last ember of the evening fire — every gesture carries meaning, every tradition tells a story.",
+    "gallery.s3.body":
+      "From the first pour of tea to the last ember of the evening fire — every gesture carries meaning, every tradition tells a story.",
     "gallery.alt1": "Green terraced hillsides of rural Morocco",
     "gallery.alt2": "Lush green fields with olive trees and rolling hills",
     "gallery.alt3": "Traditional Moroccan tea ceremony overlooking ancient villages",
@@ -177,42 +183,54 @@ const translations: Record<Lang, Dict> = {
     "timeline.title": "From dawn to stars",
     "timeline.d1.time": "Dawn",
     "timeline.d1.title": "Wake in the Atlas",
-    "timeline.d1.body": "The morning call to prayer echoes across the valley. Mist clings to the peaks. Your host brings fresh bread baked in a clay oven and mint tea — the first of many glasses.",
+    "timeline.d1.body":
+      "The morning call to prayer echoes across the valley. Mist clings to the peaks. Your host brings fresh bread baked in a clay oven and mint tea — the first of many glasses.",
     "timeline.d2.time": "Morning",
     "timeline.d2.title": "Walk the Terraces",
-    "timeline.d2.body": "Follow ancient irrigation channels through walnut and almond groves. A farmer invites you to sit under an olive tree. He doesn't speak your language, but his smile needs no translation.",
+    "timeline.d2.body":
+      "Follow ancient irrigation channels through walnut and almond groves. A farmer invites you to sit under an olive tree. He doesn't speak your language, but his smile needs no translation.",
     "timeline.d3.time": "Midday",
     "timeline.d3.title": "Share the Tagine",
-    "timeline.d3.body": "The whole family gathers around one dish. Slow-cooked lamb, preserved lemons, saffron from the village garden. You eat with your hands. Nobody is in a hurry.",
+    "timeline.d3.body":
+      "The whole family gathers around one dish. Slow-cooked lamb, preserved lemons, saffron from the village garden. You eat with your hands. Nobody is in a hurry.",
     "timeline.d4.time": "Afternoon",
     "timeline.d4.title": "The Souk & the Stories",
-    "timeline.d4.body": "Wander a weekly market where Berber women trade argan oil and handwoven carpets. Every pattern tells a story — of marriage, of harvest, of protection from the evil eye.",
+    "timeline.d4.body":
+      "Wander a weekly market where Berber women trade argan oil and handwoven carpets. Every pattern tells a story — of marriage, of harvest, of protection from the evil eye.",
     "timeline.d5.time": "Sunset",
     "timeline.d5.title": "Tea on the Rooftop",
-    "timeline.d5.body": "Three glasses of tea on a sunlit terrace overlooking the valley. The light turns gold, then amber, then rose. Your host says: you are not a guest anymore — you are family.",
+    "timeline.d5.body":
+      "Three glasses of tea on a sunlit terrace overlooking the valley. The light turns gold, then amber, then rose. Your host says: you are not a guest anymore — you are family.",
     "timeline.d6.time": "Night",
     "timeline.d6.title": "Sleep Under the Stars",
-    "timeline.d6.body": "In the desert, there are no walls between you and the sky. A Berber camp, a wool blanket, a fire dying to embers. The Sahara is silent — but it speaks volumes.",
+    "timeline.d6.body":
+      "In the desert, there are no walls between you and the sky. A Berber camp, a wool blanket, a fire dying to embers. The Sahara is silent — but it speaks volumes.",
 
     "acts.kicker": "What awaits you",
     "acts.title": "Experiences, not excursions",
     "acts.a1.title": "Mountain Treks",
-    "acts.a1.desc": "Hike through the High Atlas with Berber guides — from day walks to multi-day summit expeditions on Mt Toubkal.",
+    "acts.a1.desc":
+      "Hike through the High Atlas with Berber guides — from day walks to multi-day summit expeditions on Mt Toubkal.",
     "acts.a1.cta": "View treks",
     "acts.a2.title": "Tea Ceremonies",
-    "acts.a2.desc": "Learn the ritual of Moroccan tea from village elders — the pour, the pour height, the three glasses tradition.",
+    "acts.a2.desc":
+      "Learn the ritual of Moroccan tea from village elders — the pour, the pour height, the three glasses tradition.",
     "acts.a2.cta": "Learn more",
     "acts.a3.title": "Artisan Workshops",
-    "acts.a3.desc": "Weave carpets with Berber women, shape pottery in Tamegroute, or press argan oil the ancient way.",
+    "acts.a3.desc":
+      "Weave carpets with Berber women, shape pottery in Tamegroute, or press argan oil the ancient way.",
     "acts.a3.cta": "See workshops",
     "acts.a4.title": "Desert Camps",
-    "acts.a4.desc": "Sleep under the stars in Erg Chebbi. Camel treks at dawn, Gnawa drums at night, silence in between.",
+    "acts.a4.desc":
+      "Sleep under the stars in Erg Chebbi. Camel treks at dawn, Gnawa drums at night, silence in between.",
     "acts.a4.cta": "Explore desert",
     "acts.a5.title": "Cooking with Locals",
-    "acts.a5.desc": "Join a family kitchen. Learn tagine, couscous Friday, msemen on a clay stove — eat what you make together.",
+    "acts.a5.desc":
+      "Join a family kitchen. Learn tagine, couscous Friday, msemen on a clay stove — eat what you make together.",
     "acts.a5.cta": "Book a meal",
     "acts.a6.title": "Valley Walks",
-    "acts.a6.desc": "Wander through Paradise Valley, Aït Bouguemez, or the Drâa oases — palm groves, rivers, and ancient farms.",
+    "acts.a6.desc":
+      "Wander through Paradise Valley, Aït Bouguemez, or the Drâa oases — palm groves, rivers, and ancient farms.",
     "acts.a6.cta": "Find a walk",
     "acts.empty": "No published experience yet — the admin will add them soon.",
     "acts.dayShort": "d",
@@ -221,7 +239,8 @@ const translations: Record<Lang, Dict> = {
 
     "training.kicker": "L'Bled First Academy",
     "training.title": "Learn traditional crafts",
-    "training.sub": "Video training programs filmed with master artisans. Learn at your own pace, from anywhere.",
+    "training.sub":
+      "Video training programs filmed with master artisans. Learn at your own pace, from anywhere.",
     "training.empty": "No training published yet — check back soon.",
     "training.free": "Free",
     "training.viewDetail": "View details",
@@ -248,6 +267,7 @@ const translations: Record<Lang, Dict> = {
     "me.formations.title": "My trainings",
     "me.formations.empty": "You aren't enrolled in any training yet.",
     "me.formations.browse": "Browse trainings",
+    "me.formations.discoverMore": "Browse more available trainings",
     "me.formations.enrolled": "Enrolled",
     "me.reviews.title": "My reviews",
     "me.reviews.empty": "You haven't written any review yet.",
@@ -317,20 +337,25 @@ const translations: Record<Lang, Dict> = {
     "hero.kicker": "La première plateforme de tourisme rural authentique du Maroc",
     "hero.title1": "Rencontrez le vrai",
     "hero.title2": "Maroc",
-    "hero.sub": "Des expériences filmées avec des hôtes ruraux, traduites automatiquement dans votre langue, réservables en deux clics. Pas de clichés — juste la beauté brute et le lien humain.",
+    "hero.sub":
+      "Des expériences filmées avec des hôtes ruraux, traduites automatiquement dans votre langue, réservables en deux clics. Pas de clichés — juste la beauté brute et le lien humain.",
     "hero.cta": "Découvrez votre région",
     "hero.secondary": "Voir les histoires",
     "hero.scroll": "Faites défiler",
 
     "what.kicker": "C'est quoi L'Bled First ?",
     "what.title": "Un pont entre voyageurs et Maroc rural",
-    "what.sub": "Nous filmons de vrais hôtes dans leurs villages, traduisons tout dans votre langue et vous laissons réserver instantanément.",
+    "what.sub":
+      "Nous filmons de vrais hôtes dans leurs villages, traduisons tout dans votre langue et vous laissons réserver instantanément.",
     "what.discover.t": "Découvrir",
-    "what.discover.d": "Parcourez des expériences vidéo filmées par des pros, de l'Atlas au Sahara, du Rif et au-delà.",
+    "what.discover.d":
+      "Parcourez des expériences vidéo filmées par des pros, de l'Atlas au Sahara, du Rif et au-delà.",
     "what.book.t": "Réserver",
-    "what.book.d": "Réservez hébergements, repas et activités en ligne — sécurisé, instantané, sans intermédiaire.",
+    "what.book.d":
+      "Réservez hébergements, repas et activités en ligne — sécurisé, instantané, sans intermédiaire.",
     "what.experience.t": "Vivre",
-    "what.experience.d": "Vivez une vraie journée avec une famille rurale, comprise dans votre langue grâce à l'IA.",
+    "what.experience.d":
+      "Vivez une vraie journée avec une famille rurale, comprise dans votre langue grâce à l'IA.",
 
     "map.kicker": "Carte interactive",
     "map.title": "Explorez les régions rurales du Maroc",
@@ -350,16 +375,20 @@ const translations: Record<Lang, Dict> = {
     "story.kicker": "Une journée au bled",
     "story.title": "Suivez le voyage d'un visiteur",
     "story.sunrise.t": "Lever du soleil dans l'Atlas",
-    "story.sunrise.d": "Réveillez-vous au thé à la menthe et au silence des montagnes, puis partez sur des sentiers berbères cachés.",
+    "story.sunrise.d":
+      "Réveillez-vous au thé à la menthe et au silence des montagnes, puis partez sur des sentiers berbères cachés.",
     "story.souk.t": "Midi au souk",
-    "story.souk.d": "Flânez dans un marché rural, goûtez le pain chaud, apprenez à marchander et riez avec les artisans.",
+    "story.souk.d":
+      "Flânez dans un marché rural, goûtez le pain chaud, apprenez à marchander et riez avec les artisans.",
     "story.dinner.t": "Dîner au Sahara",
-    "story.dinner.d": "Regardez les dunes virer à l'or, puis partagez un tagine sous un ciel rempli d'étoiles.",
+    "story.dinner.d":
+      "Regardez les dunes virer à l'or, puis partagez un tagine sous un ciel rempli d'étoiles.",
 
     "how.kicker": "Comment ça marche",
     "how.title": "Trois étapes vers l'authentique",
     "how.browse.t": "Explorer",
-    "how.browse.d": "Découvrez expériences et régions, traduites automatiquement dans votre langue.",
+    "how.browse.d":
+      "Découvrez expériences et régions, traduites automatiquement dans votre langue.",
     "how.book.t": "Réserver",
     "how.book.d": "Choisissez vos dates et réservez en ligne en quelques minutes.",
     "how.live.t": "Vivre",
@@ -369,7 +398,8 @@ const translations: Record<Lang, Dict> = {
     "regions.title": "Où vous réveillerez-vous ?",
     "regions.cta": "Explorer la région",
     "regions.page.title": "Explorez nos régions",
-    "regions.page.sub": "Découvrez les régions marocaines qui proposent de vraies expériences à vivre, filmées avec des hôtes locaux.",
+    "regions.page.sub":
+      "Découvrez les régions marocaines qui proposent de vraies expériences à vivre, filmées avec des hôtes locaux.",
     "regions.page.empty": "Aucune région avec des expériences pour l'instant.",
     "regions.detail.back": "Toutes les régions",
     "regions.detail.empty": "Aucune expérience publiée dans cette région pour l'instant.",
@@ -380,7 +410,8 @@ const translations: Record<Lang, Dict> = {
 
     "host.kicker": "Pour les hôtes ruraux",
     "host.title": "Partagez votre culture, accueillez le monde",
-    "host.sub": "Faites de votre maison, votre artisanat et votre table un revenu — nous filmons, traduisons et vous amenons des voyageurs.",
+    "host.sub":
+      "Faites de votre maison, votre artisanat et votre table un revenu — nous filmons, traduisons et vous amenons des voyageurs.",
     "host.cta": "Devenir hôte",
 
     "foot.tagline": "Le Maroc rural authentique, dans votre langue.",
@@ -447,13 +478,16 @@ const translations: Record<Lang, Dict> = {
     "gallery.outro": "Venez être accueillis.",
     "gallery.s1.headline": "Découvrez",
     "gallery.s1.subline": "le Maroc rural",
-    "gallery.s1.body": "Au-delà des médinas et des riads, un Maroc que peu de voyageurs voient — des villages où le temps suit le soleil et l'hospitalité est sacrée.",
+    "gallery.s1.body":
+      "Au-delà des médinas et des riads, un Maroc que peu de voyageurs voient — des villages où le temps suit le soleil et l'hospitalité est sacrée.",
     "gallery.s2.headline": "Où",
     "gallery.s2.subline": "les portes restent ouvertes",
-    "gallery.s2.body": "Dans ces vallées, les inconnus sont accueillis avec du thé à la menthe et du pain chaud. Chaque maison est une invitation. Chaque repas se partage.",
+    "gallery.s2.body":
+      "Dans ces vallées, les inconnus sont accueillis avec du thé à la menthe et du pain chaud. Chaque maison est une invitation. Chaque repas se partage.",
     "gallery.s3.headline": "Une terre",
     "gallery.s3.subline": "de rituels",
-    "gallery.s3.body": "Du premier versé du thé à la dernière braise du feu du soir — chaque geste a un sens, chaque tradition raconte une histoire.",
+    "gallery.s3.body":
+      "Du premier versé du thé à la dernière braise du feu du soir — chaque geste a un sens, chaque tradition raconte une histoire.",
     "gallery.alt1": "Collines en terrasses vertes du Maroc rural",
     "gallery.alt2": "Champs verdoyants avec oliviers et collines",
     "gallery.alt3": "Cérémonie du thé marocain traditionnel",
@@ -462,42 +496,54 @@ const translations: Record<Lang, Dict> = {
     "timeline.title": "De l'aube aux étoiles",
     "timeline.d1.time": "Aube",
     "timeline.d1.title": "Réveil dans l'Atlas",
-    "timeline.d1.body": "L'appel à la prière du matin résonne dans la vallée. La brume s'accroche aux sommets. Votre hôte apporte du pain frais cuit au four en terre et du thé à la menthe — le premier de nombreux verres.",
+    "timeline.d1.body":
+      "L'appel à la prière du matin résonne dans la vallée. La brume s'accroche aux sommets. Votre hôte apporte du pain frais cuit au four en terre et du thé à la menthe — le premier de nombreux verres.",
     "timeline.d2.time": "Matin",
     "timeline.d2.title": "Marche dans les terrasses",
-    "timeline.d2.body": "Suivez d'anciens canaux d'irrigation à travers noyers et amandiers. Un agriculteur vous invite à vous asseoir sous un olivier. Il ne parle pas votre langue, mais son sourire n'a pas besoin de traduction.",
+    "timeline.d2.body":
+      "Suivez d'anciens canaux d'irrigation à travers noyers et amandiers. Un agriculteur vous invite à vous asseoir sous un olivier. Il ne parle pas votre langue, mais son sourire n'a pas besoin de traduction.",
     "timeline.d3.time": "Midi",
     "timeline.d3.title": "Partager le tagine",
-    "timeline.d3.body": "Toute la famille se rassemble autour d'un seul plat. Agneau mijoté, citrons confits, safran du jardin du village. On mange avec les mains. Personne n'est pressé.",
+    "timeline.d3.body":
+      "Toute la famille se rassemble autour d'un seul plat. Agneau mijoté, citrons confits, safran du jardin du village. On mange avec les mains. Personne n'est pressé.",
     "timeline.d4.time": "Après-midi",
     "timeline.d4.title": "Le souk et ses histoires",
-    "timeline.d4.body": "Flânez dans un marché hebdomadaire où les femmes berbères vendent huile d'argan et tapis tissés main. Chaque motif raconte une histoire — mariage, récolte, protection contre le mauvais œil.",
+    "timeline.d4.body":
+      "Flânez dans un marché hebdomadaire où les femmes berbères vendent huile d'argan et tapis tissés main. Chaque motif raconte une histoire — mariage, récolte, protection contre le mauvais œil.",
     "timeline.d5.time": "Coucher du soleil",
     "timeline.d5.title": "Thé sur la terrasse",
-    "timeline.d5.body": "Trois verres de thé sur une terrasse ensoleillée surplombant la vallée. La lumière devient or, puis ambre, puis rose. Votre hôte dit : vous n'êtes plus un invité — vous êtes de la famille.",
+    "timeline.d5.body":
+      "Trois verres de thé sur une terrasse ensoleillée surplombant la vallée. La lumière devient or, puis ambre, puis rose. Votre hôte dit : vous n'êtes plus un invité — vous êtes de la famille.",
     "timeline.d6.time": "Nuit",
     "timeline.d6.title": "Dormir sous les étoiles",
-    "timeline.d6.body": "Dans le désert, il n'y a aucun mur entre vous et le ciel. Un campement berbère, une couverture en laine, un feu qui s'éteint. Le Sahara est silencieux — mais il en dit long.",
+    "timeline.d6.body":
+      "Dans le désert, il n'y a aucun mur entre vous et le ciel. Un campement berbère, une couverture en laine, un feu qui s'éteint. Le Sahara est silencieux — mais il en dit long.",
 
     "acts.kicker": "Ce qui vous attend",
     "acts.title": "Des expériences, pas des excursions",
     "acts.a1.title": "Randonnées en montagne",
-    "acts.a1.desc": "Randonnez dans le Haut Atlas avec des guides berbères — des balades d'une journée aux expéditions sur le Mont Toubkal.",
+    "acts.a1.desc":
+      "Randonnez dans le Haut Atlas avec des guides berbères — des balades d'une journée aux expéditions sur le Mont Toubkal.",
     "acts.a1.cta": "Voir les treks",
     "acts.a2.title": "Cérémonies du thé",
-    "acts.a2.desc": "Apprenez le rituel du thé marocain auprès des anciens du village — la verse, la hauteur, la tradition des trois verres.",
+    "acts.a2.desc":
+      "Apprenez le rituel du thé marocain auprès des anciens du village — la verse, la hauteur, la tradition des trois verres.",
     "acts.a2.cta": "En savoir plus",
     "acts.a3.title": "Ateliers d'artisans",
-    "acts.a3.desc": "Tissez des tapis avec des femmes berbères, façonnez la poterie à Tamegroute, pressez l'huile d'argan à l'ancienne.",
+    "acts.a3.desc":
+      "Tissez des tapis avec des femmes berbères, façonnez la poterie à Tamegroute, pressez l'huile d'argan à l'ancienne.",
     "acts.a3.cta": "Voir les ateliers",
     "acts.a4.title": "Bivouacs dans le désert",
-    "acts.a4.desc": "Dormez sous les étoiles à Erg Chebbi. Méharées à l'aube, tambours Gnawa la nuit, silence entre les deux.",
+    "acts.a4.desc":
+      "Dormez sous les étoiles à Erg Chebbi. Méharées à l'aube, tambours Gnawa la nuit, silence entre les deux.",
     "acts.a4.cta": "Explorer le désert",
     "acts.a5.title": "Cuisiner avec les locaux",
-    "acts.a5.desc": "Rejoignez une cuisine familiale. Apprenez tagine, couscous du vendredi, msemen sur four en terre — mangez ce que vous préparez.",
+    "acts.a5.desc":
+      "Rejoignez une cuisine familiale. Apprenez tagine, couscous du vendredi, msemen sur four en terre — mangez ce que vous préparez.",
     "acts.a5.cta": "Réserver un repas",
     "acts.a6.title": "Balades dans les vallées",
-    "acts.a6.desc": "Parcourez la Vallée du Paradis, Aït Bouguemez, ou les oasis du Drâa — palmeraies, rivières et fermes ancestrales.",
+    "acts.a6.desc":
+      "Parcourez la Vallée du Paradis, Aït Bouguemez, ou les oasis du Drâa — palmeraies, rivières et fermes ancestrales.",
     "acts.a6.cta": "Trouver une balade",
     "acts.empty": "Aucune expérience publiée pour l'instant.",
     "acts.dayShort": "j",
@@ -506,7 +552,8 @@ const translations: Record<Lang, Dict> = {
 
     "training.kicker": "L'Bled First Academy",
     "training.title": "Apprenez les métiers traditionnels",
-    "training.sub": "Des formations vidéo filmées avec des artisans maîtres. Apprenez à votre rythme, où que vous soyez.",
+    "training.sub":
+      "Des formations vidéo filmées avec des artisans maîtres. Apprenez à votre rythme, où que vous soyez.",
     "training.empty": "Aucune formation publiée pour l'instant — revenez bientôt.",
     "training.free": "Gratuit",
     "training.viewDetail": "Voir les détails",
@@ -533,6 +580,7 @@ const translations: Record<Lang, Dict> = {
     "me.formations.title": "Mes formations",
     "me.formations.empty": "Vous n'êtes inscrit·e à aucune formation.",
     "me.formations.browse": "Voir les formations",
+    "me.formations.discoverMore": "Voir toutes les formations disponibles",
     "me.formations.enrolled": "Inscrit·e",
     "me.reviews.title": "Mes avis",
     "me.reviews.empty": "Vous n'avez pas encore laissé d'avis.",
@@ -602,24 +650,30 @@ const translations: Record<Lang, Dict> = {
     "hero.kicker": "La primera plataforma de turismo rural auténtico de Marruecos",
     "hero.title1": "Conoce el verdadero",
     "hero.title2": "Marruecos",
-    "hero.sub": "Experiencias filmadas con anfitriones rurales, traducidas a tu idioma y reservables en dos toques. Sin clichés — solo belleza pura y conexión humana.",
+    "hero.sub":
+      "Experiencias filmadas con anfitriones rurales, traducidas a tu idioma y reservables en dos toques. Sin clichés — solo belleza pura y conexión humana.",
     "hero.cta": "Descubre tu región",
     "hero.secondary": "Ver las historias",
     "hero.scroll": "Desliza para explorar",
 
     "what.kicker": "¿Qué es L'Bled First?",
     "what.title": "Un puente entre viajeros y el Marruecos rural",
-    "what.sub": "Filmamos a anfitriones reales en sus pueblos, lo traducimos a tu idioma y te dejamos reservar al instante.",
+    "what.sub":
+      "Filmamos a anfitriones reales en sus pueblos, lo traducimos a tu idioma y te dejamos reservar al instante.",
     "what.discover.t": "Descubre",
-    "what.discover.d": "Explora experiencias en vídeo filmadas por profesionales, del Atlas al Sáhara y el Rif.",
+    "what.discover.d":
+      "Explora experiencias en vídeo filmadas por profesionales, del Atlas al Sáhara y el Rif.",
     "what.book.t": "Reserva",
-    "what.book.d": "Reserva alojamientos, comidas y actividades online — seguro, instantáneo, sin intermediarios.",
+    "what.book.d":
+      "Reserva alojamientos, comidas y actividades online — seguro, instantáneo, sin intermediarios.",
     "what.experience.t": "Vive",
-    "what.experience.d": "Vive un día real con una familia rural, entendido en tu idioma gracias a la IA.",
+    "what.experience.d":
+      "Vive un día real con una familia rural, entendido en tu idioma gracias a la IA.",
 
     "map.kicker": "Mapa interactivo",
     "map.title": "Explora las regiones rurales de Marruecos",
-    "map.sub": "Pasa el ratón por una región para ver una experiencia destacada. Toca para empezar.",
+    "map.sub":
+      "Pasa el ratón por una región para ver una experiencia destacada. Toca para empezar.",
     "map.preview": "Experiencia destacada",
     "map.experiences": "experiencias",
 
@@ -635,11 +689,14 @@ const translations: Record<Lang, Dict> = {
     "story.kicker": "Un día en el bled",
     "story.title": "Sigue el viaje de un viajero",
     "story.sunrise.t": "Amanecer en el Atlas",
-    "story.sunrise.d": "Despierta con té de menta y el silencio de la montaña, luego recorre senderos bereberes ocultos.",
+    "story.sunrise.d":
+      "Despierta con té de menta y el silencio de la montaña, luego recorre senderos bereberes ocultos.",
     "story.souk.t": "Mediodía en el zoco",
-    "story.souk.d": "Pasea por un mercado rural, prueba pan caliente, aprende a regatear y ríe con los artesanos.",
+    "story.souk.d":
+      "Pasea por un mercado rural, prueba pan caliente, aprende a regatear y ríe con los artesanos.",
     "story.dinner.t": "Cena en el Sáhara",
-    "story.dinner.d": "Mira las dunas volverse doradas y comparte un tajín bajo un cielo lleno de estrellas.",
+    "story.dinner.d":
+      "Mira las dunas volverse doradas y comparte un tajín bajo un cielo lleno de estrellas.",
 
     "how.kicker": "Cómo funciona",
     "how.title": "Tres pasos hacia lo auténtico",
@@ -654,7 +711,8 @@ const translations: Record<Lang, Dict> = {
     "regions.title": "¿Dónde despertarás?",
     "regions.cta": "Explorar región",
     "regions.page.title": "Explora nuestras regiones",
-    "regions.page.sub": "Descubre las regiones marroquíes con experiencias reales para vivir, filmadas con anfitriones locales.",
+    "regions.page.sub":
+      "Descubre las regiones marroquíes con experiencias reales para vivir, filmadas con anfitriones locales.",
     "regions.page.empty": "Ninguna región con experiencias por ahora.",
     "regions.detail.back": "Todas las regiones",
     "regions.detail.empty": "Ninguna experiencia publicada en esta región por ahora.",
@@ -665,7 +723,8 @@ const translations: Record<Lang, Dict> = {
 
     "host.kicker": "Para anfitriones rurales",
     "host.title": "Comparte tu cultura, recibe al mundo",
-    "host.sub": "Convierte tu casa, tu oficio y tu mesa en ingresos — filmamos, traducimos y te traemos viajeros.",
+    "host.sub":
+      "Convierte tu casa, tu oficio y tu mesa en ingresos — filmamos, traducimos y te traemos viajeros.",
     "host.cta": "Ser anfitrión",
 
     "foot.tagline": "El Marruecos rural auténtico, en tu idioma.",
@@ -686,13 +745,16 @@ const translations: Record<Lang, Dict> = {
     "gallery.outro": "Ven a ser bienvenido.",
     "gallery.s1.headline": "Descubre",
     "gallery.s1.subline": "el Marruecos rural",
-    "gallery.s1.body": "Más allá de las medinas y los riads, un Marruecos que pocos viajeros ven — pueblos donde el tiempo sigue al sol y la hospitalidad es sagrada.",
+    "gallery.s1.body":
+      "Más allá de las medinas y los riads, un Marruecos que pocos viajeros ven — pueblos donde el tiempo sigue al sol y la hospitalidad es sagrada.",
     "gallery.s2.headline": "Donde",
     "gallery.s2.subline": "las puertas siguen abiertas",
-    "gallery.s2.body": "En estos valles, los extraños son recibidos con té a la menta y pan caliente. Cada casa es una invitación. Cada comida se comparte.",
+    "gallery.s2.body":
+      "En estos valles, los extraños son recibidos con té a la menta y pan caliente. Cada casa es una invitación. Cada comida se comparte.",
     "gallery.s3.headline": "Una tierra",
     "gallery.s3.subline": "de rituales",
-    "gallery.s3.body": "Desde el primer servido del té hasta la última brasa del fuego nocturno — cada gesto tiene sentido, cada tradición cuenta una historia.",
+    "gallery.s3.body":
+      "Desde el primer servido del té hasta la última brasa del fuego nocturno — cada gesto tiene sentido, cada tradición cuenta una historia.",
     "gallery.alt1": "Colinas verdes en terrazas del Marruecos rural",
     "gallery.alt2": "Campos verdes con olivos y colinas",
     "gallery.alt3": "Ceremonia tradicional del té marroquí",
@@ -701,48 +763,61 @@ const translations: Record<Lang, Dict> = {
     "timeline.title": "Del amanecer a las estrellas",
     "timeline.d1.time": "Amanecer",
     "timeline.d1.title": "Despertar en el Atlas",
-    "timeline.d1.body": "La llamada matinal a la oración resuena en el valle. La niebla se aferra a las cumbres. Tu anfitrión trae pan recién horneado en horno de barro y té a la menta — el primero de muchos vasos.",
+    "timeline.d1.body":
+      "La llamada matinal a la oración resuena en el valle. La niebla se aferra a las cumbres. Tu anfitrión trae pan recién horneado en horno de barro y té a la menta — el primero de muchos vasos.",
     "timeline.d2.time": "Mañana",
     "timeline.d2.title": "Caminar por las terrazas",
-    "timeline.d2.body": "Sigue antiguos canales de riego entre nogales y almendros. Un campesino te invita a sentarte bajo un olivo. No habla tu idioma, pero su sonrisa no necesita traducción.",
+    "timeline.d2.body":
+      "Sigue antiguos canales de riego entre nogales y almendros. Un campesino te invita a sentarte bajo un olivo. No habla tu idioma, pero su sonrisa no necesita traducción.",
     "timeline.d3.time": "Mediodía",
     "timeline.d3.title": "Compartir el tajín",
-    "timeline.d3.body": "Toda la familia se reúne alrededor de un solo plato. Cordero cocido a fuego lento, limones en conserva, azafrán del huerto del pueblo. Se come con las manos. Nadie tiene prisa.",
+    "timeline.d3.body":
+      "Toda la familia se reúne alrededor de un solo plato. Cordero cocido a fuego lento, limones en conserva, azafrán del huerto del pueblo. Se come con las manos. Nadie tiene prisa.",
     "timeline.d4.time": "Tarde",
     "timeline.d4.title": "El zoco y sus historias",
-    "timeline.d4.body": "Pasea por un mercado semanal donde mujeres bereberes venden aceite de argán y alfombras tejidas a mano. Cada patrón cuenta una historia — de bodas, cosechas, protección contra el mal de ojo.",
+    "timeline.d4.body":
+      "Pasea por un mercado semanal donde mujeres bereberes venden aceite de argán y alfombras tejidas a mano. Cada patrón cuenta una historia — de bodas, cosechas, protección contra el mal de ojo.",
     "timeline.d5.time": "Atardecer",
     "timeline.d5.title": "Té en la terraza",
-    "timeline.d5.body": "Tres vasos de té en una terraza soleada sobre el valle. La luz se vuelve oro, luego ámbar, luego rosa. Tu anfitrión dice: ya no eres un invitado — eres familia.",
+    "timeline.d5.body":
+      "Tres vasos de té en una terraza soleada sobre el valle. La luz se vuelve oro, luego ámbar, luego rosa. Tu anfitrión dice: ya no eres un invitado — eres familia.",
     "timeline.d6.time": "Noche",
     "timeline.d6.title": "Dormir bajo las estrellas",
-    "timeline.d6.body": "En el desierto no hay muros entre tú y el cielo. Un campamento bereber, una manta de lana, un fuego que se apaga. El Sáhara es silencioso — pero dice mucho.",
+    "timeline.d6.body":
+      "En el desierto no hay muros entre tú y el cielo. Un campamento bereber, una manta de lana, un fuego que se apaga. El Sáhara es silencioso — pero dice mucho.",
 
     "acts.kicker": "Lo que te espera",
     "acts.title": "Experiencias, no excursiones",
     "acts.a1.title": "Rutas de montaña",
-    "acts.a1.desc": "Camina por el Alto Atlas con guías bereberes — desde paseos de un día hasta expediciones al Toubkal.",
+    "acts.a1.desc":
+      "Camina por el Alto Atlas con guías bereberes — desde paseos de un día hasta expediciones al Toubkal.",
     "acts.a1.cta": "Ver rutas",
     "acts.a2.title": "Ceremonias del té",
-    "acts.a2.desc": "Aprende el ritual del té marroquí con ancianos del pueblo — el vertido, la altura, la tradición de los tres vasos.",
+    "acts.a2.desc":
+      "Aprende el ritual del té marroquí con ancianos del pueblo — el vertido, la altura, la tradición de los tres vasos.",
     "acts.a2.cta": "Saber más",
     "acts.a3.title": "Talleres artesanos",
-    "acts.a3.desc": "Teje alfombras con mujeres bereberes, moldea cerámica en Tamegroute o prensa aceite de argán a la antigua.",
+    "acts.a3.desc":
+      "Teje alfombras con mujeres bereberes, moldea cerámica en Tamegroute o prensa aceite de argán a la antigua.",
     "acts.a3.cta": "Ver talleres",
     "acts.a4.title": "Campamentos del desierto",
-    "acts.a4.desc": "Duerme bajo las estrellas en Erg Chebbi. Camellos al alba, tambores Gnawa de noche, silencio entre medias.",
+    "acts.a4.desc":
+      "Duerme bajo las estrellas en Erg Chebbi. Camellos al alba, tambores Gnawa de noche, silencio entre medias.",
     "acts.a4.cta": "Explorar desierto",
     "acts.a5.title": "Cocinar con locales",
-    "acts.a5.desc": "Únete a una cocina familiar. Aprende tajín, cuscús del viernes, msemen en horno de barro — come lo que preparas.",
+    "acts.a5.desc":
+      "Únete a una cocina familiar. Aprende tajín, cuscús del viernes, msemen en horno de barro — come lo que preparas.",
     "acts.a5.cta": "Reservar comida",
     "acts.a6.title": "Paseos por valles",
-    "acts.a6.desc": "Recorre el Valle del Paraíso, Aït Bouguemez o los oasis del Drâa — palmerales, ríos y granjas ancestrales.",
+    "acts.a6.desc":
+      "Recorre el Valle del Paraíso, Aït Bouguemez o los oasis del Drâa — palmerales, ríos y granjas ancestrales.",
     "acts.a6.cta": "Buscar paseo",
     "acts.viewAll": "Ver todas las experiencias",
 
     "training.kicker": "L'Bled First Academy",
     "training.title": "Aprende oficios tradicionales",
-    "training.sub": "Formaciones en vídeo filmadas con maestros artesanos. Aprende a tu ritmo, desde cualquier lugar.",
+    "training.sub":
+      "Formaciones en vídeo filmadas con maestros artesanos. Aprende a tu ritmo, desde cualquier lugar.",
     "training.empty": "Ninguna formación publicada aún — vuelve pronto.",
     "training.free": "Gratis",
     "training.viewDetail": "Ver detalles",
@@ -762,7 +837,8 @@ const translations: Record<Lang, Dict> = {
     "hero.kicker": "أول منصة مغربية للسياحة القروية الأصيلة",
     "hero.title1": "اكتشف المغرب",
     "hero.title2": "الحقيقي",
-    "hero.sub": "تجارب مصوّرة مع مضيفين قرويين، مترجمة تلقائياً إلى لغتك، وقابلة للحجز بنقرتين. بلا كليشيهات — فقط جمال خام وتواصل إنساني.",
+    "hero.sub":
+      "تجارب مصوّرة مع مضيفين قرويين، مترجمة تلقائياً إلى لغتك، وقابلة للحجز بنقرتين. بلا كليشيهات — فقط جمال خام وتواصل إنساني.",
     "hero.cta": "اكتشف منطقتك",
     "hero.secondary": "شاهد القصص",
     "hero.scroll": "مرّر للاستكشاف",
@@ -775,7 +851,8 @@ const translations: Record<Lang, Dict> = {
     "what.book.t": "احجز",
     "what.book.d": "احجز الإقامة والوجبات والأنشطة عبر الإنترنت — آمن وفوري وبدون وسطاء.",
     "what.experience.t": "عِش التجربة",
-    "what.experience.d": "عِش يوماً حقيقياً مع عائلة قروية، مفهوماً بلغتك بفضل الترجمة بالذكاء الاصطناعي.",
+    "what.experience.d":
+      "عِش يوماً حقيقياً مع عائلة قروية، مفهوماً بلغتك بفضل الترجمة بالذكاء الاصطناعي.",
 
     "map.kicker": "خريطة تفاعلية",
     "map.title": "استكشف المناطق القروية في المغرب",
@@ -814,7 +891,8 @@ const translations: Record<Lang, Dict> = {
     "regions.title": "أين ستستيقظ؟",
     "regions.cta": "استكشف المنطقة",
     "regions.page.title": "استكشف مناطقنا",
-    "regions.page.sub": "اكتشف المناطق المغربية التي تضم تجارب حقيقية للعيش، مصوّرة مع مضيفين محليين.",
+    "regions.page.sub":
+      "اكتشف المناطق المغربية التي تضم تجارب حقيقية للعيش، مصوّرة مع مضيفين محليين.",
     "regions.page.empty": "لا توجد مناطق بها تجارب حالياً.",
     "regions.detail.back": "كل المناطق",
     "regions.detail.empty": "لا توجد تجربة منشورة في هذه المنطقة حالياً.",
@@ -846,13 +924,16 @@ const translations: Record<Lang, Dict> = {
     "gallery.outro": "تعال لتلقى الترحاب.",
     "gallery.s1.headline": "اكتشف",
     "gallery.s1.subline": "المغرب القروي",
-    "gallery.s1.body": "خلف المدن العتيقة والرياضات، مغرب لا يراه إلا القليل من المسافرين — قرى يسير فيها الوقت مع الشمس والضيافة فيها مقدّسة.",
+    "gallery.s1.body":
+      "خلف المدن العتيقة والرياضات، مغرب لا يراه إلا القليل من المسافرين — قرى يسير فيها الوقت مع الشمس والضيافة فيها مقدّسة.",
     "gallery.s2.headline": "حيث",
     "gallery.s2.subline": "تبقى الأبواب مفتوحة",
-    "gallery.s2.body": "في هذه الوديان، يُستقبل الغرباء بالشاي بالنعناع والخبز الساخن. كل بيت دعوة. كل وجبة تُقتَسم.",
+    "gallery.s2.body":
+      "في هذه الوديان، يُستقبل الغرباء بالشاي بالنعناع والخبز الساخن. كل بيت دعوة. كل وجبة تُقتَسم.",
     "gallery.s3.headline": "أرضٌ",
     "gallery.s3.subline": "من الطقوس",
-    "gallery.s3.body": "من أول صبّة شاي إلى آخر جمرة في نار المساء — كل حركة لها معنى، وكل تقليد يروي حكاية.",
+    "gallery.s3.body":
+      "من أول صبّة شاي إلى آخر جمرة في نار المساء — كل حركة لها معنى، وكل تقليد يروي حكاية.",
     "gallery.alt1": "تلال مدرّجة خضراء في المغرب القروي",
     "gallery.alt2": "حقول خضراء بأشجار الزيتون والتلال",
     "gallery.alt3": "طقس الشاي المغربي التقليدي",
@@ -861,42 +942,53 @@ const translations: Record<Lang, Dict> = {
     "timeline.title": "من الفجر إلى النجوم",
     "timeline.d1.time": "الفجر",
     "timeline.d1.title": "الاستيقاظ في الأطلس",
-    "timeline.d1.body": "يتردد أذان الصبح في الوادي. الضباب يتشبث بالقمم. يحضر لك مضيفك خبزاً طازجاً من الفرن الطيني وشاياً بالنعناع — أول كثير من الكؤوس.",
+    "timeline.d1.body":
+      "يتردد أذان الصبح في الوادي. الضباب يتشبث بالقمم. يحضر لك مضيفك خبزاً طازجاً من الفرن الطيني وشاياً بالنعناع — أول كثير من الكؤوس.",
     "timeline.d2.time": "الصباح",
     "timeline.d2.title": "المشي في المصاطب",
-    "timeline.d2.body": "اتبع سواقي قديمة عبر أشجار الجوز واللوز. يدعوك فلاح للجلوس تحت شجرة زيتون. لا يتكلم لغتك، لكن ابتسامته لا تحتاج إلى ترجمة.",
+    "timeline.d2.body":
+      "اتبع سواقي قديمة عبر أشجار الجوز واللوز. يدعوك فلاح للجلوس تحت شجرة زيتون. لا يتكلم لغتك، لكن ابتسامته لا تحتاج إلى ترجمة.",
     "timeline.d3.time": "الظهيرة",
     "timeline.d3.title": "قسمة الطاجين",
-    "timeline.d3.body": "تلتف الأسرة كلها حول طبق واحد. لحم مطهي على مهل، ليمون مصبّر، زعفران من بستان القرية. تأكل بيديك. لا أحد في عجلة.",
+    "timeline.d3.body":
+      "تلتف الأسرة كلها حول طبق واحد. لحم مطهي على مهل، ليمون مصبّر، زعفران من بستان القرية. تأكل بيديك. لا أحد في عجلة.",
     "timeline.d4.time": "بعد الظهر",
     "timeline.d4.title": "السوق وحكاياته",
-    "timeline.d4.body": "تجوّل في سوق أسبوعي حيث تبيع النساء الأمازيغيات زيت الأركان والزرابي المنسوجة يدوياً. كل نقش يروي قصة — عن الزواج، الحصاد، الحماية من العين.",
+    "timeline.d4.body":
+      "تجوّل في سوق أسبوعي حيث تبيع النساء الأمازيغيات زيت الأركان والزرابي المنسوجة يدوياً. كل نقش يروي قصة — عن الزواج، الحصاد، الحماية من العين.",
     "timeline.d5.time": "الغروب",
     "timeline.d5.title": "شاي على السطح",
-    "timeline.d5.body": "ثلاث كؤوس شاي على سطح مشمس يطل على الوادي. يتحول الضوء إلى ذهب، ثم كهرمان، ثم وردي. يقول لك مضيفك: لم تعد ضيفاً — أنت من العائلة.",
+    "timeline.d5.body":
+      "ثلاث كؤوس شاي على سطح مشمس يطل على الوادي. يتحول الضوء إلى ذهب، ثم كهرمان، ثم وردي. يقول لك مضيفك: لم تعد ضيفاً — أنت من العائلة.",
     "timeline.d6.time": "الليل",
     "timeline.d6.title": "النوم تحت النجوم",
-    "timeline.d6.body": "في الصحراء لا جدران بينك وبين السماء. مخيّم أمازيغي، غطاء صوفي، ونار تنطفئ ببطء. الصحراء صامتة — لكنها تقول الكثير.",
+    "timeline.d6.body":
+      "في الصحراء لا جدران بينك وبين السماء. مخيّم أمازيغي، غطاء صوفي، ونار تنطفئ ببطء. الصحراء صامتة — لكنها تقول الكثير.",
 
     "acts.kicker": "ما ينتظرك",
     "acts.title": "تجارب، لا نزهات",
     "acts.a1.title": "رحلات جبلية",
-    "acts.a1.desc": "تنزّه في الأطلس الكبير مع مرشدين أمازيغ — من نزهات يومية إلى بعثات على قمة توبقال.",
+    "acts.a1.desc":
+      "تنزّه في الأطلس الكبير مع مرشدين أمازيغ — من نزهات يومية إلى بعثات على قمة توبقال.",
     "acts.a1.cta": "شاهد الرحلات",
     "acts.a2.title": "طقوس الشاي",
-    "acts.a2.desc": "تعلّم طقس الشاي المغربي من شيوخ القرية — طريقة الصبّ، الارتفاع، وتقليد الكؤوس الثلاث.",
+    "acts.a2.desc":
+      "تعلّم طقس الشاي المغربي من شيوخ القرية — طريقة الصبّ، الارتفاع، وتقليد الكؤوس الثلاث.",
     "acts.a2.cta": "اعرف المزيد",
     "acts.a3.title": "ورشات الحرفيين",
-    "acts.a3.desc": "انسج الزرابي مع نساء أمازيغيات، اصنع الفخار في تامكروت، أو اعصر زيت الأركان بالطريقة القديمة.",
+    "acts.a3.desc":
+      "انسج الزرابي مع نساء أمازيغيات، اصنع الفخار في تامكروت، أو اعصر زيت الأركان بالطريقة القديمة.",
     "acts.a3.cta": "شاهد الورشات",
     "acts.a4.title": "مخيّمات الصحراء",
     "acts.a4.desc": "نم تحت نجوم عرق الشبي. جِمال عند الفجر، إيقاعات كناوة ليلاً، وصمت بينهما.",
     "acts.a4.cta": "استكشف الصحراء",
     "acts.a5.title": "الطبخ مع الأهالي",
-    "acts.a5.desc": "انضم إلى مطبخ عائلي. تعلّم الطاجين، كسكس الجمعة، والمسمن على فرن طيني — كل ما تحضّره.",
+    "acts.a5.desc":
+      "انضم إلى مطبخ عائلي. تعلّم الطاجين، كسكس الجمعة، والمسمن على فرن طيني — كل ما تحضّره.",
     "acts.a5.cta": "احجز وجبة",
     "acts.a6.title": "نزهات في الوديان",
-    "acts.a6.desc": "استكشف وادي الجنة، آيت بوكماز، أو واحات درعة — واحات النخيل والأنهار والمزارع العتيقة.",
+    "acts.a6.desc":
+      "استكشف وادي الجنة، آيت بوكماز، أو واحات درعة — واحات النخيل والأنهار والمزارع العتيقة.",
     "acts.a6.cta": "ابحث عن نزهة",
     "acts.viewAll": "عرض جميع التجارب",
 
@@ -908,7 +1000,6 @@ const translations: Record<Lang, Dict> = {
     "training.viewDetail": "عرض التفاصيل",
     "training.viewAll": "عرض جميع الدورات",
   },
-
 };
 
 type I18nContextValue = {
@@ -970,7 +1061,7 @@ export function I18nProvider({ children }: { children: ReactNode }) {
             includedLanguages: "fr,en,ar,es",
             autoDisplay: false,
           },
-          "google_translate_element"
+          "google_translate_element",
         );
         setTimeout(() => applyGoogleTranslate(lang), 300);
       }

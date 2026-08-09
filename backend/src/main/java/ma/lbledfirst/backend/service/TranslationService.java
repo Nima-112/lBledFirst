@@ -12,6 +12,7 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -44,6 +45,25 @@ public class TranslationService {
 
     private final HttpClient httpClient = HttpClient.newHttpClient();
     private final ObjectMapper objectMapper = new ObjectMapper();
+
+    private static final int MAX_RETRIES = 3;
+
+    private HttpResponse<String> sendWithRetry(HttpRequest request) throws IOException, InterruptedException {
+        HttpResponse<String> response = null;
+        for (int attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+            response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            if (response.statusCode() == 200)
+                return response;
+            boolean retryable = response.statusCode() == 429 || response.statusCode() >= 500;
+            if (!retryable || attempt == MAX_RETRIES)
+                return response;
+            long backoffMs = 1500L * attempt * attempt;
+            log.warn("OpenAI a répondu {} (tentative {}/{}), nouvelle tentative dans {} ms",
+                    response.statusCode(), attempt, MAX_RETRIES, backoffMs);
+            Thread.sleep(backoffMs);
+        }
+        return response;
+    }
 
     /**
      * Translates originalText into every target language except the original one.
@@ -85,7 +105,7 @@ public class TranslationService {
                 .build();
 
         log.info("Envoi du texte à traduire vers {}", targetLanguage);
-        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+        HttpResponse<String> response = sendWithRetry(request);
 
         if (response.statusCode() != 200) {
             log.error("Traduction échouée ({}): {}", response.statusCode(), response.body());
@@ -125,7 +145,7 @@ public class TranslationService {
                 .build();
 
         log.info("Envoi de {} segment(s) à traduire vers {}", originalTexts.size(), targetLanguage);
-        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+        HttpResponse<String> response = sendWithRetry(request);
 
         if (response.statusCode() != 200) {
             log.error("Traduction par lot échouée ({}): {}", response.statusCode(), response.body());
@@ -151,5 +171,79 @@ public class TranslationService {
         }
 
         return translated;
+    }
+
+    private static final int SAFE_BATCH_SIZE = 20;
+
+    /**
+     * A valid translation must contain at least one real letter — catches GPT
+     * returning "???", "...", or similar junk on ambiguous short segments.
+     */
+    private boolean isGarbage(String text) {
+        return text == null || text.isBlank() || !text.chars().anyMatch(Character::isLetter);
+    }
+
+    public List<String> translateBatchSafe(List<String> originalTexts, String targetLanguage)
+            throws IOException, InterruptedException {
+        if (originalTexts.isEmpty()) {
+            return List.of();
+        }
+
+        List<String> result = new ArrayList<>(originalTexts.size());
+        for (int i = 0; i < originalTexts.size(); i += SAFE_BATCH_SIZE) {
+            List<String> group = originalTexts.subList(i, Math.min(i + SAFE_BATCH_SIZE, originalTexts.size()));
+            List<String> translatedGroup;
+            try {
+                translatedGroup = translateBatch(group, targetLanguage);
+            } catch (Exception e) {
+                log.warn("Échec du lot de traduction ({} segments) vers {}, repli au segment-par-segment",
+                        group.size(), targetLanguage, e);
+                translatedGroup = null;
+            }
+
+            boolean needsFallback = translatedGroup == null || translatedGroup.size() != group.size();
+
+            if (!needsFallback) {
+                // Size matched — but still check content quality per-entry.
+                for (int j = 0; j < translatedGroup.size(); j++) {
+                    if (isGarbage(translatedGroup.get(j))) {
+                        needsFallback = true;
+                        break;
+                    }
+                }
+            }
+
+            if (needsFallback) {
+                if (translatedGroup != null && translatedGroup.size() != group.size()) {
+                    log.warn("Désalignement détecté ({} attendus, {} reçus) vers {} — repli au segment-par-segment",
+                            group.size(), translatedGroup.size(), targetLanguage);
+                }
+                translatedGroup = new ArrayList<>(group.size());
+                for (String text : group) {
+                    String translated;
+                    try {
+                        translated = translate(text, targetLanguage);
+                    } catch (Exception e2) {
+                        translated = null;
+                    }
+                    if (isGarbage(translated)) {
+                        // Last resort: retry once more before giving up.
+                        try {
+                            translated = translate(text, targetLanguage);
+                        } catch (Exception e3) {
+                            translated = null;
+                        }
+                    }
+                    if (isGarbage(translated)) {
+                        log.error("Traduction impossible vers {} pour un segment, conservation du texte original",
+                                targetLanguage);
+                        translated = text;
+                    }
+                    translatedGroup.add(translated);
+                }
+            }
+            result.addAll(translatedGroup);
+        }
+        return result;
     }
 }

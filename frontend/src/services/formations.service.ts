@@ -109,7 +109,13 @@ export type ApiFormationPayload = {
   };
 };
 
-type UploadResult = { url: string; name: string; size: number; contentType: string };
+type UploadResult = {
+  url: string;
+  name: string;
+  size: number;
+  contentType: string;
+  durationMinutes?: number;
+};
 
 const strip = (s: string) =>
   s
