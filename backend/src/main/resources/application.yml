@@ -63,3 +63,8 @@ app:
     failure-redirect-uri: ${OAUTH2_FAILURE_REDIRECT:http://localhost:3000/auth?error=google}
   upload:
     dir: ${APP_UPLOAD_DIR:/app/uploads/videos}
+
+openai:
+  api-key: ${OPENAI_API_KEY:changeme}
+  model-transcription: whisper-1
+  model-translation: gpt-4o-mini
