@@ -27,6 +27,21 @@ spring:
             client-id: ${GOOGLE_CLIENT_ID:changeme}
             client-secret: ${GOOGLE_CLIENT_SECRET:changeme}
             scope: openid, profile, email
+  # Compte SMTP utilisé pour l'email de vérification et le mot de passe oublié.
+  # Avec Gmail : activer la validation en 2 étapes puis générer un "mot de passe
+  # d'application" (https://myaccount.google.com/apppasswords) — ne jamais utiliser
+  # le mot de passe du compte directement.
+  mail:
+    host: ${MAIL_HOST:smtp.gmail.com}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
 
 server:
   port: 8080
@@ -60,6 +75,10 @@ app:
     failure-redirect-uri: ${OAUTH2_FAILURE_REDIRECT:http://localhost:3000/auth?error=google}
   upload:
     dir: ${APP_UPLOAD_DIR:/app/uploads/videos}
+  mail:
+    from: ${MAIL_FROM:no-reply@lbledfirst.ma}
+  frontend:
+    base-url: ${FRONTEND_BASE_URL:http://localhost:3000}
 
 openai:
   api-key: ${OPENAI_API_KEY:changeme}

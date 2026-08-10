@@ -9,6 +9,7 @@ export interface User {
   language?: string;
   phone?: string;
   avatar?: string;
+  emailVerified?: boolean;
 }
 
 export interface LoginCredentials {
@@ -36,4 +37,5 @@ export interface AuthResponse {
   country?: string;
   language?: string;
   avatar?: string;
+  emailVerified?: boolean;
 }

@@ -46,6 +46,7 @@ public class AdminSeeder implements CommandLineRunner {
                         .email(adminEmail)
                         .password(encoder.encode(adminPassword))
                         .role(UserRole.admin)
+                        .emailVerified(true)
                         .createdAt(LocalDateTime.now())
                         .build();
 

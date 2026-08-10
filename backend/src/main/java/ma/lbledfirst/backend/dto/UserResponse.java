@@ -16,6 +16,7 @@ public class UserResponse {
     private String country;
     private String language;
     private String avatar;
+    private boolean emailVerified;
 
     public UserResponse(Long id, String name, String email, String role) {
         this.id = id;

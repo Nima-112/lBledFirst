@@ -17,6 +17,7 @@ public class AuthResponse {
     private String country;
     private String language;
     private String avatar;
+    private boolean emailVerified;
 
     public AuthResponse(Long id, String token, String role, String name, String email) {
         this.id = id;

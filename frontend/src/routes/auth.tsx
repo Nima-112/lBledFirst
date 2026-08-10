@@ -168,6 +168,7 @@ function AuthScreen() {
   const [showPw, setShowPw] = useState(false);
   const [clientError, setClientError] = useState<string | null>(null);
   const [googleFailed, setGoogleFailed] = useState(false);
+  const [verifiedMessage, setVerifiedMessage] = useState<{ ok: boolean; text: string } | null>(null);
   const [form, setForm] = useState({
     fullName: "",
     email: "",
@@ -180,10 +181,17 @@ function AuthScreen() {
   useEffect(() => {
     if (typeof window === "undefined") return;
     try {
-      const errorParam = new URLSearchParams(window.location.search).get("error");
+      const params = new URLSearchParams(window.location.search);
+      const errorParam = params.get("error");
       if (errorParam === "google") {
         setGoogleFailed(true);
         setClientError("La connexion avec Google a échoué. Réessayez ou utilisez votre email.");
+      }
+      const verifiedParam = params.get("verified");
+      if (verifiedParam === "1") {
+        setVerifiedMessage({ ok: true, text: "Votre email a bien été confirmé — vous pouvez vous connecter." });
+      } else if (verifiedParam === "0") {
+        setVerifiedMessage({ ok: false, text: "Ce lien de confirmation est invalide ou a expiré." });
       }
     } catch {
       // ignore
@@ -365,6 +373,14 @@ function AuthScreen() {
               </button>
             </div>
 
+            {mode === "login" && (
+              <div className="text-right">
+                <Link to="/forgot-password" className="text-xs font-medium text-muted-foreground transition hover:text-primary">
+                  Mot de passe oublié ?
+                </Link>
+              </div>
+            )}
+
             <AnimatePresence initial={false}>
               {mode === "signup" && (
                 <motion.div
@@ -409,6 +425,15 @@ function AuthScreen() {
               )}
             </AnimatePresence>
 
+            {!error && verifiedMessage && (
+              <p
+                className={`rounded-xl px-4 py-2.5 text-sm ${
+                  verifiedMessage.ok ? "bg-primary/10 text-primary" : "bg-destructive/10 text-destructive"
+                }`}
+              >
+                {verifiedMessage.text}
+              </p>
+            )}
             {error && <p className="rounded-xl bg-destructive/10 px-4 py-2.5 text-sm text-destructive">{error}</p>}
 
             <button

@@ -52,6 +52,12 @@ public class User {
     private String country;
     private String language;
 
+    // false à l'inscription classique ; mis à true immédiatement pour les comptes
+    // créés via Google (email déjà vérifié par Google, cf. OAuth2LoginSuccessHandler)
+    @Builder.Default
+    @Column(nullable = false)
+    private boolean emailVerified = false;
+
     @Builder.Default
     @Column(nullable = false)
     private LocalDateTime createdAt = LocalDateTime.now();

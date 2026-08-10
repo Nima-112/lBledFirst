@@ -13,7 +13,9 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as ExperiencesRouteImport } from './routes/experiences'
+import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as FormationsRouteImport } from './routes/formations'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as AdminIndexRouteImport } from './routes/admin/index'
 import { Route as AdminBookingsRouteImport } from './routes/admin/bookings'
@@ -52,9 +54,19 @@ const ExperiencesRoute = ExperiencesRouteImport.update({
   path: '/experiences',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
+  id: '/forgot-password',
+  path: '/forgot-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const FormationsRoute = FormationsRouteImport.update({
   id: '/formations',
   path: '/formations',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
@@ -148,7 +160,9 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AdminRouteWithChildren
   '/auth': typeof AuthRoute
   '/experiences': typeof ExperiencesRouteWithChildren
+  '/forgot-password': typeof ForgotPasswordRoute
   '/formations': typeof FormationsRouteWithChildren
+  '/reset-password': typeof ResetPasswordRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/admin/bookings': typeof AdminBookingsRoute
   '/admin/dashboard': typeof AdminDashboardRoute
@@ -171,7 +185,9 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/experiences': typeof ExperiencesRouteWithChildren
+  '/forgot-password': typeof ForgotPasswordRoute
   '/formations': typeof FormationsRouteWithChildren
+  '/reset-password': typeof ResetPasswordRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/admin/bookings': typeof AdminBookingsRoute
   '/admin/dashboard': typeof AdminDashboardRoute
@@ -196,7 +212,9 @@ export interface FileRoutesById {
   '/admin': typeof AdminRouteWithChildren
   '/auth': typeof AuthRoute
   '/experiences': typeof ExperiencesRouteWithChildren
+  '/forgot-password': typeof ForgotPasswordRoute
   '/formations': typeof FormationsRouteWithChildren
+  '/reset-password': typeof ResetPasswordRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/admin/bookings': typeof AdminBookingsRoute
   '/admin/dashboard': typeof AdminDashboardRoute
@@ -222,7 +240,9 @@ export interface FileRouteTypes {
     | '/admin'
     | '/auth'
     | '/experiences'
+    | '/forgot-password'
     | '/formations'
+    | '/reset-password'
     | '/sitemap.xml'
     | '/admin/bookings'
     | '/admin/dashboard'
@@ -245,7 +265,9 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/experiences'
+    | '/forgot-password'
     | '/formations'
+    | '/reset-password'
     | '/sitemap.xml'
     | '/admin/bookings'
     | '/admin/dashboard'
@@ -269,7 +291,9 @@ export interface FileRouteTypes {
     | '/admin'
     | '/auth'
     | '/experiences'
+    | '/forgot-password'
     | '/formations'
+    | '/reset-password'
     | '/sitemap.xml'
     | '/admin/bookings'
     | '/admin/dashboard'
@@ -294,7 +318,9 @@ export interface RootRouteChildren {
   AdminRoute: typeof AdminRouteWithChildren
   AuthRoute: typeof AuthRoute
   ExperiencesRoute: typeof ExperiencesRouteWithChildren
+  ForgotPasswordRoute: typeof ForgotPasswordRoute
   FormationsRoute: typeof FormationsRouteWithChildren
+  ResetPasswordRoute: typeof ResetPasswordRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   MeBookingsRoute: typeof MeBookingsRoute
   MeFormationsRoute: typeof MeFormationsRoute
@@ -333,11 +359,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ExperiencesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/forgot-password': {
+      id: '/forgot-password'
+      path: '/forgot-password'
+      fullPath: '/forgot-password'
+      preLoaderRoute: typeof ForgotPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/formations': {
       id: '/formations'
       path: '/formations'
       fullPath: '/formations'
       preLoaderRoute: typeof FormationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/sitemap.xml': {
@@ -517,7 +557,9 @@ const rootRouteChildren: RootRouteChildren = {
   AdminRoute: AdminRouteWithChildren,
   AuthRoute: AuthRoute,
   ExperiencesRoute: ExperiencesRouteWithChildren,
+  ForgotPasswordRoute: ForgotPasswordRoute,
   FormationsRoute: FormationsRouteWithChildren,
+  ResetPasswordRoute: ResetPasswordRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   MeBookingsRoute: MeBookingsRoute,
   MeFormationsRoute: MeFormationsRoute,

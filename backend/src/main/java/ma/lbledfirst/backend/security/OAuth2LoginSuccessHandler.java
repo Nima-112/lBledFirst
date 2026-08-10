@@ -67,6 +67,9 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
                     .password(passwordEncoder.encode(UUID.randomUUID().toString()))
                     .role(UserRole.tourist)
                     .avatar(picture)
+                    // Google a déjà vérifié cette adresse — pas besoin de repasser par
+                    // l'email de confirmation utilisé pour les inscriptions classiques.
+                    .emailVerified(true)
                     .build();
             return userRepository.save(created);
         });
