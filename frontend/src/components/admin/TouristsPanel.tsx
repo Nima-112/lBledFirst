@@ -9,6 +9,7 @@ import {
   getUsersList,
   updateUser,
 } from "@/services/users.service";
+import type { Role } from "@/types/auth";
 
 type DraftUser = {
   fullName: string;
@@ -17,6 +18,7 @@ type DraftUser = {
   phone: string;
   country: string;
   nativeLanguage: string;
+  role: Role;
 };
 
 const EMPTY: DraftUser = {
@@ -26,6 +28,7 @@ const EMPTY: DraftUser = {
   phone: "",
   country: "",
   nativeLanguage: "",
+  role: "tourist",
 };
 
 export function TouristsPanel() {
@@ -66,7 +69,7 @@ export function TouristsPanel() {
 
   const users = listQuery.data ?? [];
   const tourists = useMemo(
-    () => users.filter((u) => u.role === "tourist"),
+    () => users.filter((u) => u.role !== "admin"),
     [users],
   );
   const filtered = useMemo(() => {
@@ -76,7 +79,8 @@ export function TouristsPanel() {
       (u) =>
         u.fullName.toLowerCase().includes(q) ||
         u.email.toLowerCase().includes(q) ||
-        (u.country ?? "").toLowerCase().includes(q),
+        (u.country ?? "").toLowerCase().includes(q) ||
+        (u.role ?? "").toLowerCase().includes(q),
     );
   }, [tourists, query]);
 
@@ -92,6 +96,7 @@ export function TouristsPanel() {
       phone: u.phone ?? "",
       country: u.country,
       nativeLanguage: u.nativeLanguage,
+      role: u.role,
     });
     setEditingId(u.id);
   };
@@ -102,13 +107,12 @@ export function TouristsPanel() {
       const existing = users.find((u) => u.id === editingId)!;
       await updateMutation.mutateAsync({
         id: editingId,
-        data: { ...existing, ...draft, role: "tourist" },
+        data: { ...existing, ...draft },
       });
     } else {
       const newUser: FrontUser = {
         id: "",
         ...draft,
-        role: "tourist",
         createdAt: new Date().toISOString(),
       };
       await createMutation.mutateAsync(newUser);
@@ -116,7 +120,7 @@ export function TouristsPanel() {
   };
 
   const remove = (id: string) => {
-    if (confirm("Supprimer ce touriste ?")) deleteMutation.mutate(id);
+    if (confirm("Supprimer cet utilisateur ?")) deleteMutation.mutate(id);
   };
 
   const busy = listQuery.isLoading || createMutation.isPending || updateMutation.isPending || deleteMutation.isPending;
@@ -124,12 +128,12 @@ export function TouristsPanel() {
   return (
     <section>
       <PanelHeader
-        title="Touristes"
-        subtitle="Consultez et gérez les utilisateurs inscrits sur la plateforme."
+        title="Utilisateurs"
+        subtitle="Consultez et gérez les utilisateurs (touristes, hôtes, formateurs) inscrits sur la plateforme."
         query={query}
         setQuery={setQuery}
         onAdd={startCreate}
-        addLabel="Nouveau touriste"
+        addLabel="Nouveau utilisateur"
       />
 
       {busy && (
@@ -139,7 +143,7 @@ export function TouristsPanel() {
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         {filtered.length === 0 && !listQuery.isLoading && (
           <p className="col-span-full rounded-2xl border border-border bg-card px-5 py-10 text-center text-sm text-muted-foreground">
-            Aucun touriste.
+            Aucun utilisateur trouvé.
           </p>
         )}
         {filtered.map((u) => (
@@ -151,7 +155,17 @@ export function TouristsPanel() {
                 </span>
                 <div className="min-w-0">
                   <p className="truncate font-semibold text-foreground">{u.fullName}</p>
-                  <p className="truncate text-xs text-muted-foreground">{u.country || "—"}</p>
+                  <div className="flex flex-wrap items-center gap-1.5 mt-0.5">
+                    <span className="truncate text-xs text-muted-foreground">{u.country || "—"}</span>
+                    <span className={`inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-medium border ${
+                      u.role === "host" ? "bg-amber-50 text-amber-700 border-amber-200" :
+                      u.role === "formateur" ? "bg-blue-50 text-blue-700 border-blue-200" :
+                      u.role === "admin" ? "bg-red-50 text-red-700 border-red-200" :
+                      "bg-green-50 text-green-700 border-green-200"
+                    }`}>
+                      {u.role === "tourist" ? "Touriste" : u.role === "host" ? "Hôte" : u.role === "formateur" ? "Formateur" : u.role}
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -180,7 +194,7 @@ export function TouristsPanel() {
 
       <Modal
         open={creating || !!editingId}
-        title={editingId ? "Modifier le touriste" : "Nouveau touriste"}
+        title={editingId ? "Modifier l'utilisateur" : "Nouvel utilisateur"}
         onClose={() => {
           setCreating(false);
           setEditingId(null);
@@ -227,14 +241,27 @@ export function TouristsPanel() {
             />
           </Field>
         </div>
-        <Field label={editingId ? "Nouveau mot de passe (laisser vide pour inchangé)" : "Mot de passe"}>
-          <input
-            className={fieldCls}
-            type="text"
-            value={draft.password}
-            onChange={(e) => setDraft({ ...draft, password: e.target.value })}
-          />
-        </Field>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field label="Rôle">
+            <select
+              className={fieldCls}
+              value={draft.role}
+              onChange={(e) => setDraft({ ...draft, role: e.target.value as any })}
+            >
+              <option value="tourist">Touriste</option>
+              <option value="host">Hôte (Host)</option>
+              <option value="formateur">Formateur</option>
+            </select>
+          </Field>
+          <Field label={editingId ? "Nouveau mot de passe (laisser vide pour inchangé)" : "Mot de passe"}>
+            <input
+              className={fieldCls}
+              type="text"
+              value={draft.password}
+              onChange={(e) => setDraft({ ...draft, password: e.target.value })}
+            />
+          </Field>
+        </div>
       </Modal>
     </section>
   );

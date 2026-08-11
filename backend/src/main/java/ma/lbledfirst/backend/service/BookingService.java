@@ -5,6 +5,9 @@ import ma.lbledfirst.backend.domain.BookingStatus;
 import ma.lbledfirst.backend.domain.Experience;
 import ma.lbledfirst.backend.domain.ExperienceStatus;
 import ma.lbledfirst.backend.domain.User;
+import ma.lbledfirst.backend.dto.BookingRequest;
+import ma.lbledfirst.backend.dto.BookingResponse;
+import ma.lbledfirst.backend.dto.UserResponse;
 import ma.lbledfirst.backend.repository.BookingRepository;
 import ma.lbledfirst.backend.repository.ExperienceRepository;
 import ma.lbledfirst.backend.repository.UserRepository;
@@ -14,8 +17,10 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.http.HttpStatus;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 
@@ -42,50 +47,37 @@ public class BookingService extends AbstractCrudService<Booking, Long> {
                 .anyMatch(g -> "ROLE_ADMIN".equals(g.getAuthority()));
     }
 
-    @Override
-    @Transactional(readOnly = true)
-    public List<Booking> findAll() {
-        List<Booking> list = super.findAll();
-        for (Booking b : list) {
-            Hibernate.initialize(b.getTourist());
-            Hibernate.initialize(b.getExperience());
-            if (b.getExperience() != null) {
-                Hibernate.initialize(b.getExperience().getHost());
-                if (b.getExperience().getRegion() != null) {
-                    Hibernate.initialize(b.getExperience().getRegion());
-                }
-            }
-        }
-        return list;
+    private UserResponse mapToUserResponse(User user) {
+        if (user == null) return null;
+        return new UserResponse(
+                user.getId(),
+                user.getName(),
+                user.getEmail(),
+                user.getRole() != null ? user.getRole().name() : null,
+                user.getPhone(),
+                user.getCountry(),
+                user.getLanguage(),
+                user.getAvatar(),
+                user.isEmailVerified()
+        );
     }
 
-    @Transactional(readOnly = true)
-    public List<Booking> findMyBookings() {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth == null || auth.getName() == null) {
-            throw new ResponseStatusException(org.springframework.http.HttpStatus.UNAUTHORIZED, "Not authenticated");
-        }
-        User user = userRepository.findByEmail(auth.getName())
-                .orElseThrow(() -> new ResponseStatusException(org.springframework.http.HttpStatus.UNAUTHORIZED, "User not found"));
-
-        List<Booking> list = bookingRepository.findByTouristId(user.getId());
-        for (Booking b : list) {
-            Hibernate.initialize(b.getTourist());
-            Hibernate.initialize(b.getExperience());
-            if (b.getExperience() != null) {
-                Hibernate.initialize(b.getExperience().getHost());
-                if (b.getExperience().getRegion() != null) {
-                    Hibernate.initialize(b.getExperience().getRegion());
-                }
-            }
-        }
-        return list;
+    private BookingResponse mapToResponse(Booking b) {
+        if (b == null) return null;
+        return new BookingResponse(
+                b.getId(),
+                mapToUserResponse(b.getTourist()),
+                b.getExperience(),
+                b.getDate(),
+                b.getStatus(),
+                b.getTotalPrice(),
+                b.getGuests(),
+                b.getCreatedAt()
+        );
     }
 
-    @Override
-    @Transactional(readOnly = true)
-    public Booking findById(Long id) {
-        Booking b = super.findById(id);
+    private void initializeLazyFields(Booking b) {
+        if (b == null) return;
         Hibernate.initialize(b.getTourist());
         Hibernate.initialize(b.getExperience());
         if (b.getExperience() != null) {
@@ -94,23 +86,56 @@ public class BookingService extends AbstractCrudService<Booking, Long> {
                 Hibernate.initialize(b.getExperience().getRegion());
             }
         }
-        return b;
     }
 
-    @Override
+    @Transactional(readOnly = true)
+    public List<BookingResponse> findAllDto() {
+        List<Booking> list = bookingRepository.findAll();
+        list.forEach(this::initializeLazyFields);
+        return list.stream().map(this::mapToResponse).collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public List<BookingResponse> findMyBookingsDto(String email) {
+        if (email == null) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Not authenticated");
+        }
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not found"));
+
+        List<Booking> list = bookingRepository.findByTouristId(user.getId());
+        list.forEach(this::initializeLazyFields);
+        return list.stream().map(this::mapToResponse).collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public BookingResponse findByIdDto(Long id) {
+        Booking b = bookingRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Booking not found"));
+        initializeLazyFields(b);
+        return mapToResponse(b);
+    }
+
     @Transactional
-    public Booking save(Booking booking) {
-        if (booking.getExperience() == null || booking.getExperience().getId() == null) {
+    public BookingResponse createDto(BookingRequest req, String currentTouristEmail) {
+        if (req.getExperience() == null || req.getExperience().getId() == null) {
             throw new ResponseStatusException(BAD_REQUEST, "Experience is required");
         }
-        if (booking.getTourist() == null || booking.getTourist().getId() == null) {
-            throw new ResponseStatusException(BAD_REQUEST, "Tourist is required");
+
+        User tourist;
+        if (isCurrentUserAdmin() && req.getTourist() != null && req.getTourist().getId() != null) {
+            tourist = userRepository.findById(req.getTourist().getId())
+                    .orElseThrow(() -> new ResponseStatusException(BAD_REQUEST, "Tourist not found"));
+        } else {
+            if (currentTouristEmail == null) {
+                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Not authenticated");
+            }
+            tourist = userRepository.findByEmail(currentTouristEmail)
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not found"));
         }
 
-        Experience experience = experienceRepository.findById(booking.getExperience().getId())
+        Experience experience = experienceRepository.findById(req.getExperience().getId())
                 .orElseThrow(() -> new ResponseStatusException(BAD_REQUEST, "Experience not found"));
-        User tourist = userRepository.findById(booking.getTourist().getId())
-                .orElseThrow(() -> new ResponseStatusException(BAD_REQUEST, "Tourist not found"));
 
         if (!isCurrentUserAdmin() && experience.getStatus() != ExperienceStatus.published) {
             throw new ResponseStatusException(BAD_REQUEST, "Cannot book an experience that is not published");
@@ -120,61 +145,100 @@ public class BookingService extends AbstractCrudService<Booking, Long> {
             throw new ResponseStatusException(BAD_REQUEST, "An owner cannot book their own experience");
         }
 
-        booking.setExperience(experience);
-        booking.setTourist(tourist);
-        if (booking.getTotalPrice() == null) {
-            booking.setTotalPrice(experience.getPrice());
+        Booking booking = Booking.builder()
+                .experience(experience)
+                .tourist(tourist)
+                .date(req.getDate())
+                .totalPrice(req.getTotalPrice() != null ? req.getTotalPrice() : experience.getPrice())
+                .status(req.getStatus() != null ? req.getStatus() : BookingStatus.pending)
+                .guests(req.getGuests() != null && req.getGuests() >= 1 ? req.getGuests() : 1)
+                .build();
+
+        Booking saved = bookingRepository.save(booking);
+        initializeLazyFields(saved);
+        return mapToResponse(saved);
+    }
+
+    @Transactional
+    public BookingResponse updateDto(Long id, BookingRequest req) {
+        Booking existing = bookingRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Booking not found"));
+
+        if (req.getExperience() != null && req.getExperience().getId() != null) {
+            Experience exp = experienceRepository.findById(req.getExperience().getId())
+                    .orElseThrow(() -> new ResponseStatusException(BAD_REQUEST, "Experience not found"));
+            existing.setExperience(exp);
         }
-        if (booking.getStatus() == null) {
-            booking.setStatus(BookingStatus.pending);
+        if (req.getTourist() != null && req.getTourist().getId() != null) {
+            User t = userRepository.findById(req.getTourist().getId())
+                    .orElseThrow(() -> new ResponseStatusException(BAD_REQUEST, "Tourist not found"));
+            existing.setTourist(t);
         }
-        if (booking.getGuests() == null || booking.getGuests() < 1) {
-            booking.setGuests(1);
+        if (req.getDate() != null) existing.setDate(req.getDate());
+        if (req.getStatus() != null) existing.setStatus(req.getStatus());
+        if (req.getTotalPrice() != null) existing.setTotalPrice(req.getTotalPrice());
+        if (req.getGuests() != null) existing.setGuests(req.getGuests());
+
+        Booking saved = bookingRepository.save(existing);
+        initializeLazyFields(saved);
+        return mapToResponse(saved);
+    }
+
+    @Transactional
+    public BookingResponse cancelDto(Long id, String email, boolean isAdmin) {
+        if (email == null) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Not authenticated");
+        }
+        Booking booking = bookingRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Booking not found"));
+
+        User currentUser = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not found"));
+
+        if (!isAdmin && !booking.getTourist().getId().equals(currentUser.getId())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You can only cancel your own bookings");
+        }
+        if (booking.getStatus() == BookingStatus.completed) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cannot cancel a completed booking");
+        }
+        if (booking.getStatus() == BookingStatus.cancelled) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Booking is already cancelled");
         }
 
-        Booking saved = super.save(booking);
-        Hibernate.initialize(saved.getTourist());
-        Hibernate.initialize(saved.getExperience());
-        if (saved.getExperience() != null) {
-            Hibernate.initialize(saved.getExperience().getHost());
-            if (saved.getExperience().getRegion() != null) {
-                Hibernate.initialize(saved.getExperience().getRegion());
-            }
-        }
-        return saved;
+        booking.setStatus(BookingStatus.cancelled);
+        Booking saved = bookingRepository.save(booking);
+        initializeLazyFields(saved);
+        return mapToResponse(saved);
+    }
+
+    // Keep entities methods for backwards compatibility
+    @Override
+    @Transactional(readOnly = true)
+    public List<Booking> findAll() {
+        List<Booking> list = super.findAll();
+        list.forEach(this::initializeLazyFields);
+        return list;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Booking findById(Long id) {
+        Booking b = super.findById(id);
+        initializeLazyFields(b);
+        return b;
+    }
+
+    @Override
+    @Transactional
+    public Booking save(Booking booking) {
+        initializeLazyFields(booking);
+        return super.save(booking);
     }
 
     @Override
     @Transactional
     public Booking update(Long id, Booking booking) {
-        Booking existing = bookingRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(
-                        org.springframework.http.HttpStatus.NOT_FOUND, "Booking not found"));
-
-        if (booking.getExperience() != null && booking.getExperience().getId() != null) {
-            Experience exp = experienceRepository.findById(booking.getExperience().getId())
-                    .orElseThrow(() -> new ResponseStatusException(BAD_REQUEST, "Experience not found"));
-            existing.setExperience(exp);
-        }
-        if (booking.getTourist() != null && booking.getTourist().getId() != null) {
-            User t = userRepository.findById(booking.getTourist().getId())
-                    .orElseThrow(() -> new ResponseStatusException(BAD_REQUEST, "Tourist not found"));
-            existing.setTourist(t);
-        }
-        if (booking.getDate() != null) existing.setDate(booking.getDate());
-        if (booking.getStatus() != null) existing.setStatus(booking.getStatus());
-        if (booking.getTotalPrice() != null) existing.setTotalPrice(booking.getTotalPrice());
-        if (booking.getGuests() != null) existing.setGuests(booking.getGuests());
-
-        Booking saved = bookingRepository.save(existing);
-        Hibernate.initialize(saved.getTourist());
-        Hibernate.initialize(saved.getExperience());
-        if (saved.getExperience() != null) {
-            Hibernate.initialize(saved.getExperience().getHost());
-            if (saved.getExperience().getRegion() != null) {
-                Hibernate.initialize(saved.getExperience().getRegion());
-            }
-        }
-        return saved;
+        initializeLazyFields(booking);
+        return super.update(id, booking);
     }
 }

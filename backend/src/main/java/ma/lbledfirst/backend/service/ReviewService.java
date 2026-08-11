@@ -1,11 +1,15 @@
 package ma.lbledfirst.backend.service;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 import ma.lbledfirst.backend.domain.Experience;
 import ma.lbledfirst.backend.domain.Formation;
 import ma.lbledfirst.backend.domain.Review;
 import ma.lbledfirst.backend.domain.User;
+import ma.lbledfirst.backend.dto.ReviewRequest;
+import ma.lbledfirst.backend.dto.ReviewResponse;
+import ma.lbledfirst.backend.dto.UserResponse;
 import ma.lbledfirst.backend.repository.ExperienceRepository;
 import ma.lbledfirst.backend.repository.FormationCapsuleProgressRepository;
 import ma.lbledfirst.backend.repository.FormationPurchaseRepository;
@@ -46,77 +50,106 @@ public class ReviewService extends AbstractCrudService<Review, Long> {
         this.progressRepository = progressRepository;
     }
 
-    /**
-     * Crée un avis pour l'utilisateur actuellement authentifié (déduit du JWT,
-     * jamais du corps de la requête, pour éviter qu'un utilisateur poste un
-     * avis au nom d'un autre).
-     */
+    private UserResponse mapToUserResponse(User user) {
+        if (user == null) return null;
+        return new UserResponse(
+                user.getId(),
+                user.getName(),
+                user.getEmail(),
+                user.getRole() != null ? user.getRole().name() : null,
+                user.getPhone(),
+                user.getCountry(),
+                user.getLanguage(),
+                user.getAvatar(),
+                user.isEmailVerified()
+        );
+    }
+
+    private ReviewResponse mapToResponse(Review r) {
+        if (r == null) return null;
+        return new ReviewResponse(
+                r.getId(),
+                mapToUserResponse(r.getTourist()),
+                r.getExperience(),
+                r.getFormation(),
+                r.getRating(),
+                r.getComment(),
+                r.getCreatedAt()
+        );
+    }
+
+    @Transactional(readOnly = true)
+    public List<ReviewResponse> findAllDto() {
+        return reviewRepository.findAll().stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public ReviewResponse findByIdDto(Long id) {
+        Review r = reviewRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "Review not found"));
+        return mapToResponse(r);
+    }
+
+    @Transactional(readOnly = true)
+    public List<ReviewResponse> findByFormationIdDto(Long formationId) {
+        return reviewRepository.findByFormationId(formationId).stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public List<ReviewResponse> findByExperienceIdDto(Long experienceId) {
+        return reviewRepository.findByExperienceId(experienceId).stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public List<ReviewResponse> findMineDto(String email) {
+        User tourist = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResponseStatusException(BAD_REQUEST, "Utilisateur introuvable"));
+        return reviewRepository.findByTouristId(tourist.getId()).stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
     @Transactional
-    public Review createForCurrentUser(Review review, String touristEmail) {
+    public ReviewResponse createDto(ReviewRequest req, String touristEmail) {
         User tourist = userRepository.findByEmail(touristEmail)
                 .orElseThrow(() -> new ResponseStatusException(BAD_REQUEST, "Utilisateur introuvable"));
-        review.setId(null);
+        
+        Review review = new Review();
         review.setTourist(tourist);
+        review.setRating(req.getRating());
+        review.setComment(req.getComment());
 
-        Formation formation = resolveTargetAndValidate(review, tourist);
+        Formation formation = resolveTargetAndValidate(req, review, tourist);
 
         Review saved = reviewRepository.save(review);
         recomputeFormationRating(formation);
-        return saved;
+        return mapToResponse(saved);
     }
 
-    @Override
     @Transactional
-    public Review update(Long id, Review review) {
+    public ReviewResponse updateDto(Long id, ReviewRequest req) {
         Review existing = reviewRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "Review not found"));
 
-        if (review.getRating() != null) existing.setRating(review.getRating());
-        if (review.getComment() != null) existing.setComment(review.getComment());
+        if (req.getRating() != null) existing.setRating(req.getRating());
+        if (req.getComment() != null) existing.setComment(req.getComment());
 
         Review saved = reviewRepository.save(existing);
         recomputeFormationRating(saved.getFormation());
-        return saved;
-    }
-
-    @Override
-    @Transactional
-    public void delete(Long id) {
-        Review existing = reviewRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "Review not found"));
-        Formation formation = existing.getFormation();
-        reviewRepository.deleteById(id);
-        recomputeFormationRating(formation);
-    }
-
-    @Transactional(readOnly = true)
-    public List<Review> findByFormationId(Long formationId) {
-        return reviewRepository.findByFormationId(formationId);
-    }
-
-    @Transactional(readOnly = true)
-    public List<Review> findByExperienceId(Long experienceId) {
-        return reviewRepository.findByExperienceId(experienceId);
-    }
-
-    @Transactional(readOnly = true)
-    public List<Review> findByTouristEmail(String email) {
-        User tourist = userRepository.findByEmail(email)
-                .orElseThrow(() -> new ResponseStatusException(BAD_REQUEST, "Utilisateur introuvable"));
-        return reviewRepository.findByTouristId(tourist.getId());
+        return mapToResponse(saved);
     }
 
     // ---- Helpers --------------------------------------------------------------
 
-    /**
-     * Vérifie qu'un avis cible exactement une formation OU une expérience (jamais
-     * les deux, jamais aucune des deux), applique les règles métier associées
-     * (formation terminée + achetée, un seul avis par utilisateur et par cible)
-     * et renvoie la formation concernée si applicable (pour recalcul de note).
-     */
-    private Formation resolveTargetAndValidate(Review review, User tourist) {
-        boolean hasFormation = review.getFormation() != null && review.getFormation().getId() != null;
-        boolean hasExperience = review.getExperience() != null && review.getExperience().getId() != null;
+    private Formation resolveTargetAndValidate(ReviewRequest req, Review review, User tourist) {
+        boolean hasFormation = req.getFormation() != null && req.getFormation().getId() != null;
+        boolean hasExperience = req.getExperience() != null && req.getExperience().getId() != null;
 
         if (hasFormation == hasExperience) {
             throw new ResponseStatusException(BAD_REQUEST,
@@ -124,7 +157,7 @@ public class ReviewService extends AbstractCrudService<Review, Long> {
         }
 
         if (hasFormation) {
-            Formation formation = formationRepository.findById(review.getFormation().getId())
+            Formation formation = formationRepository.findById(req.getFormation().getId())
                     .orElseThrow(() -> new ResponseStatusException(BAD_REQUEST, "Formation introuvable"));
 
             ensureFormationCompleted(formation, tourist);
@@ -137,7 +170,7 @@ public class ReviewService extends AbstractCrudService<Review, Long> {
             review.setExperience(null);
             return formation;
         } else {
-            Experience experience = experienceRepository.findById(review.getExperience().getId())
+            Experience experience = experienceRepository.findById(req.getExperience().getId())
                     .orElseThrow(() -> new ResponseStatusException(BAD_REQUEST, "Expérience introuvable"));
 
             if (reviewRepository.findByTouristIdAndExperienceId(tourist.getId(), experience.getId()).isPresent()) {
@@ -150,11 +183,6 @@ public class ReviewService extends AbstractCrudService<Review, Long> {
         }
     }
 
-    /**
-     * Une formation est considérée "terminée" par un utilisateur quand il l'a
-     * achetée et que toutes ses capsules sont marquées comme complétées
-     * (cf. FormationService#toggleCapsuleCompletion).
-     */
     private void ensureFormationCompleted(Formation formation, User tourist) {
         boolean purchased = formationPurchaseRepository
                 .existsByUserIdAndFormationId(tourist.getId(), formation.getId());
@@ -176,10 +204,6 @@ public class ReviewService extends AbstractCrudService<Review, Long> {
         }
     }
 
-    /**
-     * Recalcule averageRating/reviewsCount d'une formation à partir des avis
-     * réels — ces champs ne sont plus jamais saisis manuellement par l'admin.
-     */
     private void recomputeFormationRating(Formation formation) {
         if (formation == null) return;
 

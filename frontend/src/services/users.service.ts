@@ -1,11 +1,12 @@
 import { api, API_ORIGIN } from "@/lib/api";
+import type { Role } from "@/types/auth";
 
 export type ApiUser = {
   id: number;
   name: string;
   email: string;
   password?: string | null;
-  role: "tourist" | "admin";
+  role: Role;
   phone?: string | null;
   avatar?: string | null;
   country?: string | null;
@@ -17,7 +18,7 @@ export type ApiUserPayload = {
   name: string;
   email: string;
   password?: string | null;
-  role?: "tourist" | "admin";
+  role?: Role;
   phone?: string | null;
   avatar?: string | null;
   country?: string | null;
@@ -33,7 +34,7 @@ export type FrontUser = {
   avatar?: string;
   country: string;
   nativeLanguage: string;
-  role: "tourist" | "admin";
+  role: Role;
   createdAt: string;
 };
 
