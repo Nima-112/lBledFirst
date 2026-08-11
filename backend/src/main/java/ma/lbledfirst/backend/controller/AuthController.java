@@ -40,12 +40,13 @@ public class AuthController {
     private String frontendBaseUrl;
 
     @PostMapping("/register")
-    public ResponseEntity<UserResponse> register(
-            @Valid @RequestBody RegisterRequest req,
-            HttpServletResponse response) {
+    public ResponseEntity<UserResponse> register(@Valid @RequestBody RegisterRequest req) {
 
+        // Pas de cookie posé ici : le compte est créé mais l'utilisateur n'est PAS
+        // connecté tant qu'il n'a pas confirmé son email (cf. login(), qui refuse
+        // désormais les comptes non vérifiés). Sans ça, l'inscription redirigeait
+        // directement vers l'espace membre sans jamais passer par la confirmation.
         AuthResponse auth = authService.register(req);
-        setAuthCookie(response, auth.getToken());
 
         return ResponseEntity.ok(toUserResponse(auth));
     }
@@ -108,8 +109,8 @@ public class AuthController {
     }
 
     @PostMapping("/resend-verification")
-    public ResponseEntity<Void> resendVerification(Authentication authentication) {
-        authService.resendVerificationEmail(authentication.getName());
+    public ResponseEntity<Void> resendVerification(@Valid @RequestBody ForgotPasswordRequest req) {
+        authService.resendVerificationEmail(req.getEmail());
         return ResponseEntity.noContent().build();
     }
 

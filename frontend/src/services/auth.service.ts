@@ -29,7 +29,9 @@ export const authService = {
     await api.post("/auth/reset-password", payload);
   },
 
-  async resendVerification(): Promise<void> {
-    await api.post("/auth/resend-verification");
+  // Public (pas besoin d'être connecté) : utile juste après l'inscription ou
+  // quand la connexion est refusée pour cause d'email non confirmé.
+  async resendVerification(email: string): Promise<void> {
+    await api.post("/auth/resend-verification", { email });
   },
 };

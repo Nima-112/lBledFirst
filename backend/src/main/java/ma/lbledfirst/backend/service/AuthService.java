@@ -10,6 +10,7 @@ import ma.lbledfirst.backend.domain.PasswordResetToken;
 import ma.lbledfirst.backend.domain.User;
 import ma.lbledfirst.backend.domain.UserRole;
 import ma.lbledfirst.backend.exception.EmailAlreadyExistsException;
+import ma.lbledfirst.backend.exception.EmailNotVerifiedException;
 import ma.lbledfirst.backend.exception.InvalidCredentialsException;
 import ma.lbledfirst.backend.exception.InvalidOrExpiredTokenException;
 import ma.lbledfirst.backend.exception.PasswordMismatchException;
@@ -76,6 +77,10 @@ public class AuthService {
             throw new InvalidCredentialsException("Identifiants invalides");
         }
 
+        if (!user.isEmailVerified()) {
+            throw new EmailNotVerifiedException("Veuillez confirmer votre email avant de vous connecter. Vérifiez votre boîte de réception.");
+        }
+
         String token = jwtUtil.generateToken(user.getEmail(), user.getRole().name());
 
         return new AuthResponse(user.getId(), token, user.getRole().name(), user.getName(), user.getEmail(), user.getPhone(), user.getCountry(), user.getLanguage(), user.getAvatar(), user.isEmailVerified());
@@ -102,13 +107,17 @@ public class AuthService {
         emailService.sendVerificationEmail(user.getEmail(), user.getName(), token);
     }
 
-    // Utilisé par l'utilisateur connecté qui n'a pas reçu/retrouvé l'email initial
+    // Public (pas d'authentification requise) : un utilisateur qui vient de
+    // s'inscrire ou dont la connexion est refusée pour cause d'email non
+    // confirmé n'a justement pas de session pour appeler un endpoint protégé.
+    // Comportement silencieux et identique que le compte existe ou non, comme
+    // forgotPassword(), pour ne pas révéler quels emails sont enregistrés.
     @Transactional
     public void resendVerificationEmail(String email) {
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new InvalidCredentialsException("Utilisateur introuvable"));
-        if (user.isEmailVerified()) return; // rien à faire, silencieux
-        sendVerificationEmail(user);
+        userRepository.findByEmail(email).ifPresent(user -> {
+            if (user.isEmailVerified()) return;
+            sendVerificationEmail(user);
+        });
     }
 
     @Transactional

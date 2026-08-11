@@ -60,6 +60,18 @@ public class GlobalExceptionHandler {
         return buildResponse(HttpStatus.UNAUTHORIZED, ex.getMessage());
     }
 
+    @ExceptionHandler(InvalidOrExpiredTokenException.class)
+    public ResponseEntity<Map<String, Object>> handleInvalidToken(InvalidOrExpiredTokenException ex) {
+        log.warn("Token invalide : {}", ex.getMessage());
+        return buildResponse(HttpStatus.BAD_REQUEST, ex.getMessage()); // 400
+    }
+
+    @ExceptionHandler(EmailNotVerifiedException.class)
+    public ResponseEntity<Map<String, Object>> handleEmailNotVerified(EmailNotVerifiedException ex) {
+        log.warn("Connexion refusée (email non confirmé) : {}", ex.getMessage());
+        return buildResponse(HttpStatus.FORBIDDEN, ex.getMessage()); // 403
+    }
+
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<Map<String, Object>> handleIllegalArgument(IllegalArgumentException ex) {
         log.warn("Argument invalide : {}", ex.getMessage());
