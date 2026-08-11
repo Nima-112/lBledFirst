@@ -27,9 +27,12 @@ public class EmailService {
     @Value("${app.frontend.base-url}")
     private String frontendBaseUrl;
 
+    @Value("${app.backend.base-url}")
+    private String backendBaseUrl;
+
     @Async
     public void sendVerificationEmail(String toEmail, String toName, String token) {
-        String link = frontendBaseUrl + "/verify-email?token=" + token;
+        String link = backendBaseUrl + "/api/auth/verify-email?token=" + token;
         String body = """
                 <div style="font-family: Arial, sans-serif; max-width: 480px; margin: auto;">
                     <h2 style="color:#b45309;">Bienvenue sur L'Bled First, %s !</h2>
@@ -41,7 +44,8 @@ public class EmailService {
                     </p>
                     <p style="color:#666;font-size:13px;">Ce lien expire dans 24 heures. Si vous n'êtes pas à l'origine de cette inscription, ignorez cet email.</p>
                 </div>
-                """.formatted(toName, link);
+                """
+                .formatted(toName, link);
 
         send(toEmail, "Confirmez votre adresse email — L'Bled First", body);
     }
@@ -61,7 +65,8 @@ public class EmailService {
                     </p>
                     <p style="color:#666;font-size:13px;">Ce lien expire dans 1 heure. Si vous n'êtes pas à l'origine de cette demande, ignorez cet email — votre mot de passe reste inchangé.</p>
                 </div>
-                """.formatted(toName, link);
+                """
+                .formatted(toName, link);
 
         send(toEmail, "Réinitialisation de votre mot de passe — L'Bled First", body);
     }

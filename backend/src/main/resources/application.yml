@@ -79,6 +79,8 @@ app:
     from: ${MAIL_FROM:no-reply@lbledfirst.ma}
   frontend:
     base-url: ${FRONTEND_BASE_URL:http://localhost:3000}
+  backend:
+    base-url: ${BACKEND_BASE_URL:http://localhost:8080}
 
 openai:
   api-key: ${OPENAI_API_KEY:changeme}

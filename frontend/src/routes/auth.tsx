@@ -168,7 +168,9 @@ function AuthScreen() {
   const [showPw, setShowPw] = useState(false);
   const [clientError, setClientError] = useState<string | null>(null);
   const [googleFailed, setGoogleFailed] = useState(false);
-  const [verifiedMessage, setVerifiedMessage] = useState<{ ok: boolean; text: string } | null>(null);
+  const [verifiedMessage, setVerifiedMessage] = useState<{ ok: boolean; text: string } | null>(
+    null,
+  );
   const [form, setForm] = useState({
     fullName: "",
     email: "",
@@ -189,9 +191,15 @@ function AuthScreen() {
       }
       const verifiedParam = params.get("verified");
       if (verifiedParam === "1") {
-        setVerifiedMessage({ ok: true, text: "Votre email a bien été confirmé — vous pouvez vous connecter." });
+        setVerifiedMessage({
+          ok: true,
+          text: "Votre email a bien été confirmé — vous pouvez vous connecter.",
+        });
       } else if (verifiedParam === "0") {
-        setVerifiedMessage({ ok: false, text: "Ce lien de confirmation est invalide ou a expiré." });
+        setVerifiedMessage({
+          ok: false,
+          text: "Ce lien de confirmation est invalide ou a expiré.",
+        });
       }
     } catch {
       // ignore
@@ -203,9 +211,22 @@ function AuthScreen() {
   };
 
   const loading = loginLoading || signupLoading;
-  const error = (googleFailed ? "La connexion avec Google a échoué. Réessayez ou utilisez votre email." : null) || clientError || loginError || signupError;
-  const countryOptions = COUNTRIES.map((country) => ({ value: country.name, label: country.name, hint: country.flag }));
-  const languageOptions = NATIVE_LANGUAGES.map((language) => ({ value: language.name, label: language.name }));
+  const error =
+    (googleFailed
+      ? "La connexion avec Google a échoué. Réessayez ou utilisez votre email."
+      : null) ||
+    clientError ||
+    loginError ||
+    signupError;
+  const countryOptions = COUNTRIES.map((country) => ({
+    value: country.name,
+    label: country.name,
+    hint: country.flag,
+  }));
+  const languageOptions = NATIVE_LANGUAGES.map((language) => ({
+    value: language.name,
+    label: language.name,
+  }));
 
   const finishAuth = (role?: "admin" | "tourist") => {
     const pendingRedirect = window.localStorage.getItem("lbf.auth.redirect");
@@ -261,6 +282,14 @@ function AuthScreen() {
     });
 
     if (!result.ok) return;
+    if (result.emailVerified === false) {
+      setMode("login");
+      setVerifiedMessage({
+        ok: false,
+        text: "Compte créé ! Vérifiez votre boîte mail et cliquez sur le lien de confirmation avant de vous connecter.",
+      });
+      return;
+    }
     finishAuth(result.role);
   };
 
@@ -270,7 +299,11 @@ function AuthScreen() {
   return (
     <div className="grid min-h-screen bg-background lg:grid-cols-2">
       <div className="relative hidden overflow-hidden lg:block">
-        <img src={heroAtlas} alt="Paysage rural marocain dans l'Atlas" className="absolute inset-0 h-full w-full object-cover" />
+        <img
+          src={heroAtlas}
+          alt="Paysage rural marocain dans l'Atlas"
+          className="absolute inset-0 h-full w-full object-cover"
+        />
         <div className="absolute inset-0 bg-gradient-to-t from-ink/80 via-ink/30 to-transparent" />
         <div className="absolute inset-x-0 bottom-0 p-12 text-card">
           <p className="font-hand text-3xl text-saffron">{c.welcome}</p>
@@ -280,7 +313,10 @@ function AuthScreen() {
 
       <div className="flex flex-col px-5 py-8 sm:px-10">
         <div className="flex items-center justify-between">
-          <Link to="/" className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground transition hover:text-foreground">
+          <Link
+            to="/"
+            className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground transition hover:text-foreground"
+          >
             <ArrowLeft className="h-4 w-4" />
             {c.back}
           </Link>
@@ -300,7 +336,9 @@ function AuthScreen() {
                   setClientError(null);
                 }}
                 className={`relative rounded-full px-6 py-2 text-sm font-semibold transition ${
-                  mode === tab ? "text-primary-foreground" : "text-muted-foreground hover:text-foreground"
+                  mode === tab
+                    ? "text-primary-foreground"
+                    : "text-muted-foreground hover:text-foreground"
                 }`}
               >
                 {mode === tab && (
@@ -347,12 +385,25 @@ function AuthScreen() {
                   exit={{ opacity: 0, height: 0 }}
                   className="overflow-hidden"
                 >
-                  <input className={inputCls} placeholder={c.fullName} value={form.fullName} onChange={set("fullName")} autoComplete="name" />
+                  <input
+                    className={inputCls}
+                    placeholder={c.fullName}
+                    value={form.fullName}
+                    onChange={set("fullName")}
+                    autoComplete="name"
+                  />
                 </motion.div>
               )}
             </AnimatePresence>
 
-            <input className={inputCls} type="email" placeholder={c.email} value={form.email} onChange={set("email")} autoComplete="email" />
+            <input
+              className={inputCls}
+              type="email"
+              placeholder={c.email}
+              value={form.email}
+              onChange={set("email")}
+              autoComplete="email"
+            />
 
             <div className="relative">
               <input
@@ -375,7 +426,10 @@ function AuthScreen() {
 
             {mode === "login" && (
               <div className="text-right">
-                <Link to="/forgot-password" className="text-xs font-medium text-muted-foreground transition hover:text-primary">
+                <Link
+                  to="/forgot-password"
+                  className="text-xs font-medium text-muted-foreground transition hover:text-primary"
+                >
                   Mot de passe oublié ?
                 </Link>
               </div>
@@ -428,13 +482,19 @@ function AuthScreen() {
             {!error && verifiedMessage && (
               <p
                 className={`rounded-xl px-4 py-2.5 text-sm ${
-                  verifiedMessage.ok ? "bg-primary/10 text-primary" : "bg-destructive/10 text-destructive"
+                  verifiedMessage.ok
+                    ? "bg-primary/10 text-primary"
+                    : "bg-destructive/10 text-destructive"
                 }`}
               >
                 {verifiedMessage.text}
               </p>
             )}
-            {error && <p className="rounded-xl bg-destructive/10 px-4 py-2.5 text-sm text-destructive">{error}</p>}
+            {error && (
+              <p className="rounded-xl bg-destructive/10 px-4 py-2.5 text-sm text-destructive">
+                {error}
+              </p>
+            )}
 
             <button
               type="submit"
@@ -468,10 +528,22 @@ function AuthScreen() {
 function GoogleIcon() {
   return (
     <svg className="h-4 w-4" viewBox="0 0 48 48" aria-hidden="true">
-      <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z" />
-      <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z" />
-      <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z" />
-      <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z" />
+      <path
+        fill="#EA4335"
+        d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"
+      />
+      <path
+        fill="#4285F4"
+        d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"
+      />
+      <path
+        fill="#FBBC05"
+        d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"
+      />
+      <path
+        fill="#34A853"
+        d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"
+      />
     </svg>
   );
 }

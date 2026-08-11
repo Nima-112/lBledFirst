@@ -10,13 +10,18 @@ export function useSignup() {
 
   const signup = async (
     data: SignupData,
-  ): Promise<{ ok: boolean; error?: string; role?: "admin" | "tourist" }> => {
+  ): Promise<{
+    ok: boolean;
+    error?: string;
+    role?: "admin" | "tourist";
+    emailVerified?: boolean;
+  }> => {
     setLoading(true);
     setError(null);
     try {
       const response = await authService.signup(data);
       setAuth(response);
-      return { ok: true, role: response.role };
+      return { ok: true, role: response.role, emailVerified: response.emailVerified };
     } catch (err: any) {
       const msg = err.response?.data?.message || "Erreur d'inscription";
       setError(msg);
@@ -25,6 +30,5 @@ export function useSignup() {
       setLoading(false);
     }
   };
-
   return { signup, loading, error };
 }

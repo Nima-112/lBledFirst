@@ -88,13 +88,15 @@ public class AuthController {
     }
 
     private UserResponse toUserResponse(AuthResponse auth) {
-        return new UserResponse(auth.getId(), auth.getName(), auth.getEmail(), auth.getRole(), auth.getPhone(), auth.getCountry(), auth.getLanguage(), auth.getAvatar(), auth.isEmailVerified());
+        return new UserResponse(auth.getId(), auth.getName(), auth.getEmail(), auth.getRole(), auth.getPhone(),
+                auth.getCountry(), auth.getLanguage(), auth.getAvatar(), auth.isEmailVerified());
     }
 
     // ---- Vérification d'email --------------------------------------------------
 
     // Lien cliqué directement depuis l'email (navigation navigateur, pas un appel
-    // axios) : on redirige donc vers une page du frontend plutôt que de renvoyer du JSON.
+    // axios) : on redirige donc vers une page du frontend plutôt que de renvoyer du
+    // JSON.
     @GetMapping("/verify-email")
     public void verifyEmail(@RequestParam String token, HttpServletResponse response) throws IOException {
         try {
