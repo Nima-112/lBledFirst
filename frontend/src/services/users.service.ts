@@ -11,6 +11,10 @@ export type ApiUser = {
   avatar?: string | null;
   country?: string | null;
   language?: string | null;
+  bio?: string | null;
+  specialty?: string | null;
+  experienceYears?: number | null;
+  hostRegion?: string | null;
   createdAt: string;
 };
 
@@ -23,6 +27,10 @@ export type ApiUserPayload = {
   avatar?: string | null;
   country?: string | null;
   language?: string | null;
+  bio?: string | null;
+  specialty?: string | null;
+  experienceYears?: number | null;
+  hostRegion?: string | null;
 };
 
 export type FrontUser = {
@@ -35,6 +43,10 @@ export type FrontUser = {
   country: string;
   nativeLanguage: string;
   role: Role;
+  bio?: string;
+  specialty?: string;
+  experienceYears?: number;
+  hostRegion?: string;
   createdAt: string;
 };
 
@@ -47,6 +59,10 @@ const toFront = (u: ApiUser): FrontUser => ({
   country: u.country ?? "",
   nativeLanguage: u.language ?? "",
   role: u.role,
+  bio: u.bio ?? undefined,
+  specialty: u.specialty ?? undefined,
+  experienceYears: u.experienceYears ?? undefined,
+  hostRegion: u.hostRegion ?? undefined,
   createdAt: u.createdAt,
 });
 
@@ -59,6 +75,10 @@ const toPayload = (u: FrontUser): ApiUserPayload => ({
   avatar: u.avatar || null,
   country: u.country || null,
   language: u.nativeLanguage || null,
+  bio: u.bio || null,
+  specialty: u.specialty || null,
+  experienceYears: u.experienceYears ?? null,
+  hostRegion: u.hostRegion || null,
 });
 
 export async function getUsersList(): Promise<FrontUser[]> {

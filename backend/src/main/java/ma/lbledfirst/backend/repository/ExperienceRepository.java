@@ -17,4 +17,6 @@ public interface ExperienceRepository extends JpaRepository<Experience, Long> {
     long countByRegionIdAndStatusAndDeletedFalse(Long regionId, ma.lbledfirst.backend.domain.ExperienceStatus status);
 
     List<Experience> findByRegionIdAndStatusAndDeletedFalse(Long regionId, ma.lbledfirst.backend.domain.ExperienceStatus status);
+
+    long countByHostId(Long hostId);
 }

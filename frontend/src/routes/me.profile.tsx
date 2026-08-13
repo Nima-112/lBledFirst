@@ -6,7 +6,6 @@ import { MeShell } from "@/components/me/MeShell";
 import { Combobox } from "@/components/ui/combobox";
 import { useI18n } from "@/lib/i18n";
 import { useAuth } from "@/context/AuthContext";
-import { useAuth as useMockAuth } from "@/lib/mock-auth";
 import { patchUser, uploadAvatar, changePassword as changePasswordApi } from "@/services/users.service";
 import { resolveUploadUrl } from "@/lib/asset-url";
 import { COUNTRIES } from "@/lib/countries";
@@ -20,7 +19,6 @@ export const Route = createFileRoute("/me/profile")({
 function MyProfile() {
   const { t } = useI18n();
   const { user, setUser } = useAuth();
-  const { updateProfile } = useMockAuth();
   const [form, setForm] = useState({ name: "", phone: "", country: "", language: "" });
   const [avatar, setAvatar] = useState<string | undefined>(undefined);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
@@ -78,14 +76,6 @@ function MyProfile() {
         country: updated.country,
         language: updated.nativeLanguage,
         avatar: updated.avatar,
-      });
-      // Sync mock-auth localStorage so Navbar reflects changes
-      updateProfile({
-        fullName: updated.fullName,
-        phone: updated.phone ?? "",
-        country: updated.country,
-        nativeLanguage: updated.nativeLanguage,
-        avatar: resolveUploadUrl(updated.avatar),
       });
       setSaved(true);
       setTimeout(() => setSaved(false), 1800);

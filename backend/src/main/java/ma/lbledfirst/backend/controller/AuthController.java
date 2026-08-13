@@ -2,7 +2,6 @@ package ma.lbledfirst.backend.controller;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,6 +21,7 @@ import ma.lbledfirst.backend.dto.RegisterRequest;
 import ma.lbledfirst.backend.dto.ResetPasswordRequest;
 import ma.lbledfirst.backend.dto.UserResponse;
 import ma.lbledfirst.backend.security.CookieUtil;
+import ma.lbledfirst.backend.security.HttpSessionCleaner;
 import ma.lbledfirst.backend.service.AuthService;
 
 @Slf4j
@@ -32,6 +32,7 @@ public class AuthController {
 
     private final AuthService authService;
     private final CookieUtil cookieUtil;
+    private final HttpSessionCleaner sessionCleaner;
 
     @Value("${cookie.secure:false}")
     private boolean cookieSecure;
@@ -74,12 +75,8 @@ public class AuthController {
 
     @PostMapping("/logout")
     public ResponseEntity<Void> logout(HttpServletRequest request, HttpServletResponse response) {
-        SecurityContextHolder.getContext().setAuthentication(null);
         SecurityContextHolder.clearContext();
-        HttpSession session = request.getSession(false);
-        if (session != null) {
-            session.invalidate();
-        }
+        sessionCleaner.invalidateIfPresent(request);
         response.addHeader(HttpHeaders.SET_COOKIE, cookieUtil.buildLogoutCookie(cookieSecure).toString());
         return ResponseEntity.noContent().build();
     }

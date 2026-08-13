@@ -19,6 +19,7 @@ import ma.lbledfirst.backend.domain.FormationLevel;
 import ma.lbledfirst.backend.domain.FormationPurchase;
 import ma.lbledfirst.backend.domain.Instructor;
 import ma.lbledfirst.backend.domain.User;
+import ma.lbledfirst.backend.domain.UserRole;
 import ma.lbledfirst.backend.dto.CapsuleDto;
 import ma.lbledfirst.backend.dto.ChapterDto;
 import ma.lbledfirst.backend.dto.FormationDetailResponse;
@@ -279,7 +280,7 @@ public class FormationService {
         formation.setObjectives(req.getObjectives() != null ? req.getObjectives() : new ArrayList<>());
         formation.setSkills(req.getSkills() != null ? req.getSkills() : new ArrayList<>());
         formation.setPrerequisites(req.getPrerequisites() != null ? req.getPrerequisites() : new ArrayList<>());
-        formation.setInstructor(toInstructor(req.getInstructor()));
+        applyFormateur(formation, req);
         formation.setChapters(toChapters(req.getChapters(), formation));
     }
 
@@ -297,7 +298,7 @@ public class FormationService {
         formation.setObjectives(req.getObjectives() != null ? req.getObjectives() : new ArrayList<>());
         formation.setSkills(req.getSkills() != null ? req.getSkills() : new ArrayList<>());
         formation.setPrerequisites(req.getPrerequisites() != null ? req.getPrerequisites() : new ArrayList<>());
-        formation.setInstructor(toInstructor(req.getInstructor()));
+        applyFormateur(formation, req);
         mergeChapters(formation, req.getChapters());
     }
 
@@ -431,6 +432,35 @@ public class FormationService {
         return chapters;
     }
 
+    private void applyFormateur(Formation formation, FormationRequest req) {
+        if (req.getFormateurId() != null) {
+            User formateur = userRepository.findById(req.getFormateurId())
+                    .orElseThrow(() -> new NotFoundException("Formateur introuvable"));
+            if (formateur.getRole() != UserRole.formateur) {
+                throw new IllegalArgumentException("L'utilisateur sélectionné n'est pas formateur");
+            }
+            formation.setFormateur(formateur);
+            formation.setInstructor(instructorFromUser(formateur));
+            return;
+        }
+        if (req.getInstructor() != null) {
+            formation.setInstructor(toInstructor(req.getInstructor()));
+        }
+    }
+
+    private Instructor instructorFromUser(User user) {
+        return Instructor.builder()
+                .name(user.getName())
+                .specialty(user.getSpecialty())
+                .experienceYears(user.getExperienceYears() != null ? user.getExperienceYears() : 0)
+                .bio(user.getBio())
+                .photo(user.getAvatar())
+                .totalFormations(0)
+                .averageRating(0.0)
+                .studentsTrained(0)
+                .build();
+    }
+
     private Instructor toInstructor(InstructorDto dto) {
         return Instructor.builder()
                 .name(dto.getName())
@@ -543,6 +573,7 @@ public class FormationService {
                 f.getSkills(),
                 f.getPrerequisites(),
                 chapters,
+                f.getFormateur() != null ? f.getFormateur().getId() : null,
                 toInstructorDto(f.getInstructor()),
                 f.getCreatedAt(),
                 purchased,

@@ -20,6 +20,7 @@ import {
   getFormationsList,
   updateFormation,
 } from "@/services/formations.service";
+import { getUsersList } from "@/services/users.service";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 export function FormationsPanel() {
@@ -36,6 +37,14 @@ export function FormationsPanel() {
     queryKey: ["admin-formations"],
     queryFn: getFormationsList,
   });
+  const usersQuery = useQuery({
+    queryKey: ["admin-users"],
+    queryFn: getUsersList,
+  });
+  const formateurs = useMemo(
+    () => (usersQuery.data ?? []).filter((u) => u.role === "formateur"),
+    [usersQuery.data],
+  );
 
   const createMutation = useMutation({
     mutationFn: createFormation,
@@ -125,8 +134,8 @@ export function FormationsPanel() {
       setValidationError("La description longue est obligatoire.");
       return;
     }
-    if (!draft.instructor?.name?.trim()) {
-      setValidationError("Le nom du formateur est obligatoire.");
+    if (!draft.formateurId?.trim()) {
+      setValidationError("Veuillez sélectionner un formateur.");
       return;
     }
     if (!draft.category?.trim()) {
@@ -327,6 +336,7 @@ export function FormationsPanel() {
         onSave={save}
         saving={createMutation.isPending || updateMutation.isPending}
         loadDetailError={loadDetailError}
+        formateurs={formateurs}
       />
     </section>
   );

@@ -2,13 +2,27 @@ package ma.lbledfirst.backend.service;
 
 import java.util.List;
 import java.util.stream.Collectors;
+
+import ma.lbledfirst.backend.domain.Booking;
 import ma.lbledfirst.backend.domain.User;
 import ma.lbledfirst.backend.domain.UserRole;
 import ma.lbledfirst.backend.dto.UserResponse;
 import ma.lbledfirst.backend.dto.UserRequest;
 import ma.lbledfirst.backend.dto.UserUpdateMeRequest;
 import ma.lbledfirst.backend.dto.ChangePasswordRequest;
+import ma.lbledfirst.backend.repository.BookingRepository;
+import ma.lbledfirst.backend.repository.EmailVerificationTokenRepository;
+import ma.lbledfirst.backend.repository.ExperienceRepository;
+import ma.lbledfirst.backend.repository.FormationCapsuleProgressRepository;
+import ma.lbledfirst.backend.repository.FormationFavoriteRepository;
+import ma.lbledfirst.backend.repository.FormationPurchaseRepository;
+import ma.lbledfirst.backend.repository.FormationRepository;
+import ma.lbledfirst.backend.repository.NotificationRepository;
+import ma.lbledfirst.backend.repository.PasswordResetTokenRepository;
+import ma.lbledfirst.backend.repository.PaymentRepository;
+import ma.lbledfirst.backend.repository.ReviewRepository;
 import ma.lbledfirst.backend.repository.UserRepository;
+import ma.lbledfirst.backend.repository.VideoRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,11 +35,49 @@ public class UserService extends AbstractCrudService<User, Long> {
 
     private final PasswordEncoder passwordEncoder;
     private final UserRepository userRepository;
+    private final EmailVerificationTokenRepository emailVerificationTokenRepository;
+    private final PasswordResetTokenRepository passwordResetTokenRepository;
+    private final FormationPurchaseRepository formationPurchaseRepository;
+    private final FormationFavoriteRepository formationFavoriteRepository;
+    private final FormationCapsuleProgressRepository formationCapsuleProgressRepository;
+    private final ReviewRepository reviewRepository;
+    private final BookingRepository bookingRepository;
+    private final PaymentRepository paymentRepository;
+    private final NotificationRepository notificationRepository;
+    private final FormationRepository formationRepository;
+    private final ExperienceRepository experienceRepository;
+    private final VideoRepository videoRepository;
 
-    public UserService(UserRepository repository, PasswordEncoder passwordEncoder) {
+    public UserService(
+            UserRepository repository,
+            PasswordEncoder passwordEncoder,
+            EmailVerificationTokenRepository emailVerificationTokenRepository,
+            PasswordResetTokenRepository passwordResetTokenRepository,
+            FormationPurchaseRepository formationPurchaseRepository,
+            FormationFavoriteRepository formationFavoriteRepository,
+            FormationCapsuleProgressRepository formationCapsuleProgressRepository,
+            ReviewRepository reviewRepository,
+            BookingRepository bookingRepository,
+            PaymentRepository paymentRepository,
+            NotificationRepository notificationRepository,
+            FormationRepository formationRepository,
+            ExperienceRepository experienceRepository,
+            VideoRepository videoRepository) {
         super(repository);
         this.userRepository = repository;
         this.passwordEncoder = passwordEncoder;
+        this.emailVerificationTokenRepository = emailVerificationTokenRepository;
+        this.passwordResetTokenRepository = passwordResetTokenRepository;
+        this.formationPurchaseRepository = formationPurchaseRepository;
+        this.formationFavoriteRepository = formationFavoriteRepository;
+        this.formationCapsuleProgressRepository = formationCapsuleProgressRepository;
+        this.reviewRepository = reviewRepository;
+        this.bookingRepository = bookingRepository;
+        this.paymentRepository = paymentRepository;
+        this.notificationRepository = notificationRepository;
+        this.formationRepository = formationRepository;
+        this.experienceRepository = experienceRepository;
+        this.videoRepository = videoRepository;
     }
 
     private UserResponse mapToResponse(User user) {
@@ -39,7 +91,11 @@ public class UserService extends AbstractCrudService<User, Long> {
                 user.getCountry(),
                 user.getLanguage(),
                 user.getAvatar(),
-                user.isEmailVerified()
+                user.isEmailVerified(),
+                user.getBio(),
+                user.getSpecialty(),
+                user.getExperienceYears(),
+                user.getHostRegion()
         );
     }
 
@@ -72,6 +128,10 @@ public class UserService extends AbstractCrudService<User, Long> {
                 .country(req.getCountry())
                 .language(req.getLanguage())
                 .avatar(req.getAvatar())
+                .bio(req.getBio())
+                .specialty(req.getSpecialty())
+                .experienceYears(req.getExperienceYears())
+                .hostRegion(req.getHostRegion())
                 .emailVerified(true)
                 .build();
 
@@ -94,6 +154,10 @@ public class UserService extends AbstractCrudService<User, Long> {
         existing.setAvatar(req.getAvatar());
         existing.setCountry(req.getCountry());
         existing.setLanguage(req.getLanguage());
+        existing.setBio(req.getBio());
+        existing.setSpecialty(req.getSpecialty());
+        existing.setExperienceYears(req.getExperienceYears());
+        existing.setHostRegion(req.getHostRegion());
 
         User saved = userRepository.save(existing);
         return mapToResponse(saved);
@@ -153,7 +217,53 @@ public class UserService extends AbstractCrudService<User, Long> {
         existing.setAvatar(user.getAvatar());
         existing.setCountry(user.getCountry());
         existing.setLanguage(user.getLanguage());
+        existing.setBio(user.getBio());
+        existing.setSpecialty(user.getSpecialty());
+        existing.setExperienceYears(user.getExperienceYears());
+        existing.setHostRegion(user.getHostRegion());
 
         return userRepository.save(existing);
+    }
+
+    @Transactional
+    @Override
+    public void delete(Long id) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+
+        if (user.getRole() == UserRole.admin) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Cannot delete admin users");
+        }
+
+        if (formationRepository.countByFormateurId(id) > 0) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "Cannot delete: user is assigned as instructor to one or more trainings");
+        }
+
+        if (experienceRepository.countByHostId(id) > 0) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "Cannot delete: user is host of one or more experiences");
+        }
+
+        if (!videoRepository.findByHostId(id).isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "Cannot delete: user has associated videos");
+        }
+
+        emailVerificationTokenRepository.deleteAllByUserId(id);
+        passwordResetTokenRepository.deleteAllByUserId(id);
+        formationPurchaseRepository.deleteByUserId(id);
+        formationFavoriteRepository.deleteByUserId(id);
+        formationCapsuleProgressRepository.deleteByUserId(id);
+        reviewRepository.deleteByTouristId(id);
+
+        List<Booking> bookings = bookingRepository.findByTouristId(id);
+        for (Booking booking : bookings) {
+            paymentRepository.findByBookingId(booking.getId()).ifPresent(paymentRepository::delete);
+        }
+        bookingRepository.deleteAll(bookings);
+
+        notificationRepository.deleteByUserId(id);
+        userRepository.delete(user);
     }
 }

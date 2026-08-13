@@ -1,5 +1,5 @@
 import { useState, type ChangeEvent, type FormEvent, useEffect } from "react";
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, Eye, EyeOff, Loader2 } from "lucide-react";
 
@@ -9,9 +9,9 @@ import { LanguageSelector } from "@/components/landing/LanguageSelector";
 import { Combobox } from "@/components/ui/combobox";
 import { useLogin } from "@/hooks/useLogin";
 import { useSignup } from "@/hooks/useSignup";
+import { consumeAuthRedirect } from "@/lib/auth-redirect";
 import { API_ORIGIN } from "@/lib/api";
 import { COUNTRIES } from "@/lib/countries";
-import { useI18n, type Lang } from "@/lib/i18n";
 import { NATIVE_LANGUAGES } from "@/lib/languages";
 
 export const Route = createFileRoute("/auth")({
@@ -54,113 +54,34 @@ type Copy = {
   errPasswordMismatch: string;
 };
 
-const COPY: Record<Lang, Copy> = {
-  fr: {
-    back: "Retour a l'accueil",
-    welcome: "Bienvenue au bled",
-    tagline: "Rencontrez le vrai Maroc rural, filme et raconte par ses habitants.",
-    loginTab: "Connexion",
-    signupTab: "Inscription",
-    loginTitle: "Content de vous revoir",
-    signupTitle: "Creez votre compte",
-    fullName: "Nom complet",
-    email: "Adresse e-mail",
-    password: "Mot de passe",
-    confirmPassword: "Confirmer le mot de passe",
-    country: "Pays d'origine",
-    nativeLanguage: "Langue maternelle",
-    countryPh: "Choisissez votre pays...",
-    languagePh: "Choisissez votre langue...",
-    loginBtn: "Se connecter",
-    signupBtn: "Creer mon compte",
-    google: "Continuer avec Google",
-    or: "ou",
-    noAccount: "Pas encore de compte ?",
-    hasAccount: "Deja inscrit ?",
-    errRequired: "Merci de remplir tous les champs.",
-    errPasswordMismatch: "Les mots de passe ne correspondent pas.",
-  },
-  en: {
-    back: "Back to home",
-    welcome: "Welcome to the bled",
-    tagline: "Meet the real rural Morocco, filmed and told by its people.",
-    loginTab: "Log in",
-    signupTab: "Sign up",
-    loginTitle: "Good to see you again",
-    signupTitle: "Create your account",
-    fullName: "Full name",
-    email: "Email address",
-    password: "Password",
-    confirmPassword: "Confirm password",
-    country: "Country of origin",
-    nativeLanguage: "Native language",
-    countryPh: "Pick your country...",
-    languagePh: "Pick your language...",
-    loginBtn: "Log in",
-    signupBtn: "Create my account",
-    google: "Continue with Google",
-    or: "or",
-    noAccount: "No account yet?",
-    hasAccount: "Already registered?",
-    errRequired: "Please fill in all fields.",
-    errPasswordMismatch: "Passwords do not match.",
-  },
-  es: {
-    back: "Volver al inicio",
-    welcome: "Bienvenido al bled",
-    tagline: "Conoce el verdadero Marruecos rural, filmado y contado por su gente.",
-    loginTab: "Entrar",
-    signupTab: "Registrarse",
-    loginTitle: "Encantado de verte de nuevo",
-    signupTitle: "Crea tu cuenta",
-    fullName: "Nombre completo",
-    email: "Correo electronico",
-    password: "Contrasena",
-    confirmPassword: "Confirmar contrasena",
-    country: "Pais de origen",
-    nativeLanguage: "Lengua materna",
-    countryPh: "Elige tu pais...",
-    languagePh: "Elige tu idioma...",
-    loginBtn: "Entrar",
-    signupBtn: "Crear mi cuenta",
-    google: "Continuar con Google",
-    or: "o",
-    noAccount: "Aun no tienes cuenta?",
-    hasAccount: "Ya registrado?",
-    errRequired: "Por favor, completa todos los campos.",
-    errPasswordMismatch: "Las contrasenas no coinciden.",
-  },
-  ar: {
-    back: "العودة إلى الرئيسية",
-    welcome: "مرحبا بك في البلاد",
-    tagline: "تعرّف على المغرب القروي الحقيقي، مصوّرا ومحكيا من أهله.",
-    loginTab: "تسجيل الدخول",
-    signupTab: "إنشاء حساب",
-    loginTitle: "سعداء بعودتك",
-    signupTitle: "أنشئ حسابك",
-    fullName: "الاسم الكامل",
-    email: "البريد الإلكتروني",
-    password: "كلمة المرور",
-    confirmPassword: "تأكيد كلمة المرور",
-    country: "بلد المنشأ",
-    nativeLanguage: "اللغة الأم",
-    countryPh: "اختر بلدك...",
-    languagePh: "اختر لغتك...",
-    loginBtn: "تسجيل الدخول",
-    signupBtn: "إنشاء حسابي",
-    google: "المتابعة مع Google",
-    or: "أو",
-    noAccount: "ليس لديك حساب بعد؟",
-    hasAccount: "مسجّل بالفعل؟",
-    errRequired: "يرجى ملء جميع الحقول.",
-    errPasswordMismatch: "كلمتا المرور غير متطابقتين.",
-  },
+const COPY: Copy = {
+  back: "Back to home",
+  welcome: "Welcome to the bled",
+  tagline: "Meet the real rural Morocco, filmed and told by its people.",
+  loginTab: "Log in",
+  signupTab: "Sign up",
+  loginTitle: "Good to see you again",
+  signupTitle: "Create your account",
+  fullName: "Full name",
+  email: "Email address",
+  password: "Password",
+  confirmPassword: "Confirm password",
+  country: "Country of origin",
+  nativeLanguage: "Native language",
+  countryPh: "Pick your country...",
+  languagePh: "Pick your language...",
+  loginBtn: "Log in",
+  signupBtn: "Create my account",
+  google: "Continue with Google",
+  or: "or",
+  noAccount: "No account yet?",
+  hasAccount: "Already registered?",
+  errRequired: "Please fill in all fields.",
+  errPasswordMismatch: "Passwords do not match.",
 };
 
 function AuthScreen() {
-  const { lang } = useI18n();
-  const c = COPY[lang];
-  const navigate = useNavigate();
+  const c = COPY;
   const { login, loading: loginLoading, error: loginError } = useLogin();
   const { signup, loading: signupLoading, error: signupError } = useSignup();
 
@@ -229,14 +150,12 @@ function AuthScreen() {
   }));
 
   const finishAuth = (role?: "admin" | "tourist") => {
-    const pendingRedirect = window.localStorage.getItem("lbf.auth.redirect");
-    if (pendingRedirect?.startsWith("/")) {
-      window.localStorage.removeItem("lbf.auth.redirect");
-      window.location.assign(pendingRedirect);
-      return;
-    }
-
-    navigate({ to: role === "admin" ? "/admin" : "/me/bookings" });
+    const pendingRedirect = consumeAuthRedirect();
+    const target =
+      pendingRedirect ?? (role === "admin" ? "/admin" : "/me/bookings");
+    // Full navigation so route guards see the cookie-backed session after login
+    // (SPA navigate can run before React applies setAuth from the same submit).
+    window.location.assign(target);
   };
 
   const submit = async (event: FormEvent) => {

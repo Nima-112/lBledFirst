@@ -39,6 +39,7 @@ export type ApiFormationDetail = ApiFormationSummary & {
   purchased: boolean;
   completed: boolean;
   reviewed: boolean;
+  formateurId?: number | null;
   instructor: {
     name: string;
     specialty?: string | null;
@@ -97,7 +98,8 @@ export type ApiFormationPayload = {
       videoUrl?: string | null;
     }[];
   }[];
-  instructor: {
+  formateurId: number;
+  instructor?: {
     name: string;
     specialty?: string | null;
     experienceYears?: number | null;
@@ -106,7 +108,7 @@ export type ApiFormationPayload = {
     totalFormations?: number | null;
     averageRating?: number | null;
     studentsTrained?: number | null;
-  };
+  } | null;
 };
 
 type UploadResult = {
@@ -218,6 +220,7 @@ const detailToFront = (d: ApiFormationDetail): Formation => ({
   skills: d.skills,
   prerequisites: d.prerequisites,
   chapters: d.chapters.map(detailChapterToFront),
+  formateurId: d.formateurId != null ? String(d.formateurId) : "",
   instructor: detailInstructorToFront(d.instructor),
   purchased: d.purchased,
   completed: d.completed,
@@ -255,16 +258,7 @@ const formationToPayload = (f: Formation): ApiFormationPayload => ({
       videoUrl: c.videoUrl ?? null,
     })),
   })),
-  instructor: {
-    name: f.instructor.name,
-    specialty: f.instructor.specialty ?? null,
-    experienceYears: f.instructor.experienceYears ?? null,
-    bio: f.instructor.bio ?? null,
-    photo: f.instructor.photo ?? null,
-    totalFormations: f.instructor.totalFormations ?? null,
-    averageRating: f.instructor.averageRating ?? null,
-    studentsTrained: f.instructor.studentsTrained ?? null,
-  },
+  formateurId: Number(f.formateurId),
 });
 
 export async function getFormationsList(): Promise<Formation[]> {

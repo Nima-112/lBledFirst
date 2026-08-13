@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import ma.lbledfirst.backend.security.JwtFilter;
 import ma.lbledfirst.backend.security.OAuth2LoginFailureHandler;
 import ma.lbledfirst.backend.security.OAuth2LoginSuccessHandler;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -28,6 +29,9 @@ public class SecurityConfig {
     private final OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler;
     private final OAuth2LoginFailureHandler oAuth2LoginFailureHandler;
 
+    @Value("${springdoc.api-docs.enabled:false}")
+    private boolean apiDocsEnabled;
+
     @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http.csrf(csrf -> csrf.disable())
@@ -38,29 +42,28 @@ public class SecurityConfig {
                 // Le reste de l'API (JwtFilter) ne s'appuie jamais sur la session : aucune session
                 // n'est créée pour les appels authentifiés par cookie JWT classiques.
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
-                .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                        .requestMatchers("/uploads/**").permitAll()
-                        .requestMatchers("/api/health").permitAll()
-                        // "*" (un seul segment) et non "**" : couvre uniquement la liste et le
-                        // détail par slug. /formations/me/purchased, /formations/me/favorites et
-                        // /formations/{slug}/progress ont plus d'un segment après /formations et
-                        // restent donc protégés par anyRequest().authenticated() ci-dessous.
-                        .requestMatchers(HttpMethod.GET, "/api/formations", "/api/formations/*").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/experiences", "/api/experiences/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/regions", "/api/regions/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/activities", "/api/activities/**").permitAll()
-                        // /me doit rester authentifié : il est placé AVANT la règle permitAll
-                        // ci-dessous, l'ordre des règles déterminant la première qui matche.
-                        .requestMatchers(HttpMethod.GET, "/api/reviews/me").authenticated()
-                        .requestMatchers(HttpMethod.GET, "/api/reviews", "/api/reviews/**").permitAll()
-                        .requestMatchers("/api/auth/register", "/api/auth/login", "/api/auth/logout").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/auth/verify-email").permitAll()
-                        .requestMatchers("/api/auth/forgot-password", "/api/auth/reset-password").permitAll()
-                        .requestMatchers("/api/auth/resend-verification").permitAll()
-                        .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**", "/actuator/health").permitAll()
-                        .requestMatchers("/oauth2/**", "/login/oauth2/**").permitAll()
-                        .anyRequest().authenticated())
+                .authorizeHttpRequests(auth -> {
+                    auth.requestMatchers(HttpMethod.OPTIONS, "/**").permitAll();
+                    auth.requestMatchers("/uploads/avatars/**", "/uploads/images/**").permitAll();
+                    auth.requestMatchers("/uploads/videos/**").authenticated();
+                    auth.requestMatchers("/api/health").permitAll();
+                    auth.requestMatchers(HttpMethod.GET, "/api/formations", "/api/formations/*").permitAll();
+                    auth.requestMatchers(HttpMethod.GET, "/api/experiences", "/api/experiences/**").permitAll();
+                    auth.requestMatchers(HttpMethod.GET, "/api/regions", "/api/regions/**").permitAll();
+                    auth.requestMatchers(HttpMethod.GET, "/api/activities", "/api/activities/**").permitAll();
+                    auth.requestMatchers(HttpMethod.GET, "/api/reviews/me").authenticated();
+                    auth.requestMatchers(HttpMethod.GET, "/api/reviews", "/api/reviews/**").permitAll();
+                    auth.requestMatchers("/api/auth/register", "/api/auth/login", "/api/auth/logout").permitAll();
+                    auth.requestMatchers(HttpMethod.GET, "/api/auth/verify-email").permitAll();
+                    auth.requestMatchers("/api/auth/forgot-password", "/api/auth/reset-password").permitAll();
+                    auth.requestMatchers("/api/auth/resend-verification").permitAll();
+                    if (apiDocsEnabled) {
+                        auth.requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**").permitAll();
+                    }
+                    auth.requestMatchers("/actuator/health").permitAll();
+                    auth.requestMatchers("/oauth2/**", "/login/oauth2/**").permitAll();
+                    auth.anyRequest().authenticated();
+                })
                 .exceptionHandling(ex -> ex.authenticationEntryPoint((request, response, authException) ->
                         response.sendError(HttpServletResponse.SC_UNAUTHORIZED)))
                 .oauth2Login(oauth2 -> oauth2

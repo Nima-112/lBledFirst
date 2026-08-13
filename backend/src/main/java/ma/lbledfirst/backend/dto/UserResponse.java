@@ -17,11 +17,25 @@ public class UserResponse {
     private String language;
     private String avatar;
     private boolean emailVerified;
+    private String bio;
+    private String specialty;
+    private Integer experienceYears;
+    private String hostRegion;
 
     public UserResponse(Long id, String name, String email, String role) {
-        this.id = id;
-        this.name = name;
-        this.email = email;
-        this.role = role;
+        this(id, name, email, role, null, null, null, null, false, null, null, null, null);
+    }
+
+    public UserResponse(
+            Long id,
+            String name,
+            String email,
+            String role,
+            String phone,
+            String country,
+            String language,
+            String avatar,
+            boolean emailVerified) {
+        this(id, name, email, role, phone, country, language, avatar, emailVerified, null, null, null, null);
     }
 }

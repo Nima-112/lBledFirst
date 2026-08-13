@@ -1,5 +1,14 @@
-import type { ReactNode } from "react";
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+/**
+ * Single source of truth for the logged-in user on the frontend.
+ *
+ * Auth model:
+ * - Backend issues a JWT stored in an httpOnly cookie (`access_token`).
+ * - Email/password and Google OAuth both end up with the same cookie.
+ * - OAuth uses a short-lived servlet session only during the Google handshake;
+ *   the backend destroys that session once the JWT cookie is set.
+ * - Never read or store the token in JavaScript — use authService.me() instead.
+ */
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import type { AuthResponse, User } from "@/types/auth";
 import { authService } from "@/services/auth.service";
 

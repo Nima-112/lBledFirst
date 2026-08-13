@@ -61,6 +61,7 @@ export type Formation = {
   skills: string[];
   prerequisites: string[];
   chapters: Chapter[];
+  formateurId?: string;
   instructor: Instructor;
   createdAt: string;
   // renseigné uniquement par l'API (le détail d'une formation) : true si
@@ -1306,6 +1307,7 @@ export function emptyFormation(): Formation {
     skills: [],
     prerequisites: [],
     chapters: [],
+    formateurId: "",
     instructor: {
       id: `i-${Date.now()}`,
       name: "",

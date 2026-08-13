@@ -10,6 +10,12 @@ import {
   updateUser,
 } from "@/services/users.service";
 import type { Role } from "@/types/auth";
+import { FormErrorBanner, FieldError } from "@/components/ui/form-feedback";
+import { Combobox } from "@/components/ui/combobox";
+import { COUNTRIES } from "@/lib/countries";
+import { NATIVE_LANGUAGES } from "@/lib/languages";
+import { parseApiError } from "@/lib/api-errors";
+import { toast } from "sonner";
 
 type DraftUser = {
   fullName: string;
@@ -19,6 +25,10 @@ type DraftUser = {
   country: string;
   nativeLanguage: string;
   role: Role;
+  bio: string;
+  specialty: string;
+  experienceYears: string;
+  hostRegion: string;
 };
 
 const EMPTY: DraftUser = {
@@ -29,6 +39,10 @@ const EMPTY: DraftUser = {
   country: "",
   nativeLanguage: "",
   role: "tourist",
+  bio: "",
+  specialty: "",
+  experienceYears: "",
+  hostRegion: "",
 };
 
 export function TouristsPanel() {
@@ -37,6 +51,8 @@ export function TouristsPanel() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
   const [draft, setDraft] = useState<DraftUser>(EMPTY);
+  const [formError, setFormError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   const listQuery = useQuery({
     queryKey: ["admin-users"],
@@ -64,6 +80,11 @@ export function TouristsPanel() {
     mutationFn: deleteUser,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-users"] });
+      toast.success("Utilisateur supprimé.");
+    },
+    onError: (err) => {
+      const parsed = parseApiError(err, "Impossible de supprimer cet utilisateur.");
+      toast.error(parsed.message);
     },
   });
 
@@ -86,6 +107,8 @@ export function TouristsPanel() {
 
   const startCreate = () => {
     setDraft(EMPTY);
+    setFormError(null);
+    setFieldErrors({});
     setCreating(true);
   };
   const startEdit = (u: FrontUser) => {
@@ -97,25 +120,69 @@ export function TouristsPanel() {
       country: u.country,
       nativeLanguage: u.nativeLanguage,
       role: u.role,
+      bio: u.bio ?? "",
+      specialty: u.specialty ?? "",
+      experienceYears: u.experienceYears != null ? String(u.experienceYears) : "",
+      hostRegion: u.hostRegion ?? "",
     });
+    setFormError(null);
+    setFieldErrors({});
     setEditingId(u.id);
   };
 
+  const toFrontUser = (): FrontUser => ({
+    id: editingId ?? "",
+    fullName: draft.fullName,
+    email: draft.email,
+    password: draft.password || undefined,
+    phone: draft.phone,
+    country: draft.country,
+    nativeLanguage: draft.nativeLanguage,
+    role: draft.role,
+    bio: draft.bio || undefined,
+    specialty: draft.specialty || undefined,
+    experienceYears: draft.experienceYears ? Number(draft.experienceYears) : undefined,
+    hostRegion: draft.hostRegion || undefined,
+    createdAt: new Date().toISOString(),
+  });
+
   const save = async () => {
-    if (!draft.fullName || !draft.email) return;
-    if (editingId) {
-      const existing = users.find((u) => u.id === editingId)!;
-      await updateMutation.mutateAsync({
-        id: editingId,
-        data: { ...existing, ...draft },
-      });
-    } else {
-      const newUser: FrontUser = {
-        id: "",
-        ...draft,
-        createdAt: new Date().toISOString(),
-      };
-      await createMutation.mutateAsync(newUser);
+    setFormError(null);
+    setFieldErrors({});
+    const clientErrors: Record<string, string> = {};
+    if (!draft.fullName.trim()) clientErrors.fullName = "Le nom est obligatoire.";
+    if (!draft.email.trim()) clientErrors.email = "L'email est obligatoire.";
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(draft.email)) clientErrors.email = "Email invalide.";
+    if (draft.role === "formateur") {
+      if (!draft.specialty.trim()) clientErrors.specialty = "La spécialité est obligatoire.";
+      if (!draft.bio.trim()) clientErrors.bio = "La biographie est obligatoire.";
+    }
+    if (draft.role === "host" && !draft.hostRegion.trim()) {
+      clientErrors.hostRegion = "La région d'activité est obligatoire pour un hôte.";
+    }
+    if (Object.keys(clientErrors).length > 0) {
+      setFieldErrors(clientErrors);
+      setFormError("Corrigez les champs en rouge.");
+      return;
+    }
+    try {
+      if (editingId) {
+        const existing = users.find((u) => u.id === editingId)!;
+        await updateMutation.mutateAsync({
+          id: editingId,
+          data: { ...existing, ...toFrontUser(), id: editingId },
+        });
+        toast.success("Utilisateur mis à jour.");
+      } else {
+        await createMutation.mutateAsync(toFrontUser());
+        toast.success("Utilisateur créé.");
+      }
+      setFormError(null);
+      setFieldErrors({});
+    } catch (err) {
+      const parsed = parseApiError(err, "Impossible d'enregistrer l'utilisateur.");
+      setFormError(parsed.message);
+      setFieldErrors(parsed.fieldErrors);
     }
   };
 
@@ -124,6 +191,15 @@ export function TouristsPanel() {
   };
 
   const busy = listQuery.isLoading || createMutation.isPending || updateMutation.isPending || deleteMutation.isPending;
+
+  const countryOptions = useMemo(
+    () => COUNTRIES.map((c) => ({ value: c.name, label: c.name, hint: c.flag })),
+    [],
+  );
+  const languageOptions = useMemo(
+    () => NATIVE_LANGUAGES.map((l) => ({ value: l.name, label: l.name })),
+    [],
+  );
 
   return (
     <section>
@@ -201,12 +277,14 @@ export function TouristsPanel() {
         }}
         onSave={save}
       >
+        <FormErrorBanner message={formError} />
         <Field label="Nom complet">
           <input
             className={fieldCls}
             value={draft.fullName}
             onChange={(e) => setDraft({ ...draft, fullName: e.target.value })}
           />
+          <FieldError message={fieldErrors.fullName || fieldErrors.name} />
         </Field>
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="E-mail">
@@ -216,6 +294,7 @@ export function TouristsPanel() {
               value={draft.email}
               onChange={(e) => setDraft({ ...draft, email: e.target.value })}
             />
+            <FieldError message={fieldErrors.email} />
           </Field>
           <Field label="Téléphone">
             <input
@@ -227,17 +306,19 @@ export function TouristsPanel() {
         </div>
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Pays d'origine">
-            <input
-              className={fieldCls}
+            <Combobox
               value={draft.country}
-              onChange={(e) => setDraft({ ...draft, country: e.target.value })}
+              onChange={(country) => setDraft({ ...draft, country })}
+              options={countryOptions}
+              placeholder="Choisir un pays…"
             />
           </Field>
           <Field label="Langue maternelle">
-            <input
-              className={fieldCls}
+            <Combobox
               value={draft.nativeLanguage}
-              onChange={(e) => setDraft({ ...draft, nativeLanguage: e.target.value })}
+              onChange={(nativeLanguage) => setDraft({ ...draft, nativeLanguage })}
+              options={languageOptions}
+              placeholder="Choisir une langue…"
             />
           </Field>
         </div>
@@ -246,7 +327,7 @@ export function TouristsPanel() {
             <select
               className={fieldCls}
               value={draft.role}
-              onChange={(e) => setDraft({ ...draft, role: e.target.value as any })}
+              onChange={(e) => setDraft({ ...draft, role: e.target.value as Role })}
             >
               <option value="tourist">Touriste</option>
               <option value="host">Hôte (Host)</option>
@@ -262,6 +343,65 @@ export function TouristsPanel() {
             />
           </Field>
         </div>
+
+        {draft.role === "formateur" && (
+          <div className="space-y-4 rounded-2xl border border-border bg-muted/30 p-4">
+            <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
+              Profil formateur
+            </p>
+            <Field label="Spécialité">
+              <input
+                className={fieldCls}
+                value={draft.specialty}
+                onChange={(e) => setDraft({ ...draft, specialty: e.target.value })}
+              />
+              <FieldError message={fieldErrors.specialty} />
+            </Field>
+            <Field label="Années d'expérience">
+              <input
+                type="number"
+                min={0}
+                className={fieldCls}
+                value={draft.experienceYears}
+                onChange={(e) => setDraft({ ...draft, experienceYears: e.target.value })}
+              />
+            </Field>
+            <Field label="Biographie">
+              <textarea
+                rows={3}
+                className={fieldCls}
+                value={draft.bio}
+                onChange={(e) => setDraft({ ...draft, bio: e.target.value })}
+              />
+              <FieldError message={fieldErrors.bio} />
+            </Field>
+          </div>
+        )}
+
+        {draft.role === "host" && (
+          <div className="space-y-4 rounded-2xl border border-border bg-muted/30 p-4">
+            <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
+              Profil hôte
+            </p>
+            <Field label="Région d'activité">
+              <input
+                className={fieldCls}
+                value={draft.hostRegion}
+                onChange={(e) => setDraft({ ...draft, hostRegion: e.target.value })}
+                placeholder="Ex: Marrakech-Safi, Haut Atlas…"
+              />
+              <FieldError message={fieldErrors.hostRegion} />
+            </Field>
+            <Field label="Biographie">
+              <textarea
+                rows={3}
+                className={fieldCls}
+                value={draft.bio}
+                onChange={(e) => setDraft({ ...draft, bio: e.target.value })}
+              />
+            </Field>
+          </div>
+        )}
       </Modal>
     </section>
   );

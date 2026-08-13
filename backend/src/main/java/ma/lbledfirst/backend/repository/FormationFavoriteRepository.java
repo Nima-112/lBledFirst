@@ -10,4 +10,5 @@ public interface FormationFavoriteRepository extends JpaRepository<FormationFavo
     Optional<FormationFavorite> findByUserIdAndFormationId(Long userId, Long formationId);
     List<FormationFavorite> findByUserId(Long userId);
     void deleteByFormationId(Long formationId);
+    void deleteByUserId(Long userId);
 }

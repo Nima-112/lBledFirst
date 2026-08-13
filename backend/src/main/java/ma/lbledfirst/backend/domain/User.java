@@ -52,6 +52,17 @@ public class User {
     private String country;
     private String language;
 
+    /** Profil formateur / hôte (renseigné selon le rôle) */
+    @Column(columnDefinition = "TEXT")
+    private String bio;
+
+    private String specialty;
+
+    private Integer experienceYears;
+
+    /** Région d'activité pour les hôtes */
+    private String hostRegion;
+
     // false à l'inscription classique ; mis à true immédiatement pour les comptes
     // créés via Google (email déjà vérifié par Google, cf. OAuth2LoginSuccessHandler)
     @Builder.Default

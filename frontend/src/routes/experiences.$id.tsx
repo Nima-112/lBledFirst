@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate, useSearch } from "@tanstack/react-router";
 import { motion } from "framer-motion";
 import {
   ArrowLeft,
@@ -19,8 +19,13 @@ import { useI18n } from "@/lib/i18n";
 import { useAuth } from "@/context/AuthContext";
 import { createBooking } from "@/services/bookings.service";
 import { getExperienceById, type FrontExperience } from "@/services/experiences.service";
+import { BookingCheckoutModal } from "@/components/booking/BookingCheckoutModal";
+import { setAuthRedirect } from "@/lib/auth-redirect";
 
 export const Route = createFileRoute("/experiences/$id")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    book: search.book === "1" || search.book === 1 ? "1" : undefined,
+  }),
   head: ({ params }) => ({
     meta: [
       { title: `Expérience — L'Bled First` },
@@ -121,6 +126,7 @@ function ExperienceDetail({ exp }: { exp: FrontExperience }) {
   const { t } = useI18n();
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { book } = Route.useSearch();
 
   const [activeDay, setActiveDay] = useState(1);
   const [startDate, setStartDate] = useState<string>(() => {
@@ -129,8 +135,7 @@ function ExperienceDetail({ exp }: { exp: FrontExperience }) {
     return d.toISOString().slice(0, 10);
   });
   const [guests, setGuests] = useState(1);
-  const [confirmed, setConfirmed] = useState(false);
-  const [booking, setBooking] = useState(false);
+  const [checkoutOpen, setCheckoutOpen] = useState(false);
 
   const total = useMemo(() => exp.price * guests, [exp.price, guests]);
   const program = exp.program.length
@@ -138,32 +143,38 @@ function ExperienceDetail({ exp }: { exp: FrontExperience }) {
     : [{ day: 1, title: exp.title, description: exp.description, images: exp.images }];
   const active = program.find((p) => p.day === activeDay) ?? program[0];
 
-  const book = async () => {
+  useEffect(() => {
+    if (book === "1" && user) {
+      setCheckoutOpen(true);
+      navigate({ to: "/experiences/$id", params: { id: String(exp.id) }, search: {}, replace: true });
+    }
+  }, [book, user, exp.id, navigate]);
+
+  const openCheckout = () => {
     if (!user) {
-      if (typeof window !== "undefined")
-        window.localStorage.setItem("lbf.auth.redirect", `/experiences/${exp.id}`);
+      setAuthRedirect(`/experiences/${exp.id}?book=1`);
       navigate({ to: "/auth" });
       return;
     }
-    try {
-      setBooking(true);
-      await createBooking({
-        id: "",
-        touristId: user.id,
-        experienceId: String(exp.id),
-        date: startDate,
-        status: "pending",
-        totalPrice: total,
-        guests,
-        createdAt: "",
-      });
-      setConfirmed(true);
-      setTimeout(() => navigate({ to: "/me/bookings" }), 1400);
-    } catch (err) {
-      console.error("Booking failed", err);
-    } finally {
-      setBooking(false);
-    }
+    setCheckoutOpen(true);
+  };
+
+  const confirmBooking = async () => {
+    if (!user) return;
+    await createBooking({
+      id: "",
+      touristId: user.id,
+      experienceId: String(exp.id),
+      date: startDate,
+      status: "pending",
+      totalPrice: total + 45,
+      guests,
+      createdAt: "",
+    });
+    setTimeout(() => {
+      setCheckoutOpen(false);
+      navigate({ to: "/me/bookings" });
+    }, 1200);
   };
 
   return (
@@ -316,19 +327,10 @@ function ExperienceDetail({ exp }: { exp: FrontExperience }) {
               </div>
 
               <button
-                onClick={book}
-                disabled={confirmed || booking}
-                className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground shadow-warm transition hover:scale-[1.01] disabled:opacity-70"
+                onClick={openCheckout}
+                className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground shadow-warm transition hover:scale-[1.01]"
               >
-                {booking ? (
-                  <><Loader2 className="h-4 w-4 animate-spin" /> {t("exp.book.cta")}</>
-                ) : confirmed ? (
-                  <>
-                    <Check className="h-4 w-4" /> {t("exp.book.confirmed")}
-                  </>
-                ) : (
-                  t("exp.book.cta")
-                )}
+                {t("exp.book.cta")}
               </button>
 
               <p className="mt-3 text-center text-xs text-muted-foreground">
@@ -342,6 +344,23 @@ function ExperienceDetail({ exp }: { exp: FrontExperience }) {
       <div className="mt-24">
         <Footer />
       </div>
+
+      <BookingCheckoutModal
+        open={checkoutOpen}
+        onClose={() => setCheckoutOpen(false)}
+        item={{
+          id: String(exp.id),
+          title: exp.title,
+          hostName: exp.hostName || "Hôte local",
+          region: exp.region,
+          guests,
+          unitPrice: exp.price,
+          coverImage: exp.images[0],
+        }}
+        defaultEmail={user?.email}
+        defaultName={user?.name}
+        onConfirm={confirmBooking}
+      />
     </div>
   );
 }

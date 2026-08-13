@@ -12,8 +12,8 @@ import { useEffect, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { I18nProvider } from "@/lib/i18n";
-import { AuthProvider as BackendAuthProvider } from "@/context/AuthContext";
-import { AuthProvider as MockAuthProvider } from "@/lib/mock-auth";
+import { AuthProvider } from "@/context/AuthContext";
+import { Toaster } from "@/components/ui/sonner";
 
 function NotFoundComponent() {
   return (
@@ -137,12 +137,10 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <I18nProvider>
-          <BackendAuthProvider>
-            <MockAuthProvider>
-            {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
+          <AuthProvider>
               <Outlet />
-            </MockAuthProvider>
-          </BackendAuthProvider>
+              <Toaster richColors closeButton position="top-center" />
+          </AuthProvider>
       </I18nProvider>
     </QueryClientProvider>
   );

@@ -53,7 +53,10 @@ public class FormationRequest {
     @Valid
     private List<ChapterDto> chapters;
 
-    @Valid
     @NotNull(message = "Le formateur est obligatoire")
+    private Long formateurId;
+
+    /** Legacy — rempli automatiquement depuis le profil formateur si formateurId est fourni */
+    @Valid
     private InstructorDto instructor;
 }

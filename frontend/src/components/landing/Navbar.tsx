@@ -15,7 +15,7 @@ import {
 import { Logo } from "./Logo";
 import { LanguageSelector } from "./LanguageSelector";
 import { useI18n } from "@/lib/i18n";
-import { useAuth } from "@/lib/mock-auth";
+import { useAuth } from "@/context/AuthContext";
 import { resolveUploadUrl } from "@/lib/asset-url";
 
 export function Navbar({ onDiscover, hero = false }: { onDiscover: () => void; hero?: boolean }) {
@@ -172,7 +172,7 @@ function TouristMenu({ scrolled }: { scrolled: boolean }) {
   }, [open]);
 
   if (!user) return null;
-  const initial = user.fullName.charAt(0).toUpperCase();
+  const initial = user.name.charAt(0).toUpperCase();
 
   return (
     <div data-tourist-menu className="relative hidden sm:block">
@@ -191,14 +191,14 @@ function TouristMenu({ scrolled }: { scrolled: boolean }) {
             {initial}
           </span>
         )}
-        <span className="max-w-[120px] truncate">{user.fullName.split(" ")[0]}</span>
+        <span className="max-w-[120px] truncate">{user.name.split(" ")[0]}</span>
         <ChevronDown className={`h-3.5 w-3.5 transition ${open ? "rotate-180" : ""}`} />
       </button>
 
       {open && (
         <div className="absolute end-0 mt-2 w-64 overflow-hidden rounded-2xl border border-border bg-card shadow-lg">
           <div className="border-b border-border bg-muted/40 px-4 py-3">
-            <p className="truncate text-sm font-semibold text-foreground">{user.fullName}</p>
+            <p className="truncate text-sm font-semibold text-foreground">{user.name}</p>
             <p className="truncate text-xs text-muted-foreground">{user.email}</p>
           </div>
           <div className="py-1">
@@ -229,7 +229,7 @@ function TouristMenu({ scrolled }: { scrolled: boolean }) {
           </div>
           <button
             onClick={() => {
-              logout();
+              void logout();
               setOpen(false);
               navigate({ to: "/" });
             }}
@@ -285,7 +285,7 @@ function MobileTouristLinks({ onClose }: { onClose: () => void }) {
   return (
     <>
       <div className="mt-1 border-t border-border pt-2 text-xs font-semibold uppercase text-muted-foreground px-3">
-        {user.fullName}
+        {user.name}
       </div>
       {item("/me/bookings", t("nav.me.bookings"), <CalendarCheck className="h-4 w-4" />)}
       {item("/me/formations", t("nav.me.formations"), <GraduationCap className="h-4 w-4" />)}

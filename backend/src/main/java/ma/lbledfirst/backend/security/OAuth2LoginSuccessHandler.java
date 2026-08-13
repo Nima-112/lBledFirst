@@ -32,6 +32,7 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
     private final CookieUtil cookieUtil;
+    private final HttpSessionCleaner sessionCleaner;
 
     @Value("${cookie.secure:false}")
     private boolean cookieSecure;
@@ -80,6 +81,9 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
 
         String token = jwtUtil.generateToken(user.getEmail(), user.getRole().name());
         response.addHeader(HttpHeaders.SET_COOKIE, cookieUtil.buildAuthCookie(token, cookieSecure).toString());
+
+        // Drop the temporary OAuth servlet session — ongoing auth uses JWT only.
+        sessionCleaner.invalidateIfPresent(request);
 
         response.sendRedirect(successRedirectUri);
     }

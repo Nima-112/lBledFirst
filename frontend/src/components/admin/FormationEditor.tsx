@@ -22,6 +22,7 @@ import {
 } from "@/lib/formations";
 import { uploadVideo } from "@/services/formations.service";
 import { uploadImage } from "@/services/experiences.service";
+import type { FrontUser } from "@/services/users.service";
 import { useMemo, useState } from "react";
 
 type VideoMode = "url" | "upload";
@@ -35,6 +36,7 @@ export function FormationEditor({
   onSave,
   saving,
   loadDetailError,
+  formateurs = [],
 }: {
   open: boolean;
   title: string;
@@ -44,11 +46,10 @@ export function FormationEditor({
   onSave: () => void | Promise<void>;
   saving?: boolean;
   loadDetailError?: string | null;
+  formateurs?: FrontUser[];
 }) {
   const { t } = useI18n();
   const patch = (p: Partial<Formation>) => setDraft({ ...draft, ...p });
-  const patchInstructor = (p: Partial<Formation["instructor"]>) =>
-    setDraft({ ...draft, instructor: { ...draft.instructor, ...p } });
 
   const capKey = (i: number, j: number) => `${i}-${j}`;
   const [videoMode, setVideoMode] = useState<Record<string, VideoMode>>({});
@@ -383,49 +384,25 @@ export function FormationEditor({
         {listField(t("admin.formations.f.prerequisites"), draft.prerequisites, "prerequisites")}
 
         <div className="rounded-2xl border border-border bg-muted/40 p-4">
-          <p className="mb-3 font-display text-sm font-bold text-foreground">
-            {t("admin.formations.f.instructor")}
-          </p>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <Field label={t("admin.formations.f.iName")}>
-              <input
-                className={fieldCls}
-                value={draft.instructor.name}
-                onChange={(e) => patchInstructor({ name: e.target.value })}
-              />
-            </Field>
-            <Field label={t("admin.formations.f.iSpecialty")}>
-              <input
-                className={fieldCls}
-                value={draft.instructor.specialty}
-                onChange={(e) => patchInstructor({ specialty: e.target.value })}
-              />
-            </Field>
-            <Field label={t("admin.formations.f.iYears")}>
-              <input
-                type="number"
-                min={0}
-                className={fieldCls}
-                value={draft.instructor.experienceYears}
-                onChange={(e) => patchInstructor({ experienceYears: Number(e.target.value) })}
-              />
-            </Field>
-            <Field label={t("admin.formations.f.iPhoto")}>
-              <input
-                className={fieldCls}
-                value={draft.instructor.photo}
-                onChange={(e) => patchInstructor({ photo: e.target.value })}
-              />
-            </Field>
-          </div>
-          <Field label={t("admin.formations.f.iBio")}>
-            <textarea
-              rows={2}
+          <Field label="Formateur">
+            <select
               className={fieldCls}
-              value={draft.instructor.bio}
-              onChange={(e) => patchInstructor({ bio: e.target.value })}
-            />
+              value={draft.formateurId ?? ""}
+              onChange={(e) => patch({ formateurId: e.target.value })}
+            >
+              <option value="">Sélectionner un formateur…</option>
+              {formateurs.map((f) => (
+                <option key={f.id} value={f.id}>
+                  {f.fullName} ({f.email})
+                </option>
+              ))}
+            </select>
           </Field>
+          {draft.formateurId && (
+            <p className="mt-2 text-xs text-muted-foreground">
+              Le profil (bio, spécialité, expérience) est géré dans le formulaire utilisateur formateur.
+            </p>
+          )}
         </div>
 
         <div className="rounded-2xl border border-border bg-muted/40 p-4">

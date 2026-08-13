@@ -20,4 +20,8 @@ public class UserRequest {
     private String country;
     private String language;
     private String avatar;
+    private String bio;
+    private String specialty;
+    private Integer experienceYears;
+    private String hostRegion;
 }

@@ -74,7 +74,7 @@ function MyBookings() {
       ) : mine.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-border bg-card px-6 py-16 text-center">
           <p className="text-sm text-muted-foreground">{t("me.bookings.empty")}</p>
-          <Link to="/" className="mt-4 inline-flex rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-warm transition hover:scale-[1.02]">
+          <Link to="/experiences" className="mt-4 inline-flex rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-warm transition hover:scale-[1.02]">
             {t("me.bookings.browse")}
           </Link>
         </div>

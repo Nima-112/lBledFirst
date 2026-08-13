@@ -30,6 +30,9 @@ import {
 } from "@/services/experiences.service";
 import { getUsersList } from "@/services/users.service";
 import { getRegionsList } from "@/services/regions.service";
+import { FormErrorBanner } from "@/components/ui/form-feedback";
+import { parseApiError } from "@/lib/api-errors";
+import { toast } from "sonner";
 
 const EXPERIENCE_CATEGORIES = [
   "Hiking",
@@ -87,6 +90,7 @@ export function ExperiencesPanel() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
   const [draft, setDraft] = useState<DraftExperience>(EMPTY);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   const expQuery = useQuery({
     queryKey: ["admin-experiences"],
@@ -152,7 +156,7 @@ export function ExperiencesPanel() {
   }, [experiences, query]);
 
   const startCreate = () => {
-    const authors = users;
+    const authors = users.filter((u) => u.role === "host" || u.role === "formateur");
     setDraft({ ...EMPTY, hostId: authors[0]?.id ?? "" });
     setCreating(true);
   };
@@ -263,7 +267,11 @@ export function ExperiencesPanel() {
   };
 
   const save = async () => {
-    if (!draft.title || !draft.hostId) return;
+    setSaveError(null);
+    if (!draft.title || !draft.hostId) {
+      setSaveError("Le titre et l'auteur (hôte) sont obligatoires.");
+      return;
+    }
     const payload: FrontExperience = {
       id: editingId ?? "",
       title: draft.title,
@@ -281,10 +289,16 @@ export function ExperiencesPanel() {
       status: draft.status,
       createdAt: new Date().toISOString(),
     };
-    if (editingId) {
-      await updateMutation.mutateAsync({ id: editingId, data: payload });
-    } else {
-      await createMutation.mutateAsync(payload);
+    try {
+      if (editingId) {
+        await updateMutation.mutateAsync({ id: editingId, data: payload });
+        toast.success("Expérience mise à jour.");
+      } else {
+        await createMutation.mutateAsync(payload);
+        toast.success("Expérience créée.");
+      }
+    } catch (err) {
+      setSaveError(parseApiError(err, "Impossible d'enregistrer l'expérience.").message);
     }
   };
 
@@ -301,7 +315,7 @@ export function ExperiencesPanel() {
     deleteMutation.isPending ||
     publishMutation.isPending;
 
-  const authors = users;
+  const authors = users.filter((u) => u.role === "host" || u.role === "formateur");
 
   return (
     <section>
@@ -407,6 +421,7 @@ export function ExperiencesPanel() {
         }}
         onSave={save}
       >
+        <FormErrorBanner message={saveError} />
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Titre">
             <input

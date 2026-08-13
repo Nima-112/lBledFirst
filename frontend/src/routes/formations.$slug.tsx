@@ -18,6 +18,7 @@ import {
   Users,
   X,
 } from "lucide-react";
+import { BookingCheckoutModal } from "@/components/booking/BookingCheckoutModal";
 import { formatDuration, totalCapsules, type Formation, type Capsule } from "@/lib/formations";
 import {
   getFormationDetail,
@@ -104,7 +105,6 @@ function FormationDetail() {
     mutationFn: () => purchaseFormationApi(slug),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["formations", slug] });
-      setCheckoutOpen(false);
     },
   });
 
@@ -513,13 +513,24 @@ function FormationDetail() {
 
       <Footer />
 
-      {/* Checkout modal */}
-      <CheckoutModal
+      <BookingCheckoutModal
         open={checkoutOpen}
         onClose={() => setCheckoutOpen(false)}
-        formation={f}
-        onPaid={() => {
-          purchaseMutation.mutate();
+        variant="formation"
+        item={{
+          id: String(f.id ?? slug),
+          title: f.title,
+          hostName: f.instructor.name,
+          region: f.category,
+          guests: 1,
+          unitPrice: f.price,
+          coverImage: f.coverImage,
+        }}
+        defaultEmail={user?.email}
+        defaultName={user?.name}
+        onConfirm={async () => {
+          await purchaseMutation.mutateAsync();
+          setTimeout(() => setCheckoutOpen(false), 1200);
         }}
       />
 
@@ -616,171 +627,6 @@ function InstructorStat({ label, value }: { label: string; value: React.ReactNod
         {label}
       </dt>
     </div>
-  );
-}
-
-function CheckoutModal({
-  open,
-  onClose,
-  formation,
-  onPaid,
-}: {
-  open: boolean;
-  onClose: () => void;
-  formation: Formation;
-  onPaid: () => void;
-}) {
-  const [method, setMethod] = useState<"card" | "paypal" | "wire">("card");
-  const [processing, setProcessing] = useState(false);
-  const [done, setDone] = useState(false);
-
-  useEffect(() => {
-    if (open) {
-      setProcessing(false);
-      setDone(false);
-    }
-  }, [open]);
-
-  const submit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setProcessing(true);
-    setTimeout(() => {
-      setDone(true);
-      setTimeout(() => onPaid(), 900);
-    }, 1200);
-  };
-
-  return (
-    <AnimatePresence>
-      {open && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          onClick={onClose}
-          className="fixed inset-0 z-[70] flex items-end justify-center bg-ink/60 p-0 backdrop-blur-sm sm:items-center sm:p-4"
-        >
-          <motion.div
-            initial={{ y: 40, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ y: 40, opacity: 0 }}
-            transition={{ type: "spring", stiffness: 320, damping: 32 }}
-            onClick={(e) => e.stopPropagation()}
-            className="max-h-[92vh] w-full max-w-md overflow-y-auto rounded-t-3xl border border-border bg-card p-6 shadow-warm sm:rounded-3xl"
-          >
-            <div className="flex items-center justify-between">
-              <h2 className="font-display text-xl font-extrabold text-foreground">
-                Finaliser l'achat
-              </h2>
-              <button
-                onClick={onClose}
-                aria-label="Fermer"
-                className="inline-flex h-9 w-9 items-center justify-center rounded-full text-muted-foreground hover:bg-muted"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-
-            <div className="mt-5 flex items-center gap-3 rounded-2xl border border-border bg-background/60 p-3">
-              <img
-                src={formation.coverImage}
-                alt=""
-                className="h-14 w-14 rounded-xl object-cover"
-              />
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-bold text-foreground">{formation.title}</p>
-                <p className="text-xs text-muted-foreground">{formation.instructor.name}</p>
-              </div>
-              <span className="font-display text-lg font-extrabold text-primary">
-                {formation.price} MAD
-              </span>
-            </div>
-
-            {done ? (
-              <div className="mt-8 flex flex-col items-center gap-3 py-4 text-center">
-                <span className="inline-flex h-14 w-14 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-600">
-                  <Check className="h-7 w-7" />
-                </span>
-                <p className="font-display text-xl font-extrabold">Paiement confirmé !</p>
-                <p className="text-sm text-muted-foreground">
-                  Vous recevrez une facture par email. Accès immédiat.
-                </p>
-              </div>
-            ) : (
-              <form onSubmit={submit} className="mt-5 space-y-4">
-                <div className="grid grid-cols-3 gap-2">
-                  {(["card", "paypal", "wire"] as const).map((m) => (
-                    <button
-                      key={m}
-                      type="button"
-                      onClick={() => setMethod(m)}
-                      className={`rounded-xl border px-3 py-2 text-xs font-bold transition ${
-                        method === m
-                          ? "border-primary bg-primary/10 text-primary"
-                          : "border-border text-muted-foreground hover:bg-muted"
-                      }`}
-                    >
-                      {m === "card" ? "Carte" : m === "paypal" ? "PayPal" : "Virement"}
-                    </button>
-                  ))}
-                </div>
-
-                {method === "card" && (
-                  <div className="space-y-3">
-                    <input
-                      required
-                      placeholder="Nom sur la carte"
-                      className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
-                    />
-                    <input
-                      required
-                      placeholder="Numéro de carte"
-                      inputMode="numeric"
-                      className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
-                    />
-                    <div className="grid grid-cols-2 gap-3">
-                      <input
-                        required
-                        placeholder="MM/AA"
-                        className="rounded-xl border border-border bg-background px-4 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
-                      />
-                      <input
-                        required
-                        placeholder="CVC"
-                        className="rounded-xl border border-border bg-background px-4 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
-                      />
-                    </div>
-                  </div>
-                )}
-                {method === "paypal" && (
-                  <p className="rounded-xl border border-dashed border-border bg-background p-4 text-xs text-muted-foreground">
-                    Vous serez redirigé vers PayPal pour finaliser le paiement.
-                  </p>
-                )}
-                {method === "wire" && (
-                  <p className="rounded-xl border border-dashed border-border bg-background p-4 text-xs text-muted-foreground">
-                    Les coordonnées bancaires vous seront envoyées par email. L'accès sera débloqué
-                    à réception du virement.
-                  </p>
-                )}
-
-                <button
-                  type="submit"
-                  disabled={processing}
-                  className="flex w-full items-center justify-center gap-2 rounded-full bg-primary px-5 py-3 text-sm font-bold text-primary-foreground shadow-warm transition hover:scale-[1.02] disabled:opacity-70"
-                >
-                  {processing ? "Traitement…" : `Payer ${formation.price} MAD`}
-                </button>
-                <p className="text-center text-[11px] text-muted-foreground">
-                  <ShieldCheck className="mr-1 inline h-3 w-3 text-emerald-600" />
-                  Paiement 100% sécurisé — démo frontend (aucun paiement réel).
-                </p>
-              </form>
-            )}
-          </motion.div>
-        </motion.div>
-      )}
-    </AnimatePresence>
   );
 }
 

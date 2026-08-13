@@ -31,6 +31,7 @@ public class FormationDetailResponse {
     private List<String> skills;
     private List<String> prerequisites;
     private List<ChapterDto> chapters;
+    private Long formateurId;
     private InstructorDto instructor;
     private LocalDateTime createdAt;
     // true si l'utilisateur courant (authentifié) a acheté la formation ;
