@@ -20,6 +20,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.Map;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+
 @RestController
 @RequestMapping("/api/experiences")
 public class ExperienceController {
@@ -81,5 +85,17 @@ public class ExperienceController {
     @DeleteMapping("/{id}")
     public void delete(@PathVariable Long id) {
         service.delete(id);
+    }
+
+    @PostMapping("/{id}/favorite")
+    public ResponseEntity<Map<String, Boolean>> toggleFavorite(@PathVariable Long id,
+            Authentication authentication) {
+        boolean favorited = service.toggleFavorite(id, authentication.getName());
+        return ResponseEntity.ok(Map.of("favorited", favorited));
+    }
+
+    @GetMapping("/me/favorites")
+    public List<Experience> getMyFavorites(Authentication authentication) {
+        return service.getFavoriteExperiences(authentication.getName());
     }
 }

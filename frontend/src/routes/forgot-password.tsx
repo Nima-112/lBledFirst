@@ -58,7 +58,7 @@ function ForgotPasswordPage() {
 
           {sent ? (
             <div className="rounded-2xl border border-border bg-card p-6 text-center shadow-card">
-              <CheckCircle2 className="mx-auto mb-3 h-10 w-10 text-primary" />
+              <CheckCircle2 className="mx-auto mb-3 h-10 w-10 text-secondary" />
               <h1 className="font-display text-xl font-extrabold text-foreground">Email envoyé</h1>
               <p className="mt-2 text-sm text-muted-foreground">
                 Si un compte existe pour <span className="font-semibold text-foreground">{email}</span>, un lien de

@@ -428,10 +428,12 @@ public class ExperienceSeeder implements CommandLineRunner {
                     .name(name)
                     .email(email)
                     .password(passwordEncoder.encode("host123"))
-                    .role(UserRole.tourist)
+                    .role(UserRole.host)
                     .phone(phone)
                     .country(country)
                     .language(language)
+                    .bio(bio)
+                    .emailVerified(true)
                     .createdAt(LocalDateTime.now())
                     .build();
             return userRepository.save(host);

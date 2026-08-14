@@ -1,6 +1,6 @@
 import { useEffect, type ReactNode } from "react";
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
-import { CalendarCheck, GraduationCap, Star, User as UserIcon, ArrowLeft, LogOut } from "lucide-react";
+import { CalendarCheck, GraduationCap, Star, User as UserIcon, ArrowLeft, LogOut, Heart } from "lucide-react";
 import { Logo } from "@/components/landing/Logo";
 import { LanguageSelector } from "@/components/landing/LanguageSelector";
 import { useI18n } from "@/lib/i18n";
@@ -28,6 +28,7 @@ export function MeShell({ children, title }: { children: ReactNode; title: strin
     { to: "/me/bookings", label: t("nav.me.bookings"), icon: <CalendarCheck className="h-4 w-4" /> },
     { to: "/me/formations", label: t("nav.me.formations"), icon: <GraduationCap className="h-4 w-4" /> },
     { to: "/me/reviews", label: t("nav.me.reviews"), icon: <Star className="h-4 w-4" /> },
+    { to: "/me/favorites", label: t("nav.me.favorites"), icon: <Heart className="h-4 w-4" /> },
     { to: "/me/profile", label: t("nav.me.profile"), icon: <UserIcon className="h-4 w-4" /> },
   ] as const;
 

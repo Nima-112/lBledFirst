@@ -42,11 +42,6 @@ public class AuthController {
 
     @PostMapping("/register")
     public ResponseEntity<UserResponse> register(@Valid @RequestBody RegisterRequest req) {
-
-        // Pas de cookie posé ici : le compte est créé mais l'utilisateur n'est PAS
-        // connecté tant qu'il n'a pas confirmé son email (cf. login(), qui refuse
-        // désormais les comptes non vérifiés). Sans ça, l'inscription redirigeait
-        // directement vers l'espace membre sans jamais passer par la confirmation.
         AuthResponse auth = authService.register(req);
 
         return ResponseEntity.ok(toUserResponse(auth));
@@ -63,11 +58,6 @@ public class AuthController {
         return ResponseEntity.ok(toUserResponse(auth));
     }
 
-    // Lit la session depuis le cookie httpOnly (via JwtFilter) : permet au
-    // frontend de récupérer l'utilisateur courant sans jamais lire le token en JS.
-    // Fonctionne aussi bien pour une session classique (email/mdp) que pour une
-    // session ouverte via Google : les deux posent le même cookie JWT (cf.
-    // OAuth2LoginSuccessHandler), donc /me n'a pas à distinguer l'origine.
     @GetMapping("/me")
     public ResponseEntity<UserResponse> me(Authentication authentication) {
         return ResponseEntity.ok(authService.getCurrentUser(authentication.getName()));
@@ -90,11 +80,6 @@ public class AuthController {
                 auth.getCountry(), auth.getLanguage(), auth.getAvatar(), auth.isEmailVerified());
     }
 
-    // ---- Vérification d'email --------------------------------------------------
-
-    // Lien cliqué directement depuis l'email (navigation navigateur, pas un appel
-    // axios) : on redirige donc vers une page du frontend plutôt que de renvoyer du
-    // JSON.
     @GetMapping("/verify-email")
     public void verifyEmail(@RequestParam String token, HttpServletResponse response) throws IOException {
         try {
@@ -110,8 +95,6 @@ public class AuthController {
         authService.resendVerificationEmail(req.getEmail());
         return ResponseEntity.noContent().build();
     }
-
-    // ---- Mot de passe oublié ----------------------------------------------------
 
     @PostMapping("/forgot-password")
     public ResponseEntity<Void> forgotPassword(@Valid @RequestBody ForgotPasswordRequest req) {

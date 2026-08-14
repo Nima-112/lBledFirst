@@ -49,7 +49,7 @@ export function ReviewsPanel() {
       if (r.rating < minRating) return false;
       if (!q) return true;
       return (
-        r.comment.toLowerCase().includes(q) ||
+        (r.comment ?? "").toLowerCase().includes(q) ||
         touristName(r.touristId).toLowerCase().includes(q) ||
         experienceTitle(r.experienceId).toLowerCase().includes(q)
       );

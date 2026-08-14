@@ -48,6 +48,7 @@ const EMPTY: DraftUser = {
 export function TouristsPanel() {
   const queryClient = useQueryClient();
   const [query, setQuery] = useState("");
+  const [selectedRole, setSelectedRole] = useState<string>("all");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
   const [draft, setDraft] = useState<DraftUser>(EMPTY);
@@ -94,16 +95,20 @@ export function TouristsPanel() {
     [users],
   );
   const filtered = useMemo(() => {
+    let result = tourists;
+    if (selectedRole !== "all") {
+      result = result.filter((u) => u.role === selectedRole);
+    }
     const q = query.trim().toLowerCase();
-    if (!q) return tourists;
-    return tourists.filter(
+    if (!q) return result;
+    return result.filter(
       (u) =>
         u.fullName.toLowerCase().includes(q) ||
         u.email.toLowerCase().includes(q) ||
         (u.country ?? "").toLowerCase().includes(q) ||
         (u.role ?? "").toLowerCase().includes(q),
     );
-  }, [tourists, query]);
+  }, [tourists, query, selectedRole]);
 
   const startCreate = () => {
     setDraft(EMPTY);
@@ -205,12 +210,23 @@ export function TouristsPanel() {
     <section>
       <PanelHeader
         title="Utilisateurs"
-        subtitle="Consultez et gérez les utilisateurs (touristes, hôtes, formateurs) inscrits sur la plateforme."
+        subtitle=""
         query={query}
         setQuery={setQuery}
         onAdd={startCreate}
         addLabel="Nouveau utilisateur"
-      />
+      >
+        <select
+          value={selectedRole}
+          onChange={(e) => setSelectedRole(e.target.value)}
+          className="cursor-pointer rounded-full border border-border bg-card px-4 py-2.5 text-sm font-semibold text-foreground outline-none transition hover:border-primary/40 focus:border-primary focus:ring-2 focus:ring-primary/20"
+        >
+          <option value="all">Tous les rôles</option>
+          <option value="tourist">Touristes</option>
+          <option value="host">Hôtes</option>
+          <option value="formateur">Formateurs</option>
+        </select>
+      </PanelHeader>
 
       {busy && (
         <p className="mb-4 text-sm text-muted-foreground">Chargement…</p>

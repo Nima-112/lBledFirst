@@ -8,6 +8,7 @@ import { useI18n } from "@/lib/i18n";
 import { useAuth } from "@/context/AuthContext";
 import { patchUser, uploadAvatar, changePassword as changePasswordApi } from "@/services/users.service";
 import { resolveUploadUrl } from "@/lib/asset-url";
+import { parseApiError } from "@/lib/api-errors";
 import { COUNTRIES } from "@/lib/countries";
 import { NATIVE_LANGUAGES } from "@/lib/languages";
 
@@ -24,6 +25,7 @@ function MyProfile() {
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [saved, setSaved] = useState(false);
   const [password, setPassword] = useState("");
+  const [currentPassword, setCurrentPassword] = useState("");
   const [pwSaved, setPwSaved] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -89,18 +91,54 @@ function MyProfile() {
   const changePasswordMutation = useMutation({
     mutationFn: async () => {
       if (!user?.id) throw new Error("No connected user");
-      await changePasswordApi(password);
+      await changePasswordApi(password, currentPassword);
     },
     onSuccess: () => {
       setPassword("");
+      setCurrentPassword("");
       setPwSaved(true);
       setTimeout(() => setPwSaved(false), 1800);
     },
   });
 
   const changePassword = () => {
-    if (!password.trim() || password.length < 6) return;
+    if (!password.trim() || password.length < 6 || !currentPassword.trim()) return;
     changePasswordMutation.mutate();
+  };
+
+  const getProfileErrorMessage = () => {
+    if (!profileMutation.error) return null;
+    const parsed = parseApiError(profileMutation.error, "Failed to update profile. Please check your inputs.");
+    let msg = parsed.message;
+    if (msg.includes("Invalid phone number")) {
+      msg = "Invalid phone number. It must be between 8 and 20 digits.";
+    } else if (msg.includes("Name must be")) {
+      // Keep name validation
+    } else {
+      msg = "Failed to update profile. Please check your inputs.";
+    }
+    return msg;
+  };
+
+  const getPasswordErrorMessage = () => {
+    if (!changePasswordMutation.error) return null;
+    const parsed = parseApiError(changePasswordMutation.error, "Failed to update password.");
+    let msg = parsed.message;
+    const status = (changePasswordMutation.error as any)?.response?.status;
+
+    if (msg === "Identifiants invalides" || msg === "Incorrect password" || msg === "Invalid credentials" || msg === "Invalid password") {
+      return "Incorrect current password. Please try again.";
+    }
+
+    if (status === 400 || (status && status < 500)) {
+      return msg;
+    }
+
+    if (msg.includes("must be at least") || msg.includes("must contain")) {
+      return msg;
+    }
+
+    return "Failed to update password. Please try again later.";
   };
 
   const countryOptions = COUNTRIES.map((c) => ({ value: c.name, label: c.name, hint: c.flag }));
@@ -162,11 +200,23 @@ function MyProfile() {
               {profileMutation.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
               {saved ? <><Check className="h-4 w-4" /> {t("me.profile.saved")}</> : t("me.profile.save")}
             </button>
+            {profileMutation.isError && (
+              <p className="mt-4 rounded-xl bg-destructive/10 px-4 py-2.5 text-sm text-destructive">
+                {getProfileErrorMessage()}
+              </p>
+            )}
           </div>
 
           <div className="rounded-2xl border border-border bg-card p-6 shadow-card">
             <h3 className="mb-4 font-display text-base font-bold text-foreground">{t("me.profile.password")}</h3>
             <div className="flex flex-col gap-3 sm:flex-row">
+              <input
+                type="password"
+                value={currentPassword}
+                onChange={(e) => setCurrentPassword(e.target.value)}
+                placeholder={t("me.profile.currentPassword")}
+                className={inputCls}
+              />
               <input
                 type="password"
                 value={password}
@@ -176,13 +226,18 @@ function MyProfile() {
               />
               <button
                 onClick={changePassword}
-                disabled={!password.trim() || password.length < 6 || changePasswordMutation.isPending}
+                disabled={!password.trim() || password.length < 6 || !currentPassword.trim() || changePasswordMutation.isPending}
                 className="inline-flex shrink-0 items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-warm transition hover:scale-[1.02] disabled:opacity-60"
               >
                 {changePasswordMutation.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
                 {pwSaved ? <><Check className="h-4 w-4" /> {t("me.profile.saved")}</> : t("me.profile.updatePassword")}
               </button>
             </div>
+            {changePasswordMutation.isError && (
+              <p className="mt-4 rounded-xl bg-destructive/10 px-4 py-2.5 text-sm text-destructive">
+                {getPasswordErrorMessage()}
+              </p>
+            )}
           </div>
         </div>
       </div>

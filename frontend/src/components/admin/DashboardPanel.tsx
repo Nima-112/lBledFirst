@@ -9,6 +9,7 @@ import { getBookingsList } from "@/services/bookings.service";
 import { getReviewsList } from "@/services/reviews.service";
 import { getFormationsList } from "@/services/formations.service";
 import type { Formation } from "@/lib/formations";
+import { getFormationEnrollments } from "@/services/formation-enrollments.service";
 
 type BookingStatus = "pending" | "confirmed" | "completed" | "cancelled";
 
@@ -30,6 +31,10 @@ export function DashboardPanel() {
     queryKey: ["admin-formations"],
     queryFn: getFormationsList,
   });
+  const enrollmentsQuery = useQuery({
+    queryKey: ["admin-enrollments"],
+    queryFn: getFormationEnrollments,
+  });
 
   const users = usersQuery.data ?? [];
   const experiences = experiencesQuery.data ?? [];
@@ -39,13 +44,17 @@ export function DashboardPanel() {
 
   void formationsQuery;
 
-  const revenue = bookings
-    .filter(
-      (b) =>
-        (b.status === "confirmed" || b.status === "completed") &&
-        !b.experienceDeleted,
-    )
+  const enrollments = enrollmentsQuery.data ?? [];
+
+  const bookingRevenue = bookings
+    .filter((b) => b.status === "confirmed" || b.status === "completed")
     .reduce((s, b) => s + b.totalPrice, 0);
+
+  const formationRevenue = enrollments
+    .reduce((s, e) => s + (e.formationPrice ?? 0), 0);
+
+  const revenue = bookingRevenue + formationRevenue;
+
   const totalTourists = users.filter((u) => u.role === "tourist").length;
   const publishedExperiences = experiences.filter((e) => e.status === "published").length;
   const avgRating =
@@ -83,7 +92,8 @@ export function DashboardPanel() {
     usersQuery.isLoading ||
     experiencesQuery.isLoading ||
     bookingsQuery.isLoading ||
-    reviewsQuery.isLoading;
+    reviewsQuery.isLoading ||
+    enrollmentsQuery.isLoading;
 
   return (
     <section>

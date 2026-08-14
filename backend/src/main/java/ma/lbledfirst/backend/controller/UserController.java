@@ -26,25 +26,25 @@ public class UserController {
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping
     public List<UserResponse> findAll() {
-        return service.findAllDto();
+        return service.findAllUsers();
     }
 
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/{id}")
     public UserResponse findById(@PathVariable Long id) {
-        return service.findByIdDto(id);
+        return service.findByIdUser(id);
     }
 
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
     public UserResponse create(@Valid @RequestBody UserRequest req) {
-        return service.createDto(req);
+        return service.createUser(req);
     }
 
     @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{id}")
     public UserResponse update(@PathVariable Long id, @Valid @RequestBody UserRequest req) {
-        return service.updateDto(id, req);
+        return service.updateUser(id, req);
     }
 
     @PreAuthorize("hasRole('ADMIN')")
@@ -53,14 +53,12 @@ public class UserController {
         service.delete(id);
     }
 
-    // Self-update: any authenticated user can update their own profile
     @PatchMapping("/me")
     public UserResponse updateMe(@Valid @RequestBody UserUpdateMeRequest patch, Authentication authentication) {
         String email = (authentication != null) ? authentication.getName() : null;
         return service.updateMe(email, patch);
     }
 
-    // Change password: any authenticated user can change their own password
     @PatchMapping("/me/password")
     public Map<String, String> changePassword(@Valid @RequestBody ChangePasswordRequest body, Authentication authentication) {
         String email = (authentication != null) ? authentication.getName() : null;

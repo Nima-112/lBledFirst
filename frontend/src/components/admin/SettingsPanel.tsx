@@ -6,6 +6,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Toggle } from "./Toggle";
 import { FrontSettings, getSettings, saveSettings } from "@/services/settings.service";
 import { patchUser } from "@/services/users.service";
+import { parseApiError } from "@/lib/api-errors";
 
 export function SettingsPanel() {
   const queryClient = useQueryClient();
@@ -71,6 +72,16 @@ export function SettingsPanel() {
     },
   });
 
+  const getProfileErrorMessage = () => {
+    if (!profileMutation.error) return null;
+    const parsed = parseApiError(profileMutation.error, "Failed to update profile. Please check your inputs.");
+    let msg = parsed.message;
+    if (msg.includes("Invalid phone number")) {
+      msg = "Invalid phone number. It must be between 8 and 20 digits.";
+    }
+    return msg;
+  };
+
   return (
     <section>
       <PanelHeader
@@ -110,9 +121,7 @@ export function SettingsPanel() {
             </button>
             {profileMutation.error && (
               <p className="text-xs text-destructive">
-                {(profileMutation.error as any)?.response?.data?.message ??
-                  (profileMutation.error as any)?.message ??
-                  "Erreur d'enregistrement"}
+                {getProfileErrorMessage()}
               </p>
             )}
           </div>

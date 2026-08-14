@@ -10,12 +10,16 @@ import ma.lbledfirst.backend.domain.User;
 import ma.lbledfirst.backend.dto.ReviewRequest;
 import ma.lbledfirst.backend.dto.ReviewResponse;
 import ma.lbledfirst.backend.dto.UserResponse;
+import ma.lbledfirst.backend.domain.BookingStatus;
+import ma.lbledfirst.backend.repository.BookingRepository;
 import ma.lbledfirst.backend.repository.ExperienceRepository;
 import ma.lbledfirst.backend.repository.FormationCapsuleProgressRepository;
 import ma.lbledfirst.backend.repository.FormationPurchaseRepository;
 import ma.lbledfirst.backend.repository.FormationRepository;
 import ma.lbledfirst.backend.repository.ReviewRepository;
 import ma.lbledfirst.backend.repository.UserRepository;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
@@ -34,13 +38,15 @@ public class ReviewService extends AbstractCrudService<Review, Long> {
     private final FormationRepository formationRepository;
     private final FormationPurchaseRepository formationPurchaseRepository;
     private final FormationCapsuleProgressRepository progressRepository;
+    private final BookingRepository bookingRepository;
 
     public ReviewService(ReviewRepository repository,
                          UserRepository userRepository,
                          ExperienceRepository experienceRepository,
                          FormationRepository formationRepository,
                          FormationPurchaseRepository formationPurchaseRepository,
-                         FormationCapsuleProgressRepository progressRepository) {
+                         FormationCapsuleProgressRepository progressRepository,
+                         BookingRepository bookingRepository) {
         super(repository);
         this.reviewRepository = repository;
         this.userRepository = userRepository;
@@ -48,6 +54,14 @@ public class ReviewService extends AbstractCrudService<Review, Long> {
         this.formationRepository = formationRepository;
         this.formationPurchaseRepository = formationPurchaseRepository;
         this.progressRepository = progressRepository;
+        this.bookingRepository = bookingRepository;
+    }
+
+    private static boolean isCurrentUserAdmin() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null) return false;
+        return auth.getAuthorities().stream()
+                .anyMatch(g -> "ROLE_ADMIN".equals(g.getAuthority()));
     }
 
     private UserResponse mapToUserResponse(User user) {
@@ -117,8 +131,14 @@ public class ReviewService extends AbstractCrudService<Review, Long> {
 
     @Transactional
     public ReviewResponse createDto(ReviewRequest req, String touristEmail) {
-        User tourist = userRepository.findByEmail(touristEmail)
-                .orElseThrow(() -> new ResponseStatusException(BAD_REQUEST, "Utilisateur introuvable"));
+        User tourist;
+        if (isCurrentUserAdmin() && req.getTourist() != null && req.getTourist().getId() != null) {
+            tourist = userRepository.findById(req.getTourist().getId())
+                    .orElseThrow(() -> new ResponseStatusException(BAD_REQUEST, "Touriste introuvable"));
+        } else {
+            tourist = userRepository.findByEmail(touristEmail)
+                    .orElseThrow(() -> new ResponseStatusException(BAD_REQUEST, "Utilisateur introuvable"));
+        }
         
         Review review = new Review();
         review.setTourist(tourist);
@@ -172,6 +192,12 @@ public class ReviewService extends AbstractCrudService<Review, Long> {
         } else {
             Experience experience = experienceRepository.findById(req.getExperience().getId())
                     .orElseThrow(() -> new ResponseStatusException(BAD_REQUEST, "Expérience introuvable"));
+
+            boolean hasBooking = bookingRepository.existsByTouristIdAndExperienceIdAndStatusIn(
+                    tourist.getId(), experience.getId(), List.of(BookingStatus.confirmed, BookingStatus.completed));
+            if (!hasBooking) {
+                throw new ResponseStatusException(FORBIDDEN, "Vous devez avoir une réservation confirmée ou complétée pour évaluer cette expérience");
+            }
 
             if (reviewRepository.findByTouristIdAndExperienceId(tourist.getId(), experience.getId()).isPresent()) {
                 throw new ResponseStatusException(CONFLICT, "Vous avez déjà laissé un avis pour cette expérience");

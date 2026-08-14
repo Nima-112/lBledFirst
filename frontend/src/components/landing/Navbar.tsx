@@ -11,6 +11,7 @@ import {
   GraduationCap,
   Star,
   ChevronDown,
+  Heart,
 } from "lucide-react";
 import { Logo } from "./Logo";
 import { LanguageSelector } from "./LanguageSelector";
@@ -221,6 +222,12 @@ function TouristMenu({ scrolled }: { scrolled: boolean }) {
               onClick={() => setOpen(false)}
             />
             <MenuLink
+              to="/me/favorites"
+              icon={<Heart className="h-4 w-4" />}
+              label={t("nav.me.favorites")}
+              onClick={() => setOpen(false)}
+            />
+            <MenuLink
               to="/me/profile"
               icon={<UserIcon className="h-4 w-4" />}
               label={t("nav.me.profile")}
@@ -290,6 +297,7 @@ function MobileTouristLinks({ onClose }: { onClose: () => void }) {
       {item("/me/bookings", t("nav.me.bookings"), <CalendarCheck className="h-4 w-4" />)}
       {item("/me/formations", t("nav.me.formations"), <GraduationCap className="h-4 w-4" />)}
       {item("/me/reviews", t("nav.me.reviews"), <Star className="h-4 w-4" />)}
+      {item("/me/favorites", t("nav.me.favorites"), <Heart className="h-4 w-4" />)}
       {item("/me/profile", t("nav.me.profile"), <UserIcon className="h-4 w-4" />)}
       <button
         onClick={() => {

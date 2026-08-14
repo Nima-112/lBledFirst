@@ -3,6 +3,7 @@ package ma.lbledfirst.backend.config;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import ma.lbledfirst.backend.security.JwtFilter;
+import ma.lbledfirst.backend.security.VideoAccessFilter;
 import ma.lbledfirst.backend.security.OAuth2LoginFailureHandler;
 import ma.lbledfirst.backend.security.OAuth2LoginSuccessHandler;
 import org.springframework.beans.factory.annotation.Value;
@@ -26,6 +27,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfig {
 
     private final JwtFilter jwtFilter;
+    private final VideoAccessFilter videoAccessFilter;
     private final OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler;
     private final OAuth2LoginFailureHandler oAuth2LoginFailureHandler;
 
@@ -48,6 +50,7 @@ public class SecurityConfig {
                     auth.requestMatchers("/uploads/videos/**").authenticated();
                     auth.requestMatchers("/api/health").permitAll();
                     auth.requestMatchers(HttpMethod.GET, "/api/formations", "/api/formations/*").permitAll();
+                    auth.requestMatchers(HttpMethod.GET, "/api/experiences/me/favorites").authenticated();
                     auth.requestMatchers(HttpMethod.GET, "/api/experiences", "/api/experiences/**").permitAll();
                     auth.requestMatchers(HttpMethod.GET, "/api/regions", "/api/regions/**").permitAll();
                     auth.requestMatchers(HttpMethod.GET, "/api/activities", "/api/activities/**").permitAll();
@@ -62,6 +65,7 @@ public class SecurityConfig {
                     }
                     auth.requestMatchers("/actuator/health").permitAll();
                     auth.requestMatchers("/oauth2/**", "/login/oauth2/**").permitAll();
+                    auth.requestMatchers("/error").permitAll();
                     auth.anyRequest().authenticated();
                 })
                 .exceptionHandling(ex -> ex.authenticationEntryPoint((request, response, authException) ->
@@ -69,7 +73,8 @@ public class SecurityConfig {
                 .oauth2Login(oauth2 -> oauth2
                         .successHandler(oAuth2LoginSuccessHandler)
                         .failureHandler(oAuth2LoginFailureHandler))
-                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterAfter(videoAccessFilter, JwtFilter.class);
         return http.build();
     }
 }

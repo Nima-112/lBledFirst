@@ -12,3 +12,8 @@ springdoc:
 
 cookie:
   secure: false
+
+logging:
+  level:
+    org.springframework.security: DEBUG
+    org.springframework.web: DEBUG

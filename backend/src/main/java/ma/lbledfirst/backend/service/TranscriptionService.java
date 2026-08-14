@@ -52,7 +52,9 @@ public class TranscriptionService {
     @Value("${openai.whisper-initial-prompt:مرحبا، غادي نهضر بالدارجة المغربية ديال المغرب.}")
     private String initialPrompt;
 
-    private final HttpClient httpClient = HttpClient.newHttpClient();
+    private final HttpClient httpClient = HttpClient.newBuilder()
+            .connectTimeout(java.time.Duration.ofSeconds(30))
+            .build();
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     public static class TranscriptionSegment {
@@ -136,6 +138,7 @@ public class TranscriptionService {
                 .uri(URI.create(WHISPER_URL))
                 .header("Authorization", "Bearer " + apiKey)
                 .header("Content-Type", "multipart/form-data; boundary=" + boundary)
+                .timeout(java.time.Duration.ofMinutes(2))
                 .POST(HttpRequest.BodyPublishers.ofByteArray(multipartBody))
                 .build();
 

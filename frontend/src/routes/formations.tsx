@@ -1,4 +1,5 @@
 import { createFileRoute, Link, Outlet, useMatches, useNavigate } from "@tanstack/react-router";
+import { resolveUploadUrl } from "@/lib/asset-url";
 import { motion } from "framer-motion";
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -279,7 +280,7 @@ function FormationsPage() {
                 >
                   <div className="relative h-52 overflow-hidden">
                     <img
-                      src={f.coverImage}
+                      src={resolveUploadUrl(f.coverImage) || f.coverImage}
                       alt={f.title}
                       className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
                       loading="lazy"
@@ -313,7 +314,7 @@ function FormationsPage() {
 
                     <div className="mt-4 flex items-center gap-3 border-t border-border/70 pt-4">
                       <img
-                        src={f.instructor.photo}
+                        src={resolveUploadUrl(f.instructor.photo) || f.instructor.photo}
                         alt={f.instructor.name}
                         className="h-9 w-9 rounded-full object-cover"
                         loading="lazy"

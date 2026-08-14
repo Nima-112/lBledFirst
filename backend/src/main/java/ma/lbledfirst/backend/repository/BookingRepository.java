@@ -3,6 +3,7 @@ package ma.lbledfirst.backend.repository;
 import java.util.List;
 
 import ma.lbledfirst.backend.domain.Booking;
+import ma.lbledfirst.backend.domain.BookingStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -15,4 +16,6 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     void deleteByExperienceId(@Param("experienceId") Long experienceId);
 
     List<Booking> findByTouristId(Long touristId);
+
+    boolean existsByTouristIdAndExperienceIdAndStatusIn(Long touristId, Long experienceId, List<BookingStatus> statuses);
 }

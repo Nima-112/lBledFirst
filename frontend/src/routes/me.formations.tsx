@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { resolveUploadUrl } from "@/lib/asset-url";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { PlayCircle, Clock, GraduationCap, Compass } from "lucide-react";
 import { MeShell } from "@/components/me/MeShell";
@@ -38,7 +39,7 @@ function MyFormations() {
           >
             <div className="relative aspect-video overflow-hidden">
               <img
-                src={f.coverImage}
+                src={resolveUploadUrl(f.coverImage) || f.coverImage}
                 alt={f.title}
                 className="h-full w-full object-cover"
                 loading="lazy"

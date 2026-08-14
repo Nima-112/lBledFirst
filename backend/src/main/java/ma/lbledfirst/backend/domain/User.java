@@ -52,7 +52,6 @@ public class User {
     private String country;
     private String language;
 
-    /** Profil formateur / hôte (renseigné selon le rôle) */
     @Column(columnDefinition = "TEXT")
     private String bio;
 
@@ -60,11 +59,8 @@ public class User {
 
     private Integer experienceYears;
 
-    /** Région d'activité pour les hôtes */
     private String hostRegion;
 
-    // false à l'inscription classique ; mis à true immédiatement pour les comptes
-    // créés via Google (email déjà vérifié par Google, cf. OAuth2LoginSuccessHandler)
     @Builder.Default
     @Column(nullable = false)
     private boolean emailVerified = false;
@@ -85,19 +81,8 @@ public class User {
     @OneToMany(mappedBy = "tourist")
     private List<Review> reviews;
 
-//    @JsonIgnore
-//    @OneToMany(mappedBy = "sender")
-//    private List<Message> sentMessages;
-//
-//    @JsonIgnore
-//    @OneToMany(mappedBy = "receiver")
-//    private List<Message> receivedMessages;
-
     @JsonIgnore
     @OneToMany(mappedBy = "host")
     private List<Video> videos;
 
-    @JsonIgnore
-    @OneToMany(mappedBy = "user")
-    private List<Notification> notifications;
 }

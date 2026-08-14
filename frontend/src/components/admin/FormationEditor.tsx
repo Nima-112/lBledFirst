@@ -1,4 +1,5 @@
 import { Field, fieldCls, IconBtn, Modal } from "@/components/dashboard/ui";
+import { resolveUploadUrl } from "@/lib/asset-url";
 import { useI18n } from "@/lib/i18n";
 import {
   AlertTriangle,
@@ -364,7 +365,7 @@ export function FormationEditor({
           {draft.coverImage && (
             <Field label="Aperçu">
               <div className="aspect-video overflow-hidden rounded-xl border border-border bg-muted">
-                <img src={draft.coverImage} alt="" className="h-full w-full object-cover" />
+                <img src={resolveUploadUrl(draft.coverImage) || draft.coverImage} alt="" className="h-full w-full object-cover" />
               </div>
             </Field>
           )}

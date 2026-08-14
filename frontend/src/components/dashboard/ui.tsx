@@ -12,6 +12,7 @@ export function PanelHeader({
   setQuery,
   onAdd,
   addLabel,
+  children,
 }: {
   title: string;
   subtitle: string;
@@ -19,6 +20,7 @@ export function PanelHeader({
   setQuery?: (v: string) => void;
   onAdd?: () => void;
   addLabel?: string;
+  children?: ReactNode;
 }) {
   return (
     <div className="mb-5 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
@@ -26,7 +28,8 @@ export function PanelHeader({
         <h1 className="font-display text-2xl font-extrabold text-foreground">{title}</h1>
         <p className="text-sm text-muted-foreground">{subtitle}</p>
       </div>
-      <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2">
+        {children}
         {setQuery && (
           <div className="relative">
             <Search className="pointer-events-none absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -44,7 +47,7 @@ export function PanelHeader({
             className="inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-warm transition hover:scale-105"
           >
             <Plus className="h-4 w-4" />
-            <span className="hidden sm:inline">{addLabel}</span>
+            <span className="hidden sm:inline">{addLabel || "Ajouter"}</span>
           </button>
         )}
       </div>
@@ -229,18 +232,20 @@ export function BarChart({ data, unit }: { data: { label: string; value: number 
   return (
     <div className="flex h-52 items-end gap-3">
       {data.map((d) => (
-        <div key={d.label} className="flex flex-1 flex-col items-center gap-2">
+        <div key={d.label} className="flex h-full flex-1 flex-col items-center gap-1.5 justify-end">
           <span className="text-xs font-semibold text-foreground">
             {d.value}
             {unit}
           </span>
-          <motion.div
-            initial={{ height: 0 }}
-            animate={{ height: `${(d.value / max) * 100}%` }}
-            transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-            className="w-full rounded-t-lg bg-gradient-to-t from-primary to-saffron"
-            style={{ minHeight: 4 }}
-          />
+          <div className="relative flex-1 w-full flex items-end justify-center">
+            <motion.div
+              initial={{ height: 0 }}
+              animate={{ height: `${(d.value / max) * 100}%` }}
+              transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+              className="w-full rounded-t-lg bg-gradient-to-t from-primary to-saffron"
+              style={{ minHeight: 4 }}
+            />
+          </div>
           <span className="text-xs text-muted-foreground">{d.label}</span>
         </div>
       ))}

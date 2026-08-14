@@ -110,8 +110,8 @@ export async function uploadAvatar(file: File): Promise<string> {
   return data.url;
 }
 
-export async function changePassword(newPassword: string): Promise<void> {
-  await api.patch("/users/me/password", { newPassword });
+export async function changePassword(newPassword: string, currentPassword?: string): Promise<void> {
+  await api.patch("/users/me/password", { newPassword, currentPassword });
 }
 
 export async function createUser(u: FrontUser): Promise<FrontUser> {

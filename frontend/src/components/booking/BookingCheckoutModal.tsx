@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { resolveUploadUrl } from "@/lib/asset-url";
 import { createPortal } from "react-dom";
 import { motion } from "framer-motion";
 import {
@@ -217,7 +218,7 @@ export function BookingCheckoutModal({
             <div className="mt-5 flex items-center gap-3 rounded-2xl border border-border bg-background/60 p-3">
               <div className="grid h-14 w-14 shrink-0 place-items-center overflow-hidden rounded-xl bg-primary/15 text-primary">
                 {item.coverImage ? (
-                  <img src={item.coverImage} alt="" className="h-full w-full object-cover" />
+                  <img src={resolveUploadUrl(item.coverImage) || item.coverImage} alt="" className="h-full w-full object-cover" />
                 ) : (
                   <Mountain className="h-6 w-6" />
                 )}

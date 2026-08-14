@@ -43,7 +43,9 @@ public class TranslationService {
     @Value("${openai.model-translation}")
     private String model;
 
-    private final HttpClient httpClient = HttpClient.newHttpClient();
+    private final HttpClient httpClient = HttpClient.newBuilder()
+            .connectTimeout(java.time.Duration.ofSeconds(30))
+            .build();
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     private static final int MAX_RETRIES = 3;
@@ -101,6 +103,7 @@ public class TranslationService {
                 .uri(URI.create(CHAT_URL))
                 .header("Authorization", "Bearer " + apiKey)
                 .header("Content-Type", "application/json")
+                .timeout(java.time.Duration.ofMinutes(2))
                 .POST(HttpRequest.BodyPublishers.ofString(requestBody))
                 .build();
 
@@ -141,6 +144,7 @@ public class TranslationService {
                 .uri(URI.create(CHAT_URL))
                 .header("Authorization", "Bearer " + apiKey)
                 .header("Content-Type", "application/json")
+                .timeout(java.time.Duration.ofMinutes(2))
                 .POST(HttpRequest.BodyPublishers.ofString(requestBody))
                 .build();
 

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { resolveUploadUrl } from "@/lib/asset-url";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 type Props = {
@@ -27,7 +28,7 @@ export function ImageCarousel({ images, alt, autoplayMs = 4200, className, round
       {safe.map((src, idx) => (
         <img
           key={idx}
-          src={src}
+          src={resolveUploadUrl(src) || src}
           alt={alt}
           loading="lazy"
           className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-700 ${
@@ -37,7 +38,7 @@ export function ImageCarousel({ images, alt, autoplayMs = 4200, className, round
       ))}
       {/* spacer for aspect */}
       <div className="invisible">
-        <img src={safe[0]} alt="" className="h-full w-full object-cover" />
+        <img src={resolveUploadUrl(safe[0]) || safe[0]} alt="" className="h-full w-full object-cover" />
       </div>
       {safe.length > 1 && (
         <>

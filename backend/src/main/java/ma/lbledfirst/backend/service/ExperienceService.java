@@ -8,6 +8,8 @@ import ma.lbledfirst.backend.repository.BookingRepository;
 import ma.lbledfirst.backend.repository.ExperienceRepository;
 import ma.lbledfirst.backend.repository.RegionRepository;
 import ma.lbledfirst.backend.repository.UserRepository;
+import ma.lbledfirst.backend.repository.ExperienceFavoriteRepository;
+import ma.lbledfirst.backend.domain.ExperienceFavorite;
 import org.hibernate.Hibernate;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -29,16 +31,19 @@ public class ExperienceService extends AbstractCrudService<Experience, Long> {
     private final UserRepository userRepository;
     private final RegionRepository regionRepository;
     private final BookingRepository bookingRepository;
+    private final ExperienceFavoriteRepository experienceFavoriteRepository;
 
     public ExperienceService(ExperienceRepository repository,
                              UserRepository userRepository,
                              RegionRepository regionRepository,
-                             BookingRepository bookingRepository) {
+                             BookingRepository bookingRepository,
+                             ExperienceFavoriteRepository experienceFavoriteRepository) {
         super(repository);
         this.experienceRepository = repository;
         this.userRepository = userRepository;
         this.regionRepository = regionRepository;
         this.bookingRepository = bookingRepository;
+        this.experienceFavoriteRepository = experienceFavoriteRepository;
     }
 
     @Override
@@ -234,5 +239,42 @@ public class ExperienceService extends AbstractCrudService<Experience, Long> {
                 .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "Experience not found"));
         experience.setDeleted(Boolean.TRUE);
         experienceRepository.save(experience);
+        experienceFavoriteRepository.deleteByExperienceId(id);
+    }
+
+    @Transactional
+    public boolean toggleFavorite(Long experienceId, String email) {
+        Experience experience = experienceRepository.findById(experienceId)
+                .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "Experience not found"));
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResponseStatusException(BAD_REQUEST, "User not found"));
+
+        var existing = experienceFavoriteRepository.findByUserIdAndExperienceId(user.getId(), experience.getId());
+        if (existing.isPresent()) {
+            experienceFavoriteRepository.delete(existing.get());
+            return false;
+        }
+        experienceFavoriteRepository.save(ExperienceFavorite.builder()
+                .user(user)
+                .experience(experience)
+                .build());
+        return true;
+    }
+
+    @Transactional(readOnly = true)
+    public List<Experience> getFavoriteExperiences(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResponseStatusException(BAD_REQUEST, "User not found"));
+        List<Experience> list = experienceFavoriteRepository.findByUserId(user.getId()).stream()
+                .map(ExperienceFavorite::getExperience)
+                .filter(e -> !Boolean.TRUE.equals(e.getDeleted()))
+                .toList();
+        for (Experience e : list) {
+            Hibernate.initialize(e.getCoverImages());
+            Hibernate.initialize(e.getDayPrograms());
+            Hibernate.initialize(e.getHost());
+            if (e.getRegion() != null) Hibernate.initialize(e.getRegion());
+        }
+        return list;
     }
 }

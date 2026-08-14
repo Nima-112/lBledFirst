@@ -235,3 +235,13 @@ export async function uploadImage(file: File): Promise<string> {
   });
   return data.url;
 }
+
+export async function toggleExperienceFavoriteApi(id: string): Promise<boolean> {
+  const { data } = await api.post<{ favorited: boolean }>(`/experiences/${id}/favorite`);
+  return data.favorited;
+}
+
+export async function getMyFavoriteExperiences(): Promise<FrontExperience[]> {
+  const { data } = await api.get<ApiExperience[]>("/experiences/me/favorites");
+  return data.map(toFront);
+}

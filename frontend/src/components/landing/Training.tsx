@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { resolveUploadUrl } from "@/lib/asset-url";
 import { motion } from "framer-motion";
 import { Link } from "@tanstack/react-router";
 import { Clock, Star, Users, BookOpen, AlertTriangle, RefreshCw } from "lucide-react";
@@ -108,7 +109,7 @@ export function Training() {
                 >
                   <div className="relative h-56 w-full overflow-hidden">
                     <img
-                      src={f.coverImage}
+                      src={resolveUploadUrl(f.coverImage) || f.coverImage}
                       alt={f.title}
                       className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                     />

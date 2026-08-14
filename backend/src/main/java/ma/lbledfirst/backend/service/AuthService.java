@@ -40,11 +40,11 @@ public class AuthService {
     public AuthResponse register(RegisterRequest req) {
 
         if (userRepository.findByEmail(req.getEmail()).isPresent()) {
-            throw new EmailAlreadyExistsException("Cet email est déjà utilisé");
+            throw new EmailAlreadyExistsException("Email already in use");
         }
 
         if (!req.getPassword().equals(req.getConfirmPassword())) {
-            throw new PasswordMismatchException("Les mots de passe ne correspondent pas");
+            throw new PasswordMismatchException("Passwords do not match");
         }
 
 
@@ -54,31 +54,29 @@ public class AuthService {
                 .password(passwordEncoder.encode(req.getPassword()))
                 .role(UserRole.tourist)
                 .country(req.getCountry())
-                .language(req.getLanguage())
+                .language(req.getLanguage() != null ? req.getLanguage() : "English")
                 .emailVerified(false)
                 .build();
 
         userRepository.save(user);
         sendVerificationEmail(user);
 
-        String token = jwtUtil.generateToken(user.getEmail(), user.getRole().name());
-
-        return new AuthResponse(user.getId(), token, user.getRole().name(), user.getName(), user.getEmail(), user.getPhone(), user.getCountry(), user.getLanguage(), user.getAvatar(), user.isEmailVerified());
+        return new AuthResponse(user.getId(), null, user.getRole().name(), user.getName(), user.getEmail(), user.getPhone(), user.getCountry(), user.getLanguage(), user.getAvatar(), user.isEmailVerified());
     }
 
     public AuthResponse login(LoginRequest req) {
 
         User user = userRepository.findByEmail(req.getEmail())
                 .orElseThrow(() -> {
-                    return new InvalidCredentialsException("Identifiants invalides");
+                    return new InvalidCredentialsException("Invalid credentials");
                 });
 
         if (!passwordEncoder.matches(req.getPassword(), user.getPassword())) {
-            throw new InvalidCredentialsException("Identifiants invalides");
+            throw new InvalidCredentialsException("Invalid credentials");
         }
 
         if (!user.isEmailVerified()) {
-            throw new EmailNotVerifiedException("Veuillez confirmer votre email avant de vous connecter. Vérifiez votre boîte de réception.");
+            throw new EmailNotVerifiedException("Please verify your email before logging in. Check your inbox.");
         }
 
         String token = jwtUtil.generateToken(user.getEmail(), user.getRole().name());
@@ -88,12 +86,10 @@ public class AuthService {
 
     public UserResponse getCurrentUser(String email) {
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new InvalidCredentialsException("Utilisateur introuvable"));
+                .orElseThrow(() -> new InvalidCredentialsException("User not found"));
 
         return new UserResponse(user.getId(), user.getName(), user.getEmail(), user.getRole().name(), user.getPhone(), user.getCountry(), user.getLanguage(), user.getAvatar(), user.isEmailVerified());
     }
-
-    // ---- Vérification d'email --------------------------------------------------
 
     @Transactional
     public void sendVerificationEmail(User user) {
@@ -123,11 +119,11 @@ public class AuthService {
     @Transactional
     public void verifyEmail(String token) {
         EmailVerificationToken verification = verificationTokenRepository.findByToken(token)
-                .orElseThrow(() -> new InvalidOrExpiredTokenException("Lien de vérification invalide"));
+                .orElseThrow(() -> new InvalidOrExpiredTokenException("Invalid token"));
 
         if (verification.isExpired()) {
             verificationTokenRepository.delete(verification);
-            throw new InvalidOrExpiredTokenException("Ce lien de vérification a expiré, redemandez-en un");
+            throw new InvalidOrExpiredTokenException("Expired token");
         }
 
         User user = verification.getUser();
@@ -135,8 +131,6 @@ public class AuthService {
         userRepository.save(user);
         verificationTokenRepository.delete(verification);
     }
-
-    // ---- Mot de passe oublié ----------------------------------------------------
 
     @Transactional
     public void forgotPassword(String email) {
@@ -157,22 +151,21 @@ public class AuthService {
     @Transactional
     public void resetPassword(ResetPasswordRequest req) {
         if (!req.getNewPassword().equals(req.getConfirmNewPassword())) {
-            throw new PasswordMismatchException("Les mots de passe ne correspondent pas");
+            throw new PasswordMismatchException("Passwords do not match");
         }
 
         PasswordResetToken reset = resetTokenRepository.findByToken(req.getToken())
-                .orElseThrow(() -> new InvalidOrExpiredTokenException("Lien de réinitialisation invalide"));
+                .orElseThrow(() -> new InvalidOrExpiredTokenException("Invalid link"));
 
         if (reset.isExpired()) {
             resetTokenRepository.delete(reset);
-            throw new InvalidOrExpiredTokenException("Ce lien de réinitialisation a expiré, refaites une demande");
+            throw new InvalidOrExpiredTokenException("Expired link");
         }
 
         User user = reset.getUser();
         user.setPassword(passwordEncoder.encode(req.getNewPassword()));
         userRepository.save(user);
 
-        // Un seul lien utilisable : on invalide tout token restant pour cet utilisateur
         resetTokenRepository.deleteAllByUserId(user.getId());
     }
 }

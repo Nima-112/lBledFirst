@@ -11,6 +11,7 @@ import {
   AlertTriangle,
   RefreshCw,
   Loader2,
+  Heart,
 } from "lucide-react";
 import { Navbar } from "@/components/landing/Navbar";
 import { Footer } from "@/components/landing/Footer";
@@ -18,7 +19,7 @@ import { ImageCarousel } from "@/components/experiences/ImageCarousel";
 import { useI18n } from "@/lib/i18n";
 import { useAuth } from "@/context/AuthContext";
 import { createBooking } from "@/services/bookings.service";
-import { getExperienceById, type FrontExperience } from "@/services/experiences.service";
+import { getExperienceById, toggleExperienceFavoriteApi, getMyFavoriteExperiences, type FrontExperience } from "@/services/experiences.service";
 import { BookingCheckoutModal } from "@/components/booking/BookingCheckoutModal";
 import { setAuthRedirect } from "@/lib/auth-redirect";
 
@@ -137,6 +138,40 @@ function ExperienceDetail({ exp }: { exp: FrontExperience }) {
   const [guests, setGuests] = useState(1);
   const [checkoutOpen, setCheckoutOpen] = useState(false);
 
+  const [favorites, setFavorites] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (!user || user.role !== "tourist") {
+      setFavorites([]);
+      return;
+    }
+    getMyFavoriteExperiences()
+      .then((list) => {
+        setFavorites(list.map((e) => String(e.id)));
+      })
+      .catch(() => {});
+  }, [user]);
+
+  const handleToggleFavorite = async () => {
+    if (!user) {
+      navigate({ to: "/auth" });
+      return;
+    }
+    const expId = String(exp.id);
+    try {
+      const isFav = await toggleExperienceFavoriteApi(expId);
+      if (isFav) {
+        setFavorites((prev) => [...prev, expId]);
+      } else {
+        setFavorites((prev) => prev.filter((x) => x !== expId));
+      }
+    } catch {
+      // ignore
+    }
+  };
+
+  const isFavorited = favorites.includes(String(exp.id));
+
   const total = useMemo(() => exp.price * guests, [exp.price, guests]);
   const program = exp.program.length
     ? exp.program
@@ -218,9 +253,22 @@ function ExperienceDetail({ exp }: { exp: FrontExperience }) {
               </span>
             </div>
 
-            <h1 className="mt-4 font-display text-3xl font-bold text-foreground sm:text-4xl">
-              {exp.title}
-            </h1>
+            <div className="flex items-start justify-between gap-4 mt-4">
+              <h1 className="font-display text-3xl font-bold text-foreground sm:text-4xl">
+                {exp.title}
+              </h1>
+              {(!user || user.role === "tourist") && (
+                <button
+                  onClick={handleToggleFavorite}
+                  className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-muted/60 hover:bg-muted text-primary shadow transition hover:scale-110"
+                  aria-label="Ajouter aux favoris"
+                >
+                  <Heart
+                    className={`h-5 w-5 ${isFavorited ? "fill-primary" : ""}`}
+                  />
+                </button>
+              )}
+            </div>
             <p className="mt-4 text-base leading-relaxed text-muted-foreground">
               {exp.description}
             </p>

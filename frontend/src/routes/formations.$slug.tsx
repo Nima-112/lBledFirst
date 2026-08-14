@@ -1,4 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { resolveUploadUrl } from "@/lib/asset-url";
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -17,6 +18,7 @@ import {
   Star,
   Users,
   X,
+  Heart,
 } from "lucide-react";
 import { BookingCheckoutModal } from "@/components/booking/BookingCheckoutModal";
 import { formatDuration, totalCapsules, type Formation, type Capsule } from "@/lib/formations";
@@ -26,6 +28,8 @@ import {
   getFormationProgressApi,
   toggleCapsuleCompletionApi,
   getCapsuleCaptionsApi,
+  toggleFormationFavoriteApi,
+  getMyFavoriteFormations,
 } from "@/services/formations.service";
 import { CaptionedVideoPlayer } from "@/components/formations/CaptionedVideoPlayer";
 import {
@@ -108,6 +112,28 @@ function FormationDetail() {
     },
   });
 
+  const { data: favoriteFormations = [] } = useQuery({
+    queryKey: ["formations", "favorites"],
+    queryFn: getMyFavoriteFormations,
+    enabled: !!user,
+  });
+  const isFavorited = favoriteFormations.some((fav) => fav.slug === slug);
+
+  const toggleFavoriteMutation = useMutation({
+    mutationFn: () => toggleFormationFavoriteApi(slug),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["formations", "favorites"] });
+    },
+  });
+
+  const handleToggleFavorite = () => {
+    if (!user) {
+      navigate({ to: "/auth" });
+      return;
+    }
+    toggleFavoriteMutation.mutate();
+  };
+
   const toggleCapsuleMutation = useMutation({
     mutationFn: (capsuleId: string) => toggleCapsuleCompletionApi(slug, capsuleId),
     onSuccess: () => {
@@ -180,7 +206,12 @@ function FormationDetail() {
       {/* Banner */}
       <section className="relative isolate overflow-hidden pt-24 pb-14 sm:pt-32 sm:pb-20">
         <div className="absolute inset-0 -z-10">
-          <img src={f.coverImage} alt="" className="h-full w-full object-cover" aria-hidden />
+          <img
+            src={resolveUploadUrl(f.coverImage) || f.coverImage}
+            alt=""
+            className="h-full w-full object-cover"
+            aria-hidden
+          />
           <div className="absolute inset-0 bg-gradient-to-r from-ink/85 via-ink/70 to-ink/55" />
           <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
         </div>
@@ -205,9 +236,22 @@ function FormationDetail() {
                 <BannerChip tone="saffron">{f.level}</BannerChip>
                 <BannerChip>{f.language}</BannerChip>
               </div>
-              <h1 className="mt-5 font-display text-3xl font-extrabold leading-tight sm:text-5xl">
-                {f.title}
-              </h1>
+              <div className="flex items-start justify-between gap-4">
+                <h1 className="mt-5 font-display text-3xl font-extrabold leading-tight sm:text-5xl">
+                  {f.title}
+                </h1>
+                {(!user || user.role === "tourist") && (
+                  <button
+                    onClick={handleToggleFavorite}
+                    className="mt-5 inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white/10 hover:bg-white/20 text-white shadow backdrop-blur transition hover:scale-110"
+                    aria-label="Ajouter aux favoris"
+                  >
+                    <Heart
+                      className={`h-5 w-5 ${isFavorited ? "fill-white text-white" : "text-white"}`}
+                    />
+                  </button>
+                )}
+              </div>
               <p className="mt-4 max-w-2xl text-base text-card/85 sm:text-lg">
                 {f.shortDescription}
               </p>
@@ -392,7 +436,7 @@ function FormationDetail() {
                                 >
                                   <div className="relative h-14 w-20 shrink-0 overflow-hidden rounded-lg bg-muted">
                                     <img
-                                      src={c.thumbnail}
+                                      src={resolveUploadUrl(c.thumbnail) || c.thumbnail}
                                       alt=""
                                       className="h-full w-full object-cover"
                                       loading="lazy"
@@ -524,7 +568,7 @@ function FormationDetail() {
           region: f.category,
           guests: 1,
           unitPrice: f.price,
-          coverImage: f.coverImage,
+          coverImage: resolveUploadUrl(f.coverImage) || f.coverImage,
         }}
         defaultEmail={user?.email}
         defaultName={user?.name}
@@ -672,14 +716,14 @@ function VideoModal({
             <div className="relative aspect-video bg-ink">
               {capsule.videoUrl ? (
                 <CaptionedVideoPlayer
-                  src={capsule.videoUrl}
-                  poster={capsule.thumbnail || undefined}
+                  src={resolveUploadUrl(capsule.videoUrl) || capsule.videoUrl}
+                  poster={resolveUploadUrl(capsule.thumbnail) || undefined}
                   captions={captionsQuery.data}
                 />
               ) : (
                 <>
                   <img
-                    src={capsule.thumbnail}
+                    src={resolveUploadUrl(capsule.thumbnail) || capsule.thumbnail}
                     alt=""
                     className="h-full w-full object-cover opacity-70"
                   />

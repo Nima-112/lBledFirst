@@ -9,6 +9,7 @@ import { LanguageSelector } from "@/components/landing/LanguageSelector";
 import { Combobox } from "@/components/ui/combobox";
 import { useLogin } from "@/hooks/useLogin";
 import { useSignup } from "@/hooks/useSignup";
+import { authService } from "@/services/auth.service";
 import { consumeAuthRedirect } from "@/lib/auth-redirect";
 import { API_ORIGIN } from "@/lib/api";
 import { COUNTRIES } from "@/lib/countries";
@@ -92,6 +93,9 @@ function AuthScreen() {
   const [verifiedMessage, setVerifiedMessage] = useState<{ ok: boolean; text: string } | null>(
     null,
   );
+  const [resendLoading, setResendLoading] = useState(false);
+  const [showResend, setShowResend] = useState(false);
+  const [resendEmail, setResendEmail] = useState("");
   const [form, setForm] = useState({
     fullName: "",
     email: "",
@@ -161,6 +165,7 @@ function AuthScreen() {
   const submit = async (event: FormEvent) => {
     event.preventDefault();
     setClientError(null);
+    setShowResend(false);
 
     if (mode === "login") {
       if (!form.email || !form.password) {
@@ -169,7 +174,13 @@ function AuthScreen() {
       }
 
       const result = await login({ email: form.email, password: form.password });
-      if (!result.ok) return;
+      if (!result.ok) {
+        if (result.emailNotVerified) {
+          setShowResend(true);
+          setResendEmail(form.email);
+        }
+        return;
+      }
       finishAuth(result.role);
       return;
     }
@@ -204,12 +215,30 @@ function AuthScreen() {
     if (result.emailVerified === false) {
       setMode("login");
       setVerifiedMessage({
-        ok: false,
+        ok: true,
         text: "Compte créé ! Vérifiez votre boîte mail et cliquez sur le lien de confirmation avant de vous connecter.",
       });
       return;
     }
     finishAuth(result.role);
+  };
+
+  const resendEmailLink = async () => {
+    if (!resendEmail) return;
+    setResendLoading(true);
+    try {
+      await authService.resendVerification(resendEmail);
+      setVerifiedMessage({
+        ok: true,
+        text: "Un nouveau lien de confirmation a été envoyé à votre adresse email.",
+      });
+      setShowResend(false);
+      setClientError(null);
+    } catch (err) {
+      setClientError("Impossible de renvoyer le lien. Veuillez réessayer plus tard.");
+    } finally {
+      setResendLoading(false);
+    }
   };
 
   const inputCls =
@@ -253,6 +282,8 @@ function AuthScreen() {
                 onClick={() => {
                   setMode(tab);
                   setClientError(null);
+                  setShowResend(false);
+                  setVerifiedMessage(null);
                 }}
                 className={`relative rounded-full px-6 py-2 text-sm font-semibold transition ${
                   mode === tab
@@ -402,7 +433,7 @@ function AuthScreen() {
               <p
                 className={`rounded-xl px-4 py-2.5 text-sm ${
                   verifiedMessage.ok
-                    ? "bg-primary/10 text-primary"
+                    ? "bg-secondary/10 text-secondary"
                     : "bg-destructive/10 text-destructive"
                 }`}
               >
@@ -410,9 +441,21 @@ function AuthScreen() {
               </p>
             )}
             {error && (
-              <p className="rounded-xl bg-destructive/10 px-4 py-2.5 text-sm text-destructive">
-                {error}
-              </p>
+              <div className="space-y-2">
+                <p className="rounded-xl bg-destructive/10 px-4 py-2.5 text-sm text-destructive">
+                  {error}
+                </p>
+                {showResend && (
+                  <button
+                    type="button"
+                    onClick={resendEmailLink}
+                    disabled={resendLoading}
+                    className="text-xs font-semibold text-primary hover:underline block text-right w-full"
+                  >
+                    {resendLoading ? "Envoi en cours..." : "Pas reçu d'e-mail ? Renvoyer le lien de confirmation"}
+                  </button>
+                )}
+              </div>
             )}
 
             <button
@@ -432,6 +475,8 @@ function AuthScreen() {
               onClick={() => {
                 setMode(mode === "login" ? "signup" : "login");
                 setClientError(null);
+                setShowResend(false);
+                setVerifiedMessage(null);
               }}
               className="font-semibold text-primary hover:underline"
             >

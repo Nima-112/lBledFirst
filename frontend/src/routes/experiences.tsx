@@ -11,6 +11,7 @@ import {
   AlertTriangle,
   RefreshCw,
   X,
+  Heart,
 } from "lucide-react";
 import { Navbar } from "@/components/landing/Navbar";
 import { Footer } from "@/components/landing/Footer";
@@ -20,9 +21,12 @@ import {
   getExperiencesByRegion,
   getExperiencesList,
   getExperiencesPaged,
+  toggleExperienceFavoriteApi,
+  getMyFavoriteExperiences,
   type FrontExperience,
 } from "@/services/experiences.service";
 import { getRegionsList, type FrontRegion } from "@/services/regions.service";
+import { useAuth } from "@/context/AuthContext";
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
 
@@ -96,6 +100,38 @@ function ExperiencesPage() {
 
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState<string | null>(categoryParam ?? null);
+
+  const { user } = useAuth();
+  const [favorites, setFavorites] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (!user || user.role !== "tourist") {
+      setFavorites([]);
+      return;
+    }
+    getMyFavoriteExperiences()
+      .then((list) => {
+        setFavorites(list.map((e) => String(e.id)));
+      })
+      .catch(() => {});
+  }, [user]);
+
+  const handleToggleFavorite = async (id: string) => {
+    if (!user) {
+      navigate({ to: "/auth" });
+      return;
+    }
+    try {
+      const isFav = await toggleExperienceFavoriteApi(id);
+      if (isFav) {
+        setFavorites((prev) => [...prev, id]);
+      } else {
+        setFavorites((prev) => prev.filter((x) => x !== id));
+      }
+    } catch {
+      // ignore
+    }
+  };
 
   useEffect(() => {
     setCategory(categoryParam ?? null);
@@ -393,7 +429,15 @@ function ExperiencesPage() {
           ) : (
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {filtered.map((e, i) => (
-                <ExperienceCard key={e.id} exp={e} index={i} onOpen={openExperience} />
+                <ExperienceCard
+                  key={e.id}
+                  exp={e}
+                  index={i}
+                  onOpen={openExperience}
+                  isFavorited={favorites.includes(String(e.id))}
+                  onToggleFavorite={handleToggleFavorite}
+                  showFavoriteButton={!user || user.role === "tourist"}
+                />
               ))}
             </div>
           )}
@@ -488,14 +532,20 @@ function buildPageList(current: number, total: number): (number | "ellipsis")[] 
   return pages;
 }
 
-function ExperienceCard({
+export function ExperienceCard({
   exp,
   index,
   onOpen,
+  isFavorited,
+  onToggleFavorite,
+  showFavoriteButton = true,
 }: {
   exp: FrontExperience;
   index: number;
   onOpen: (id: string) => void;
+  isFavorited: boolean;
+  onToggleFavorite: (id: string) => void;
+  showFavoriteButton?: boolean;
 }) {
   const { t } = useI18n();
   const expId = String(exp.id);
@@ -518,6 +568,21 @@ function ExperienceCard({
         <span className="absolute end-3 top-3 rounded-full bg-primary px-4 py-1.5 text-sm font-bold text-primary-foreground shadow-warm">
           {exp.price} MAD
         </span>
+        {showFavoriteButton && (
+          <button
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onToggleFavorite(expId);
+            }}
+            className="absolute left-3 top-3 inline-flex h-9 w-9 items-center justify-center rounded-full bg-background/90 text-primary shadow-card backdrop-blur transition hover:scale-110"
+            aria-label="Ajouter aux favoris"
+          >
+            <Heart
+              className={`h-4 w-4 ${isFavorited ? "fill-primary" : ""}`}
+            />
+          </button>
+        )}
       </div>
 
       <div className="flex flex-1 flex-col p-6">

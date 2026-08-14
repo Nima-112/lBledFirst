@@ -79,7 +79,7 @@ function ResetPasswordPage() {
 
           {done ? (
             <div className="rounded-2xl border border-border bg-card p-6 text-center shadow-card">
-              <CheckCircle2 className="mx-auto mb-3 h-10 w-10 text-primary" />
+              <CheckCircle2 className="mx-auto mb-3 h-10 w-10 text-secondary" />
               <h1 className="font-display text-xl font-extrabold text-foreground">Mot de passe mis à jour</h1>
               <p className="mt-2 text-sm text-muted-foreground">Vous pouvez maintenant vous connecter avec votre nouveau mot de passe.</p>
               <button

@@ -145,13 +145,25 @@ public class BookingService extends AbstractCrudService<Booking, Long> {
             throw new ResponseStatusException(BAD_REQUEST, "An owner cannot book their own experience");
         }
 
+        int guests = req.getGuests() != null && req.getGuests() >= 1 ? req.getGuests() : 1;
+        java.math.BigDecimal basePrice = experience.getPrice().multiply(java.math.BigDecimal.valueOf(guests));
+        java.math.BigDecimal finalPrice = basePrice;
+        if (req.getTotalPrice() != null) {
+            java.math.BigDecimal clientPrice = req.getTotalPrice();
+            java.math.BigDecimal priceWithFee = basePrice.add(java.math.BigDecimal.valueOf(45));
+            if (clientPrice.compareTo(basePrice) != 0 && clientPrice.compareTo(priceWithFee) != 0) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid booking price");
+            }
+            finalPrice = clientPrice;
+        }
+
         Booking booking = Booking.builder()
                 .experience(experience)
                 .tourist(tourist)
                 .date(req.getDate())
-                .totalPrice(req.getTotalPrice() != null ? req.getTotalPrice() : experience.getPrice())
+                .totalPrice(finalPrice)
                 .status(req.getStatus() != null ? req.getStatus() : BookingStatus.pending)
-                .guests(req.getGuests() != null && req.getGuests() >= 1 ? req.getGuests() : 1)
+                .guests(guests)
                 .build();
 
         Booking saved = bookingRepository.save(booking);

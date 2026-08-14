@@ -74,32 +74,36 @@ public class CapsuleProcessingService {
         // of each chunk being transcribed as if it were the very start of the video.
         String continuationPrompt = null;
 
-        for (String chunkPath : audioChunks) {
-            double actualChunkDuration = audioExtractionService.getAudioDuration(chunkPath);
+        try {
+            for (String chunkPath : audioChunks) {
+                double actualChunkDuration = audioExtractionService.getAudioDuration(chunkPath);
 
-            var result = transcriptionService.transcribeWithTimestamps(chunkPath, continuationPrompt);
+                var result = transcriptionService.transcribeWithTimestamps(chunkPath, continuationPrompt);
 
-            // Language is now forced via openai.whisper-language, so every chunk
-            // reports the same language — no more "best chunk" guessing needed.
-            if (detectedLanguage == null) {
-                detectedLanguage = result.getLanguage();
+                // Language is now forced via openai.whisper-language, so every chunk
+                // reports the same language — no more "best chunk" guessing needed.
+                if (detectedLanguage == null) {
+                    detectedLanguage = result.getLanguage();
+                }
+
+                if (fullText.length() > 0)
+                    fullText.append(" ");
+                fullText.append(result.getText());
+
+                for (var seg : result.getSegments()) {
+                    allSegments.add(new TranscriptionService.TranscriptionSegment(
+                            seg.getStart() + timeOffset, seg.getEnd() + timeOffset, seg.getText()));
+                }
+                timeOffset += actualChunkDuration;
+
+                continuationPrompt = result.getText();
             }
-
-            if (fullText.length() > 0)
-                fullText.append(" ");
-            fullText.append(result.getText());
-
-            for (var seg : result.getSegments()) {
-                allSegments.add(new TranscriptionService.TranscriptionSegment(
-                        seg.getStart() + timeOffset, seg.getEnd() + timeOffset, seg.getText()));
-            }
-            timeOffset += actualChunkDuration;
-
-            continuationPrompt = result.getText();
-
-            try {
-                Files.deleteIfExists(Path.of(chunkPath));
-            } catch (Exception ignored) {
+        } finally {
+            for (String chunkPath : audioChunks) {
+                try {
+                    Files.deleteIfExists(Path.of(chunkPath));
+                } catch (Exception ignored) {
+                }
             }
         }
 
