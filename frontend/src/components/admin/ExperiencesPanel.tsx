@@ -1,10 +1,14 @@
 import {
   CalendarRange,
+  Clock,
+  Heart,
   MapPin,
   Pencil,
   Plus,
+  Star,
   Trash2,
   Upload,
+  Users,
   X,
 } from "lucide-react";
 import { resolveUploadUrl } from "@/lib/asset-url";
@@ -390,6 +394,25 @@ export function ExperiencesPanel() {
                   </span>
                   <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
                     {e.category}
+                  </span>
+                </div>
+
+                <div className="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-1.5 text-[10px] font-semibold text-muted-foreground">
+                  <span className="inline-flex items-center gap-1 rounded-md bg-muted/60 px-2 py-1">
+                    <Clock className="h-3 w-3" /> {e.durationDays} j
+                  </span>
+                  <span className="inline-flex items-center gap-1 rounded-md bg-muted/60 px-2 py-1">
+                    <Users className="h-3 w-3" /> {e.bookingsCount ?? 0}
+                  </span>
+                  <span className="inline-flex items-center gap-1 rounded-md bg-muted/60 px-2 py-1">
+                    <Heart className="h-3 w-3" /> {e.favoritesCount ?? 0}
+                  </span>
+                  <span className="inline-flex items-center gap-1 rounded-md bg-muted/60 px-2 py-1">
+                    <Star className="h-3 w-3 text-saffron" />
+                    {(e.averageRating ?? 0).toFixed(1)}
+                    {e.reviewsCount ? (
+                      <span className="text-muted-foreground/70">({e.reviewsCount})</span>
+                    ) : null}
                   </span>
                 </div>
                 <div className="mt-4 flex items-center gap-1.5 border-t border-border pt-3">

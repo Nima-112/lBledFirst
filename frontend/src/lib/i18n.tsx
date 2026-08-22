@@ -327,29 +327,7 @@ const translations: Dict = {
     "admin.exp.f.host": "Host",
 };
 
-const translationsFr: Record<string, string> = {
-  "nav.regions": "Régions",
-  "nav.experiences": "Expériences",
-  "nav.how": "Comment ça marche",
-  "nav.host": "Devenir hôte",
-  "nav.cta": "Découvrir la région",
-  "nav.login": "Connexion",
-  "nav.formations": "Formations",
-  "nav.me.formations": "Mes formations",
-  "nav.me.reviews": "Mes avis",
-  "nav.me.profile": "Mon profil",
-  "nav.me.favorites": "Mes favoris",
-  "nav.me.logout": "Déconnexion",
-  "admin.logout": "Déconnexion",
-  "admin.nav.dashboard": "Tableau de bord",
-  "admin.nav.bookings": "Réservations",
-  "admin.nav.tourists": "Utilisateurs",
-  "admin.nav.experiences": "Expériences",
-  "admin.nav.reviews": "Avis",
-  "admin.nav.formations": "Formations",
-  "admin.nav.enrollments": "Inscriptions",
-  "admin.nav.settings": "Paramètres",
-};
+
 
 type I18nContextValue = {
   lang: Lang;
@@ -363,7 +341,7 @@ const I18nContext = createContext<I18nContextValue | null>(null);
 function applyGoogleTranslate(targetLang: Lang) {
   if (typeof window === "undefined") return;
 
-  const cookieVal = targetLang === "fr" ? "/fr/fr" : `/fr/${targetLang}`;
+  const cookieVal = targetLang === "en" ? "/en/en" : `/en/${targetLang}`;
 
   // Set google translate cookies
   document.cookie = `googtrans=${cookieVal}; path=/; domain=${window.location.hostname}`;
@@ -406,7 +384,7 @@ export function I18nProvider({ children }: { children: ReactNode }) {
       if ((window as any).google?.translate?.TranslateElement) {
         new (window as any).google.translate.TranslateElement(
           {
-            pageLanguage: "fr",
+            pageLanguage: "en",
             includedLanguages: "fr,en,ar,es",
             autoDisplay: false,
           },
@@ -442,9 +420,6 @@ export function I18nProvider({ children }: { children: ReactNode }) {
       setLang: changeLang,
       dir,
       t: (key: string) => {
-        if (lang !== "en") {
-          return translationsFr[key] ?? translations[key] ?? key;
-        }
         return translations[key] ?? key;
       },
     }),

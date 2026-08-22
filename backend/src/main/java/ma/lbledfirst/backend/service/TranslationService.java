@@ -88,6 +88,10 @@ public class TranslationService {
     }
 
     public String translate(String originalText, String targetLanguage) throws IOException, InterruptedException {
+        if (apiKey == null || apiKey.isBlank()) {
+            throw new IllegalStateException(
+                    "OPENAI_API_KEY non configurée — traduction GPT impossible.");
+        }
         String systemPrompt = "You are a professional translator. Translate the user's text into "
                 + targetLanguage + ". Return ONLY the translation, no explanations, no quotes.";
 
@@ -103,7 +107,7 @@ public class TranslationService {
                 .uri(URI.create(CHAT_URL))
                 .header("Authorization", "Bearer " + apiKey)
                 .header("Content-Type", "application/json")
-                .timeout(java.time.Duration.ofMinutes(2))
+                .timeout(java.time.Duration.ofMinutes(10))
                 .POST(HttpRequest.BodyPublishers.ofString(requestBody))
                 .build();
 
@@ -144,7 +148,7 @@ public class TranslationService {
                 .uri(URI.create(CHAT_URL))
                 .header("Authorization", "Bearer " + apiKey)
                 .header("Content-Type", "application/json")
-                .timeout(java.time.Duration.ofMinutes(2))
+                .timeout(java.time.Duration.ofMinutes(10))
                 .POST(HttpRequest.BodyPublishers.ofString(requestBody))
                 .build();
 

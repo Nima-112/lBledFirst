@@ -10,4 +10,5 @@ public interface FormationRepository extends JpaRepository<Formation, Long> {
     boolean existsBySlug(String slug);
     long countByFormateurId(Long formateurId);
     boolean existsByPreviewVideo(String previewVideo);
+    boolean existsByPreviewVideoEndingWith(String previewVideoSuffix);
 }

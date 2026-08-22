@@ -79,8 +79,14 @@ public class AudioExtractionService {
 
         int exitCode = process.waitFor();
         if (exitCode != 0) {
+            StringBuilder stderr = new StringBuilder();
+            try (var reader = process.errorReader()) {
+                reader.lines().forEach(l -> stderr.append(l).append(System.lineSeparator()));
+            } catch (Exception ignored) {}
+            log.error("ffmpeg a échoué pour {} avec le code {} : {}", inputVideoPath, exitCode, stderr);
             throw new RuntimeException(
-                    "ffmpeg a échoué avec le code " + exitCode + " pour le fichier " + inputVideoPath);
+                    "ffmpeg a échoué avec le code " + exitCode + " pour le fichier " + inputVideoPath
+                            + " — sortie détaillée dans les logs backend.");
         }
 
         // Collect generated chunk files in order (000, 001, 002, ...)

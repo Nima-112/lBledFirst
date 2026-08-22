@@ -16,7 +16,6 @@ import {
   LEVELS,
   LANGUAGES,
   formatDuration,
-  totalCapsules,
   type Level,
   type Language,
 } from "@/lib/formations";
@@ -329,15 +328,18 @@ function FormationsPage() {
                       </div>
                     </div>
 
-                    <div className="mt-4 grid grid-cols-3 gap-2 text-[11px] text-muted-foreground">
+                    <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px] text-muted-foreground">
                       <MetaCell icon={<Clock className="h-3.5 w-3.5" />}>
                         {formatDuration(f.totalDuration)}
                       </MetaCell>
                       <MetaCell icon={<BookOpen className="h-3.5 w-3.5" />}>
-                        {totalCapsules(f)} caps.
+                        {(f.capsulesCount ?? 0)} caps.
                       </MetaCell>
                       <MetaCell icon={<Users className="h-3.5 w-3.5" />}>
                         {f.studentsCount}
+                      </MetaCell>
+                      <MetaCell icon={<Heart className="h-3.5 w-3.5" />}>
+                        {f.favoritesCount ?? 0}
                       </MetaCell>
                     </div>
 

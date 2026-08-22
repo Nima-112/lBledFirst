@@ -1,10 +1,11 @@
 import { IconBtn, PanelHeader } from "@/components/dashboard/ui";
-import { emptyFormation, formatDuration, Formation, totalCapsules } from "@/lib/formations";
+import { emptyFormation, formatDuration, Formation } from "@/lib/formations";
 import { useI18n } from "@/lib/i18n";
 import {
+  BookOpen,
   Clock,
   ExternalLink,
-  GraduationCap,
+  Heart,
   Link,
   Loader2,
   Pencil,
@@ -134,8 +135,15 @@ export function FormationsPanel() {
       setValidationError("La description longue est obligatoire.");
       return;
     }
-    if (!draft.formateurId?.trim()) {
-      setValidationError("Veuillez sélectionner un formateur.");
+    // formateurId est FACULTATIF (nullable) depuis FormationRequest DTO
+    // → on accepte: soit un formateur choisi, soit un instructeur saisi
+    // manuellement avec nom non vide.
+    const hasFormateur = !!draft.formateurId && String(draft.formateurId).trim() !== "";
+    const hasInstructor = !!draft.instructor?.name?.trim();
+    if (!hasFormateur && !hasInstructor) {
+      setValidationError(
+        "Veuillez sélectionner un formateur ou renseigner le nom de l'instructeur.",
+      );
       return;
     }
     if (!draft.category?.trim()) {
@@ -151,7 +159,7 @@ export function FormationsPanel() {
       return;
     }
     const total = draft.chapters.reduce(
-      (s, ch) => s + ch.capsules.reduce((cs, c) => cs + c.duration, 0),
+      (s, ch) => s + ch.capsules.reduce((cs, c) => cs + Number(c.duration || 0), 0),
       0,
     );
     const next: Formation = {
@@ -159,13 +167,25 @@ export function FormationsPanel() {
       totalDuration: total || draft.totalDuration,
       slug: draft.slug || slugify(draft.title) || `formation-${Date.now()}`,
     };
-    if (editing) {
-      await updateMutation.mutateAsync({ slug: editing.slug, data: next });
-    } else {
-      const uniqueSlug = formations.some((f) => f.slug === next.slug)
-        ? `${next.slug}-${Date.now()}`
-        : next.slug;
-      await createMutation.mutateAsync({ ...next, slug: uniqueSlug });
+    try {
+      if (editing) {
+        await updateMutation.mutateAsync({ slug: editing.slug, data: next });
+      } else {
+        const uniqueSlug = formations.some((f) => f.slug === next.slug)
+          ? `${next.slug}-${Date.now()}`
+          : next.slug;
+        await createMutation.mutateAsync({ ...next, slug: uniqueSlug });
+      }
+    } catch (err: any) {
+      const detail =
+        err?.response?.data?.detail ??
+        err?.response?.data?.message ??
+        (Array.isArray(err?.response?.data)
+          ? err.response.data.map((x: any) => x.defaultMessage ?? x.message ?? String(x)).join(", ")
+          : null) ??
+        err?.message ??
+        "Échec de la sauvegarde (détails dans les logs du serveur).";
+      setValidationError(String(detail));
     }
   }, [draft, editing, formations, createMutation, updateMutation]);
 
@@ -287,15 +307,18 @@ export function FormationsPanel() {
                 </span>
               </div>
 
-              <div className="mt-3 grid grid-cols-3 gap-1.5 text-[10px] font-semibold text-muted-foreground">
+              <div className="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-1.5 text-[10px] font-semibold text-muted-foreground">
                 <span className="inline-flex items-center gap-1 rounded-md bg-muted/60 px-2 py-1">
                   <Clock className="h-3 w-3" /> {formatDuration(f.totalDuration || 0)}
                 </span>
                 <span className="inline-flex items-center gap-1 rounded-md bg-muted/60 px-2 py-1">
-                  <GraduationCap className="h-3 w-3" /> {totalCapsules(f)}
+                  <BookOpen className="h-3 w-3" /> {(f.capsulesCount ?? 0)} caps.
                 </span>
                 <span className="inline-flex items-center gap-1 rounded-md bg-muted/60 px-2 py-1">
                   <Users className="h-3 w-3" /> {f.studentsCount}
+                </span>
+                <span className="inline-flex items-center gap-1 rounded-md bg-muted/60 px-2 py-1">
+                  <Heart className="h-3 w-3" /> {f.favoritesCount ?? 0}
                 </span>
               </div>
 

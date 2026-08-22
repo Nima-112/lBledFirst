@@ -17,3 +17,15 @@ logging:
   level:
     org.springframework.security: DEBUG
     org.springframework.web: DEBUG
+
+# ---- Pipeline IA (Transcription + Traduction multilingue via OpenAI) ----
+openai:
+  api-key: ${OPENAI_API_KEY:}
+  # Modèle Whisper : transcription audio → texte + timestamps.
+  # Whisper-1 supporte l'Arabe. On précise `language: ar` en prompt pour Darija.
+  model-transcription: ${OPENAI_MODEL_TRANSCRIPTION:whisper-1}
+  whisper-language: ${OPENAI_WHISPER_LANGUAGE:ar}
+  # Prompt initial pour orienter Whisper sur la Darija marocaine (MSA phonétique)
+  whisper-initial-prompt: ${OPENAI_WHISPER_INITIAL_PROMPT:"مرحبا، غادي نهضر بالدارجة المغربية ديال المغرب. Hada tafahom darija marocain."}
+  # Modèle Chat pour traduire Darija/Mixte vers les langues cibles du touriste (en/zh/tr/es/fr/de/nl/pt)
+  model-translation: ${OPENAI_MODEL_TRANSLATION:gpt-4o-mini}

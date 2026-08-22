@@ -95,7 +95,7 @@ public class ReviewTestDataSeeder implements CommandLineRunner {
 
         // ---- test.deja-note : achète + termine tout + note déjà -----------
         purchaseAndComplete(dejaNote, tarzFassi);
-        saveReview(dejaNote, tarzFassi, 5, "Formation exceptionnelle, la maalema explique chaque point avec beaucoup de patience !");
+        saveReview(dejaNote, tarzFassi, 5, "Exceptional course, the maalema explains every point with great patience!");
 
         // ---- test.encours : achète mais ne termine qu'une partie ----------
         purchase(enCours, zellige);
@@ -106,10 +106,10 @@ public class ReviewTestDataSeeder implements CommandLineRunner {
 
         // ---- avis supplémentaires pour peupler la liste sur Tarz Fassi ----
         purchaseAndComplete(graduate1, tarzFassi);
-        saveReview(graduate1, tarzFassi, 4, "Très complet, j'aurais juste aimé plus d'exemples sur les motifs complexes.");
+        saveReview(graduate1, tarzFassi, 4, "Very comprehensive, I just would have liked more examples of complex patterns.");
 
         purchaseAndComplete(graduate2, tarzFassi);
-        saveReview(graduate2, tarzFassi, 5, "Le meilleur cours d'artisanat que j'aie suivi en ligne, au top !");
+        saveReview(graduate2, tarzFassi, 5, "The best craft course I have taken online, top notch!");
 
         recomputeFormationRating(tarzFassi);
 

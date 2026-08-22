@@ -87,7 +87,8 @@ function AuthScreen() {
   const { signup, loading: signupLoading, error: signupError } = useSignup();
 
   const [mode, setMode] = useState<"login" | "signup">("login");
-  const [showPw, setShowPw] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [clientError, setClientError] = useState<string | null>(null);
   const [googleFailed, setGoogleFailed] = useState(false);
   const [verifiedMessage, setVerifiedMessage] = useState<{ ok: boolean; text: string } | null>(
@@ -156,7 +157,7 @@ function AuthScreen() {
   const finishAuth = (role?: "admin" | "tourist") => {
     const pendingRedirect = consumeAuthRedirect();
     const target =
-      pendingRedirect ?? (role === "admin" ? "/admin" : "/me/bookings");
+      role === "admin" ? "/admin" : pendingRedirect ?? "/me/bookings";
     // Full navigation so route guards see the cookie-backed session after login
     // (SPA navigate can run before React applies setAuth from the same submit).
     window.location.assign(target);
@@ -358,7 +359,7 @@ function AuthScreen() {
             <div className="relative">
               <input
                 className={inputCls}
-                type={showPw ? "text" : "password"}
+                type={showPassword ? "text" : "password"}
                 placeholder={c.password}
                 value={form.password}
                 onChange={set("password")}
@@ -366,11 +367,11 @@ function AuthScreen() {
               />
               <button
                 type="button"
-                onClick={() => setShowPw((value) => !value)}
+                onClick={() => setShowPassword((value) => !value)}
                 className="absolute end-3 top-1/2 -translate-y-1/2 text-muted-foreground transition hover:text-foreground"
                 aria-label="toggle password"
               >
-                {showPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </button>
             </div>
 
@@ -393,14 +394,24 @@ function AuthScreen() {
                   exit={{ opacity: 0, height: 0 }}
                   className="overflow-hidden"
                 >
-                  <input
-                    className={inputCls}
-                    type={showPw ? "text" : "password"}
-                    placeholder={c.confirmPassword}
-                    value={form.confirmPassword}
-                    onChange={set("confirmPassword")}
-                    autoComplete="new-password"
-                  />
+                  <div className="relative">
+                    <input
+                      className={inputCls}
+                      type={showConfirmPassword ? "text" : "password"}
+                      placeholder={c.confirmPassword}
+                      value={form.confirmPassword}
+                      onChange={set("confirmPassword")}
+                      autoComplete="new-password"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPassword((value) => !value)}
+                      className="absolute end-3 top-1/2 -translate-y-1/2 text-muted-foreground transition hover:text-foreground"
+                      aria-label="toggle confirm password"
+                    >
+                      {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
                 </motion.div>
               )}
             </AnimatePresence>

@@ -6,4 +6,5 @@ import java.util.Optional;
 
 public interface CapsuleRepository extends JpaRepository<Capsule, Long> {
     Optional<Capsule> findByVideoUrl(String videoUrl);
+    Optional<Capsule> findFirstByVideoUrlEndingWith(String videoUrlSuffix);
 }

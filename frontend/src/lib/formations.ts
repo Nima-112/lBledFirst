@@ -53,10 +53,13 @@ export type Formation = {
   price: number; // MAD
   coverImage: string;
   previewVideo?: string;
-  totalDuration: number; // minutes
-  studentsCount: number;
-  averageRating: number;
-  reviewsCount: number;
+  totalDuration: number; // minutes — somme des durées de toutes les capsules
+  chaptersCount: number; // nb réel de chapitres
+  capsulesCount: number; // nb réel de capsules (tous chapitres confondus)
+  studentsCount: number; // nb réel d'achats (FormationPurchase)
+  favoritesCount: number; // nb réel de favoris (FormationFavorite)
+  averageRating: number; // moyenne réelle des reviews
+  reviewsCount: number; // nb réel d'avis
   objectives: string[];
   skills: string[];
   prerequisites: string[];
@@ -357,7 +360,10 @@ export const FORMATIONS: Formation[] = [
     coverImage:
       "https://images.unsplash.com/photo-1548013146-72479768bada?auto=format&fit=crop&w=1200&q=80",
     totalDuration: 540,
+    chaptersCount: 5,
+    capsulesCount: 7,
     studentsCount: 218,
+    favoritesCount: 0,
     averageRating: 4.8,
     reviewsCount: 87,
     objectives: [
@@ -583,7 +589,10 @@ export const FORMATIONS: Formation[] = [
     coverImage:
       "https://images.unsplash.com/photo-1493106641515-6b5631de4bb9?auto=format&fit=crop&w=1200&q=80",
     totalDuration: 360,
+    chaptersCount: 5,
+    capsulesCount: 6,
     studentsCount: 189,
+    favoritesCount: 0,
     averageRating: 4.7,
     reviewsCount: 74,
     objectives: [
@@ -795,7 +804,10 @@ export const FORMATIONS: Formation[] = [
     coverImage:
       "https://images.unsplash.com/photo-1541544181051-e46607bc22a4?auto=format&fit=crop&w=1600&q=80",
     totalDuration: 420,
+    chaptersCount: 5,
+    capsulesCount: 15,
     studentsCount: 987,
+    favoritesCount: 0,
     averageRating: 4.8,
     reviewsCount: 342,
     objectives: [
@@ -1084,8 +1096,11 @@ export const FORMATIONS: Formation[] = [
     price: 1490,
     coverImage:
       "https://images.unsplash.com/photo-1583912086096-8c60d75a53f9?auto=format&fit=crop&w=1200&q=80",
-    totalDuration: 620,
-    studentsCount: 143,
+    totalDuration: 480,
+    chaptersCount: 5,
+    capsulesCount: 11,
+    studentsCount: 342,
+    favoritesCount: 0,
     averageRating: 4.9,
     reviewsCount: 58,
     objectives: [
@@ -1300,7 +1315,10 @@ export function emptyFormation(): Formation {
     coverImage:
       "https://images.unsplash.com/photo-1517849845537-4d257902454a?auto=format&fit=crop&w=1200&q=80",
     totalDuration: 60,
+    chaptersCount: 0,
+    capsulesCount: 0,
     studentsCount: 0,
+    favoritesCount: 0,
     averageRating: 0,
     reviewsCount: 0,
     objectives: [],

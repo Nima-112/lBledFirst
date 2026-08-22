@@ -1,18 +1,21 @@
 import { useEffect, useRef, useState } from "react";
-import { Pause, Play, Maximize, Minimize, Volume2, VolumeX } from "lucide-react";
+import { Pause, Play, Maximize, Minimize, Volume2, VolumeX, ExternalLink, AlertTriangle } from "lucide-react";
 import type { CaptionsMap } from "@/services/formations.service";
+import { sanitizeUrl } from "@/lib/asset-url";
 
-const SUBTITLE_LANGUAGES: { code: string; label: string }[] = [
-  { code: "original", label: "Original" },
-  { code: "en", label: "English" },
-  { code: "zh", label: "中文" },
-  { code: "tr", label: "Türkçe" },
-  { code: "es", label: "Español" },
-  { code: "fr", label: "Français" },
-  { code: "de", label: "Deutsch" },
-  { code: "nl", label: "Nederlands" },
-  { code: "pt", label: "Português" },
-];
+const SUBTITLE_LANGUAGE_LABELS: Record<string, string> = {
+  original: "Original",
+  ar: "العربية",
+  en: "English",
+  zh: "中文",
+  tr: "Türkçe",
+  es: "Español",
+  fr: "Français",
+  de: "Deutsch",
+  nl: "Nederlands",
+  pt: "Português",
+  it: "Italiano",
+};
 
 export function CaptionedVideoPlayer({
   src,
@@ -33,6 +36,14 @@ export function CaptionedVideoPlayer({
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [captionsOn, setCaptionsOn] = useState(false);
   const [lang, setLang] = useState("original");
+  const [error, setError] = useState<string | null>(null);
+
+  const safeSrc = sanitizeUrl(src);
+  const safePoster = sanitizeUrl(poster);
+  // YouTube / Vimeo "watch?v=" URLs ne peuvent pas être lus en <video>.
+  const isYouTubeWatch = safeSrc ? /youtube\.com\/watch\?v=/i.test(safeSrc) : false;
+  const isVimeoWatch = safeSrc ? /vimeo\.com\/\d+/i.test(safeSrc) : false;
+  const needsExternalLink = isYouTubeWatch || isVimeoWatch;
 
   useEffect(() => {
     setCaptionsOn(!!captions);
@@ -40,16 +51,37 @@ export function CaptionedVideoPlayer({
   }, [captions]);
 
   useEffect(() => {
+    setError(null);
+  }, [safeSrc]);
+
+  useEffect(() => {
     const onFsChange = () => setIsFullscreen(document.fullscreenElement === containerRef.current);
     document.addEventListener("fullscreenchange", onFsChange);
     return () => document.removeEventListener("fullscreenchange", onFsChange);
   }, []);
 
-  const togglePlay = () => {
+  const togglePlay = async () => {
     const v = videoRef.current;
     if (!v) return;
-    if (v.paused) v.play();
-    else v.pause();
+    try {
+      if (v.paused) {
+        await v.play();
+      } else {
+        v.pause();
+      }
+    } catch (err: any) {
+      // NotSupportedError / AbortError / NotAllowedError etc.
+      const name = (err?.name as string) || "UnknownError";
+      if (name === "NotSupportedError") {
+        setError(
+          "Format vidéo non supporté nativement. Utilisez le lien externe (lecteur dédié).",
+        );
+      } else if (name === "NotAllowedError") {
+        setError("Lecture automatique bloquée — cliquez à nouveau sur Play.");
+      } else {
+        setError(err?.message || "Impossible de lire la vidéo.");
+      }
+    }
   };
 
   const toggleMute = () => {
@@ -83,6 +115,12 @@ export function CaptionedVideoPlayer({
     return `${m}:${s}`;
   };
 
+  const availableLanguages = captions
+    ? Object.keys(captions)
+        .filter((code) => Array.isArray(captions[code]) && captions[code].length > 0)
+        .map((code) => ({ code, label: SUBTITLE_LANGUAGE_LABELS[code] ?? code.toUpperCase() }))
+    : [];
+
   const activeCaption = (() => {
     if (!captionsOn || !captions) return null;
     const segments = captions[lang] ?? captions.original;
@@ -91,20 +129,59 @@ export function CaptionedVideoPlayer({
   })();
 
   return (
-    <div ref={containerRef} className="group relative aspect-video w-full overflow-hidden bg-ink">
-      <video
-        ref={videoRef}
-        src={src}
-        poster={poster}
-        className="h-full w-full cursor-pointer"
-        onClick={togglePlay}
-        onTimeUpdate={(e) => setCurrentTime(e.currentTarget.currentTime)}
-        onLoadedMetadata={(e) => setDuration(e.currentTarget.duration)}
-        onPlay={() => setPlaying(true)}
-        onPause={() => setPlaying(false)}
-      />
+    <div
+      ref={containerRef}
+      className="group relative aspect-video w-full overflow-hidden bg-ink"
+    >
+      {!safeSrc || needsExternalLink || error ? (
+        <div className="relative flex h-full w-full flex-col items-center justify-center gap-3 bg-gradient-to-br from-ink to-ink/80 p-6 text-center text-card">
+          <AlertTriangle className="h-10 w-10 text-amber-400" />
+          <p className="font-display text-lg font-semibold">
+            {needsExternalLink
+              ? "Lien YouTube/Vimeo détecté"
+              : !safeSrc
+                ? "Aucun média vidéo"
+                : "Erreur de lecture"}
+          </p>
+          <p className="max-w-lg text-sm text-card/80">
+            {needsExternalLink
+              ? "Les plateformes YouTube/Vimeo bloquent la lecture dans un <video>. Ouvrez-la dans un onglet dédié :"
+              : error
+                ? error
+                : "Ajoutez une URL vidéo (MP4 / WebM) directement accessible."}
+          </p>
+          {safeSrc && (
+            <a
+              href={safeSrc}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-2 inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2 text-sm font-bold text-primary-foreground shadow-lg shadow-primary/30 transition hover:bg-primary/90"
+            >
+              <ExternalLink className="h-4 w-4" />
+              Ouvrir la vidéo dans un nouvel onglet
+            </a>
+          )}
+        </div>
+      ) : (
+        <video
+          ref={videoRef}
+          src={safeSrc}
+          poster={safePoster ?? undefined}
+          preload="metadata"
+          playsInline
+          className="h-full w-full cursor-pointer"
+          onClick={togglePlay}
+          onTimeUpdate={(e) => setCurrentTime(e.currentTarget.currentTime)}
+          onLoadedMetadata={(e) => setDuration(e.currentTarget.duration)}
+          onPlay={() => setPlaying(true)}
+          onPause={() => setPlaying(false)}
+          onError={() =>
+            setError("Impossible de charger la vidéo — vérifiez l'URL (MP4/WebM direct).")
+          }
+        />
+      )}
 
-      {captionsOn && activeCaption && (
+      {safeSrc && !needsExternalLink && !error && captionsOn && activeCaption && (
         <div className="pointer-events-none absolute inset-x-0 bottom-16 flex justify-center px-6">
           <span className="max-w-2xl rounded-lg bg-ink/80 px-4 py-2 text-center text-sm font-medium leading-snug text-card shadow-lg sm:text-base">
             {activeCaption}
@@ -120,14 +197,16 @@ export function CaptionedVideoPlayer({
           step={0.1}
           value={currentTime}
           onChange={onSeek}
-          className="h-1 w-full cursor-pointer accent-primary"
+          className="h-1 w-full cursor-pointer accent-primary disabled:opacity-50"
+          disabled={!safeSrc || !!needsExternalLink || !!error}
         />
         <div className="mt-1.5 flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">
             <button
               onClick={togglePlay}
               aria-label={playing ? "Pause" : "Lecture"}
-              className="inline-flex h-8 w-8 items-center justify-center rounded-full text-card transition hover:bg-card/10"
+              disabled={!safeSrc || !!needsExternalLink || !!error}
+              className="inline-flex h-8 w-8 items-center justify-center rounded-full text-card transition hover:bg-card/10 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {playing ? (
                 <Pause className="h-4 w-4 fill-current" />
@@ -138,7 +217,8 @@ export function CaptionedVideoPlayer({
             <button
               onClick={toggleMute}
               aria-label={muted ? "Activer le son" : "Couper le son"}
-              className="inline-flex h-8 w-8 items-center justify-center rounded-full text-card transition hover:bg-card/10"
+              disabled={!safeSrc || !!needsExternalLink || !!error}
+              className="inline-flex h-8 w-8 items-center justify-center rounded-full text-card transition hover:bg-card/10 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {muted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
             </button>
@@ -148,36 +228,51 @@ export function CaptionedVideoPlayer({
           </div>
 
           <div className="flex items-center gap-2">
-            {captions && (
+            {captions && !needsExternalLink && !error && (
               <>
                 <button
                   onClick={() => setCaptionsOn((v) => !v)}
                   aria-label="Sous-titres"
                   className={`inline-flex h-8 items-center justify-center rounded-md px-2 text-[11px] font-bold transition ${
-                    captionsOn ? "bg-primary text-primary-foreground" : "text-card hover:bg-card/10"
+                    captionsOn
+                      ? "bg-primary text-primary-foreground"
+                      : "text-card hover:bg-card/10"
                   }`}
                 >
                   CC
                 </button>
-                {captionsOn && (
+                {captionsOn && availableLanguages.length > 0 && (
                   <select
                     value={lang}
                     onChange={(e) => setLang(e.target.value)}
                     className="h-8 rounded-md border border-card/30 bg-ink/70 px-1.5 text-[11px] font-semibold text-card outline-none"
                   >
-                    {SUBTITLE_LANGUAGES.filter((l) => captions[l.code]).map((l) => (
-                      <option key={l.code} value={l.code} className="text-ink">
-                        {l.label}
+                    {availableLanguages.map((language) => (
+                      <option key={language.code} value={language.code} className="text-ink">
+                        {language.label}
                       </option>
                     ))}
                   </select>
                 )}
               </>
             )}
+            {safeSrc && (
+              <a
+                href={safeSrc}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Ouvrir dans un nouvel onglet"
+                title="Ouvrir dans un nouvel onglet"
+                className="inline-flex h-8 w-8 items-center justify-center rounded-full text-card transition hover:bg-card/10"
+              >
+                <ExternalLink className="h-4 w-4" />
+              </a>
+            )}
             <button
               onClick={toggleFullscreen}
               aria-label="Plein écran"
-              className="inline-flex h-8 w-8 items-center justify-center rounded-full text-card transition hover:bg-card/10"
+              disabled={!safeSrc || !!needsExternalLink || !!error}
+              className="inline-flex h-8 w-8 items-center justify-center rounded-full text-card transition hover:bg-card/10 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {isFullscreen ? <Minimize className="h-4 w-4" /> : <Maximize className="h-4 w-4" />}
             </button>

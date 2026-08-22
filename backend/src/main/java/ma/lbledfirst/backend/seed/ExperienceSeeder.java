@@ -37,18 +37,18 @@ public class ExperienceSeeder implements CommandLineRunner {
         // ── Host users ─────────────────────────────────────────────────────
         User brahim = findOrCreateHost(
                 "brahim@host.ma", "Brahim Aït Toubkal",
-                "+212 661-112233", "Maroc", "Amazigh",
-                "Guide de montagne depuis 15 ans dans le Haut Atlas.");
+                "+212 661-112233", "Morocco", "Amazigh",
+                "Mountain guide for 15 years in the High Atlas.");
 
         User khadija = findOrCreateHost(
                 "khadija@host.ma", "Khadija El Merzougi",
-                "+212 662-445566", "Maroc", "Arabe",
-                "Famille nomade, bivouacs et dîners sous les étoiles.");
+                "+212 662-445566", "Morocco", "Arabic",
+                "Nomadic family, bivouacs and dinners under the stars.");
 
         User youssef = findOrCreateHost(
                 "youssef@host.ma", "Youssef Ouzoud",
-                "+212 663-778899", "Maroc", "Amazigh",
-                "Passionné des cascades et de la cuisine du terroir.");
+                "+212 663-778899", "Morocco", "Amazigh",
+                "Passionate about waterfalls and local cuisine.");
 
         // ── Regions ────────────────────────────────────────────────────────
         Region marrakechSafi = regionRepository.findByName(RegionName.MARRAKECH_SAFI).orElse(null);
@@ -68,7 +68,7 @@ public class ExperienceSeeder implements CommandLineRunner {
         experienceRepository.save(Experience.builder()
                 .host(brahim)
                 .title("Mountain Treks — High Atlas")
-                .description("Trois jours de randonnée dans le Haut Atlas avec un guide berbère. Sentiers cachés, villages accrochés à la montagne, nuits chez l'habitant et petits-déjeuners face aux sommets.")
+                .description("Three days of hiking in the High Atlas with a Berber guide. Hidden trails, villages clinging to the mountainside, overnight stays with locals, and breakfasts facing the peaks.")
                 .price(new BigDecimal("1200"))
                 .duration(3)
                 .category("Hiking")
@@ -82,14 +82,14 @@ public class ExperienceSeeder implements CommandLineRunner {
                         "https://images.unsplash.com/photo-1516026672322-bc52d61a55d5?auto=format&fit=crop&w=1200&q=80",
                         "https://images.unsplash.com/photo-1548013146-72479768bada?auto=format&fit=crop&w=1200&q=80"))
                 .dayPrograms(List.of(
-                        ExperienceDayProgram.builder().dayNumber(1).title("Arrivée à Imlil & montée douce")
-                                .description("Accueil au village, thé à la menthe, mise en jambes vers Aroumd et nuit dans un gîte familial.")
+                        ExperienceDayProgram.builder().dayNumber(1).title("Arrival in Imlil & gentle climb")
+                                .description("Welcome to the village, mint tea, warming up towards Aroumd and overnight in a family lodge.")
                                 .build(),
-                        ExperienceDayProgram.builder().dayNumber(2).title("Ascension vers le refuge du Toubkal")
-                                .description("Marche d'altitude entre pierriers et cascades. Repas berbère au refuge, ciel étoilé.")
+                        ExperienceDayProgram.builder().dayNumber(2).title("Ascent to the Toubkal refuge")
+                                .description("High altitude trek between scree and waterfalls. Berber meal at the refuge, starry sky.")
                                 .build(),
-                        ExperienceDayProgram.builder().dayNumber(3).title("Retour par la vallée d'Imenane")
-                                .description("Descente panoramique par un vallon secret, déjeuner chez une famille, retour à Marrakech.")
+                        ExperienceDayProgram.builder().dayNumber(3).title("Return via the Imenane valley")
+                                .description("Panoramic descent through a secret valley, lunch with a family, return to Marrakech.")
                                 .build()))
                 .createdAt(LocalDateTime.of(2026, 3, 1, 8, 0))
                 .build());
@@ -98,7 +98,7 @@ public class ExperienceSeeder implements CommandLineRunner {
         experienceRepository.save(Experience.builder()
                 .host(youssef)
                 .title("Tea Ceremonies with Village Elders")
-                .description("Une journée d'immersion dans le rituel du thé à la menthe : cueillette, gestes du service, hauteur du versé, tradition des trois verres.")
+                .description("A day of immersion in the mint tea ritual: picking, pouring gestures, pouring height, the tradition of the three glasses.")
                 .price(new BigDecimal("220"))
                 .duration(1)
                 .category("Cuisine")
@@ -112,8 +112,8 @@ public class ExperienceSeeder implements CommandLineRunner {
                         "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?auto=format&fit=crop&w=1200&q=80",
                         "https://images.unsplash.com/photo-1574484284002-952d92456975?auto=format&fit=crop&w=1200&q=80"))
                 .dayPrograms(List.of(
-                        ExperienceDayProgram.builder().dayNumber(1).title("Rituel du thé, du jardin à la tasse")
-                                .description("Cueillette de la menthe, préparation traditionnelle, apprentissage des trois verres (amer, doux, tendre) chez un ancien.")
+                        ExperienceDayProgram.builder().dayNumber(1).title("Tea ritual, from garden to cup")
+                                .description("Mint picking, traditional preparation, learning the three glasses (bitter, sweet, tender) with an elder.")
                                 .build()))
                 .createdAt(LocalDateTime.of(2026, 3, 4, 8, 0))
                 .build());
@@ -122,7 +122,7 @@ public class ExperienceSeeder implements CommandLineRunner {
         experienceRepository.save(Experience.builder()
                 .host(youssef)
                 .title("Artisan Workshops — Argan Cooperative")
-                .description("Deux jours dans une coopérative de femmes berbères : concassage, torréfaction et pressage de l'huile d'argan, atelier de tissage.")
+                .description("Two days in a Berber women's cooperative: crushing, roasting, and pressing argan oil, weaving workshop.")
                 .price(new BigDecimal("640"))
                 .duration(2)
                 .category("Crafts")
@@ -136,11 +136,11 @@ public class ExperienceSeeder implements CommandLineRunner {
                         "https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=1200&q=80",
                         "https://images.unsplash.com/photo-1615485500704-8e990f9900e3?auto=format&fit=crop&w=1200&q=80"))
                 .dayPrograms(List.of(
-                        ExperienceDayProgram.builder().dayNumber(1).title("Fabrication de l'huile d'argan")
-                                .description("Découverte du fruit, ateliers pratiques, dégustations.")
+                        ExperienceDayProgram.builder().dayNumber(1).title("Making argan oil")
+                                .description("Discovering the fruit, hands-on workshops, tastings.")
                                 .build(),
-                        ExperienceDayProgram.builder().dayNumber(2).title("Tissage berbère")
-                                .description("Motifs, symboles, un petit tissage à emporter.")
+                        ExperienceDayProgram.builder().dayNumber(2).title("Berber weaving")
+                                .description("Patterns, symbols, a small weaving to take away.")
                                 .build()))
                 .createdAt(LocalDateTime.of(2026, 3, 6, 8, 0))
                 .build());
@@ -149,7 +149,7 @@ public class ExperienceSeeder implements CommandLineRunner {
         experienceRepository.save(Experience.builder()
                 .host(khadija)
                 .title("Desert Camps under the Stars")
-                .description("Deux nuits à Erg Chebbi : méharée au coucher du soleil, dîner nomade sous les étoiles, tambours Gnawa et lever de soleil sur les dunes.")
+                .description("Two nights in Erg Chebbi: sunset camel ride, nomadic dinner under the stars, Gnawa drums and sunrise over the dunes.")
                 .price(new BigDecimal("1400"))
                 .duration(2)
                 .category("Homestays")
@@ -163,11 +163,11 @@ public class ExperienceSeeder implements CommandLineRunner {
                         "https://images.unsplash.com/photo-1511633479497-6158b31fd2b5?auto=format&fit=crop&w=1200&q=80",
                         "https://images.unsplash.com/photo-1451337516015-6b6e9a44a8a3?auto=format&fit=crop&w=1200&q=80"))
                 .dayPrograms(List.of(
-                        ExperienceDayProgram.builder().dayNumber(1).title("Arrivée & coucher de soleil à dos de dromadaire")
-                                .description("Méharée dans les dunes, dîner et musique Gnawa autour du feu.")
+                        ExperienceDayProgram.builder().dayNumber(1).title("Arrival & camel ride at sunset")
+                                .description("Camel trek in the dunes, dinner and Gnawa music around the fire.")
                                 .build(),
-                        ExperienceDayProgram.builder().dayNumber(2).title("Lever de soleil & retour")
-                                .description("Silence du désert, petit-déjeuner à l'ombre du bivouac, retour au village.")
+                        ExperienceDayProgram.builder().dayNumber(2).title("Sunrise & return")
+                                .description("Silence of the desert, breakfast in the shade of the bivouac, return to the village.")
                                 .build()))
                 .createdAt(LocalDateTime.of(2026, 3, 9, 8, 0))
                 .build());
@@ -176,7 +176,7 @@ public class ExperienceSeeder implements CommandLineRunner {
         experienceRepository.save(Experience.builder()
                 .host(brahim)
                 .title("Cooking with Locals — Tagine & Msemen")
-                .description("Une journée en cuisine familiale : marché du matin, préparation d'un tagine lent, msemen à la plancha berbère et repas partagé.")
+                .description("A day in a family kitchen: morning market, slow tagine preparation, msemen on a Berber griddle and a shared meal.")
                 .price(new BigDecimal("280"))
                 .duration(1)
                 .category("Cuisine")
@@ -190,8 +190,8 @@ public class ExperienceSeeder implements CommandLineRunner {
                         "https://images.unsplash.com/photo-1547573854-74d2a71d0826?auto=format&fit=crop&w=1200&q=80",
                         "https://images.unsplash.com/photo-1600891964092-4316c288032e?auto=format&fit=crop&w=1200&q=80"))
                 .dayPrograms(List.of(
-                        ExperienceDayProgram.builder().dayNumber(1).title("Du souk à la table")
-                                .description("Marché, cuisine à quatre mains, dégustation autour d'un grand plat commun.")
+                        ExperienceDayProgram.builder().dayNumber(1).title("From the souk to the table")
+                                .description("Market, cooking together, tasting around a large common dish.")
                                 .build()))
                 .createdAt(LocalDateTime.of(2026, 3, 12, 8, 0))
                 .build());
@@ -200,7 +200,7 @@ public class ExperienceSeeder implements CommandLineRunner {
         experienceRepository.save(Experience.builder()
                 .host(youssef)
                 .title("Valley Walks — Aït Bouguemez")
-                .description("Deux jours de balades douces dans la Vallée Heureuse : palmeraies, greniers collectifs et déjeuner chez une famille.")
+                .description("Two days of gentle walks in the Happy Valley: palm groves, collective granaries and lunch with a family.")
                 .price(new BigDecimal("520"))
                 .duration(2)
                 .category("Hiking")
@@ -214,11 +214,11 @@ public class ExperienceSeeder implements CommandLineRunner {
                         "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1200&q=80",
                         "https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=1200&q=80"))
                 .dayPrograms(List.of(
-                        ExperienceDayProgram.builder().dayNumber(1).title("Boucle des villages")
-                                .description("Traversée de hameaux perchés, terrasses cultivées, repas berbère.")
+                        ExperienceDayProgram.builder().dayNumber(1).title("Village loop")
+                                .description("Crossing perched hamlets, cultivated terraces, Berber meal.")
                                 .build(),
-                        ExperienceDayProgram.builder().dayNumber(2).title("Grenier collectif & source sacrée")
-                                .description("Marche vers un agadir millénaire, temps de partage avec les habitants.")
+                        ExperienceDayProgram.builder().dayNumber(2).title("Collective granary & sacred spring")
+                                .description("Walk to a millennial agadir, time of sharing with the locals.")
                                 .build()))
                 .createdAt(LocalDateTime.of(2026, 3, 15, 8, 0))
                 .build());
@@ -226,8 +226,8 @@ public class ExperienceSeeder implements CommandLineRunner {
         // ── 7. Citrus Orchards & Cliff Roads — L'Oriental ──────────────────
         experienceRepository.save(Experience.builder()
                 .host(brahim)
-                .title("Vergers d'Agrumes & Route des Falaises")
-                .description("Une journée entre les vergers d'agrumes de la région d'Oujda et les routes sinueuses qui longent les falaises, avec halte chez un producteur local.")
+                .title("Citrus Orchards & Cliff Roads")
+                .description("A day among the citrus orchards of the Oujda region and the winding roads along the cliffs, with a stop at a local producer.")
                 .price(new BigDecimal("310"))
                 .duration(1)
                 .category("Nature")
@@ -241,8 +241,8 @@ public class ExperienceSeeder implements CommandLineRunner {
                         "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?auto=format&fit=crop&w=1200&q=80",
                         "https://images.unsplash.com/photo-1574484284002-952d92456975?auto=format&fit=crop&w=1200&q=80"))
                 .dayPrograms(List.of(
-                        ExperienceDayProgram.builder().dayNumber(1).title("Vergers et routes de falaise")
-                                .description("Cueillette d'agrumes, pique-nique face aux gorges, retour au coucher du soleil.")
+                        ExperienceDayProgram.builder().dayNumber(1).title("Orchards and cliff roads")
+                                .description("Citrus picking, picnic facing the gorges, return at sunset.")
                                 .build()))
                 .createdAt(LocalDateTime.of(2026, 3, 18, 8, 0))
                 .build());
@@ -250,8 +250,8 @@ public class ExperienceSeeder implements CommandLineRunner {
         // ── 8. Craft Workshops & Mountain Treks — Fès-Meknès ───────────────
         experienceRepository.save(Experience.builder()
                 .host(youssef)
-                .title("Ateliers d'Artisanat & Randonnée en Moyen Atlas")
-                .description("Une journée entre les ateliers de poterie et de cuir de Fès et une courte randonnée dans les collines du Moyen Atlas.")
+                .title("Craft Workshops & Mountain Treks")
+                .description("A day between the pottery and leather workshops of Fes and a short hike in the hills of the Middle Atlas.")
                 .price(new BigDecimal("360"))
                 .duration(1)
                 .category("Crafts")
@@ -265,8 +265,8 @@ public class ExperienceSeeder implements CommandLineRunner {
                         "https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=1200&q=80",
                         "https://images.unsplash.com/photo-1615485500704-8e990f9900e3?auto=format&fit=crop&w=1200&q=80"))
                 .dayPrograms(List.of(
-                        ExperienceDayProgram.builder().dayNumber(1).title("Médina et collines")
-                                .description("Atelier chez un artisan tanneur, déjeuner, marche panoramique sur les hauteurs de Fès.")
+                        ExperienceDayProgram.builder().dayNumber(1).title("Medina and hills")
+                                .description("Workshop with a master tanner, lunch, panoramic walk on the heights of Fes.")
                                 .build()))
                 .createdAt(LocalDateTime.of(2026, 3, 20, 8, 0))
                 .build());
@@ -274,11 +274,11 @@ public class ExperienceSeeder implements CommandLineRunner {
         // ── 9. Thermal Springs & Plateau Hikes — Rabat-Salé-Kénitra ────────
         experienceRepository.save(Experience.builder()
                 .host(khadija)
-                .title("Sources Thermales & Balades sur le Plateau")
-                .description("Détente autour des sources thermales de la région et balade douce sur le plateau agricole, entre oliveraies et fermes familiales.")
+                .title("Thermal Springs & Plateau Hikes")
+                .description("Relaxation around the region's thermal springs and a gentle walk on the agricultural plateau, among olive groves and family farms.")
                 .price(new BigDecimal("240"))
                 .duration(1)
-                .category("Détente")
+                .category("Relaxation")
                 .status(ExperienceStatus.published)
                 .city("Sidi Kacem")
                 .region(rabatSaleKenitra)
@@ -289,8 +289,8 @@ public class ExperienceSeeder implements CommandLineRunner {
                         "https://images.unsplash.com/photo-1511633479497-6158b31fd2b5?auto=format&fit=crop&w=1200&q=80",
                         "https://images.unsplash.com/photo-1451337516015-6b6e9a44a8a3?auto=format&fit=crop&w=1200&q=80"))
                 .dayPrograms(List.of(
-                        ExperienceDayProgram.builder().dayNumber(1).title("Sources et plateau")
-                                .description("Bain thermal, déjeuner à la ferme, marche parmi les oliviers.")
+                        ExperienceDayProgram.builder().dayNumber(1).title("Springs and plateau")
+                                .description("Thermal bath, lunch at the farm, walk among the olive trees.")
                                 .build()))
                 .createdAt(LocalDateTime.of(2026, 3, 22, 8, 0))
                 .build());
@@ -298,8 +298,8 @@ public class ExperienceSeeder implements CommandLineRunner {
         // ── 10. Coastal Heritage & Medina Walks — Casablanca-Settat ────────
         experienceRepository.save(Experience.builder()
                 .host(brahim)
-                .title("Patrimoine Côtier & Balades en Médina")
-                .description("Découverte de la médina fortifiée d'El Jadida et de son front de mer, avec un guide passionné d'histoire portugaise et marocaine.")
+                .title("Coastal Heritage & Medina Walks")
+                .description("Discovery of the fortified medina of El Jadida and its seafront, with a guide passionate about Portuguese and Moroccan history.")
                 .price(new BigDecimal("260"))
                 .duration(1)
                 .category("Culture")
@@ -313,8 +313,8 @@ public class ExperienceSeeder implements CommandLineRunner {
                         "https://images.unsplash.com/photo-1547573854-74d2a71d0826?auto=format&fit=crop&w=1200&q=80",
                         "https://images.unsplash.com/photo-1600891964092-4316c288032e?auto=format&fit=crop&w=1200&q=80"))
                 .dayPrograms(List.of(
-                        ExperienceDayProgram.builder().dayNumber(1).title("Cité portugaise & médina")
-                                .description("Citerne portugaise, remparts, ruelles de la médina et déjeuner face à l'océan.")
+                        ExperienceDayProgram.builder().dayNumber(1).title("Portuguese city & medina")
+                                .description("Portuguese cistern, ramparts, alleys of the medina and lunch facing the ocean.")
                                 .build()))
                 .createdAt(LocalDateTime.of(2026, 3, 24, 8, 0))
                 .build());
@@ -322,8 +322,8 @@ public class ExperienceSeeder implements CommandLineRunner {
         // ── 11. Saffron Harvest — Souss-Massa ──────────────────────────────
         experienceRepository.save(Experience.builder()
                 .host(youssef)
-                .title("Récolte du Safran avec les Coopératives")
-                .description("Une matinée à récolter les fleurs de safran à l'aube aux côtés d'une coopérative de femmes, suivie d'un atelier d'émondage et de dégustation.")
+                .title("Saffron Harvest with Cooperatives")
+                .description("A morning harvesting saffron flowers at dawn alongside a women's cooperative, followed by a pruning workshop and tasting.")
                 .price(new BigDecimal("420"))
                 .duration(1)
                 .category("Crafts")
@@ -337,8 +337,8 @@ public class ExperienceSeeder implements CommandLineRunner {
                         "https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=1200&q=80",
                         "https://images.unsplash.com/photo-1615485500704-8e990f9900e3?auto=format&fit=crop&w=1200&q=80"))
                 .dayPrograms(List.of(
-                        ExperienceDayProgram.builder().dayNumber(1).title("Cueillette à l'aube")
-                                .description("Récolte des fleurs, émondage des pistils, thé au safran avec la coopérative.")
+                        ExperienceDayProgram.builder().dayNumber(1).title("Harvest at dawn")
+                                .description("Harvesting flowers, pruning pistils, saffron tea with the cooperative.")
                                 .build()))
                 .createdAt(LocalDateTime.of(2026, 3, 26, 8, 0))
                 .build());
@@ -346,8 +346,8 @@ public class ExperienceSeeder implements CommandLineRunner {
         // ── 12. Red Sandstone Arches — Guelmim-Oued Noun ───────────────────
         experienceRepository.save(Experience.builder()
                 .host(khadija)
-                .title("Arches de Grès Rouge au Coucher du Soleil")
-                .description("Randonnée facile jusqu'aux arches de grès rouge de la région, avec pique-nique et coucher de soleil sur le désert présaharien.")
+                .title("Red Sandstone Arches at Sunset")
+                .description("Easy hike to the region's red sandstone arches, with a picnic and sunset over the pre-Saharan desert.")
                 .price(new BigDecimal("330"))
                 .duration(1)
                 .category("Nature")
@@ -361,8 +361,8 @@ public class ExperienceSeeder implements CommandLineRunner {
                         "https://images.unsplash.com/photo-1511633479497-6158b31fd2b5?auto=format&fit=crop&w=1200&q=80",
                         "https://images.unsplash.com/photo-1451337516015-6b6e9a44a8a3?auto=format&fit=crop&w=1200&q=80"))
                 .dayPrograms(List.of(
-                        ExperienceDayProgram.builder().dayNumber(1).title("Arches et coucher de soleil")
-                                .description("Marche jusqu'aux arches, pique-nique et observation du coucher de soleil sur les dunes.")
+                        ExperienceDayProgram.builder().dayNumber(1).title("Arches and sunset")
+                                .description("Walk to the arches, picnic and sunset observation over the dunes.")
                                 .build()))
                 .createdAt(LocalDateTime.of(2026, 3, 28, 8, 0))
                 .build());
@@ -370,8 +370,8 @@ public class ExperienceSeeder implements CommandLineRunner {
         // ── 13. Desert-meets-Ocean Dunes & Kitesurf — Laâyoune-Sakia El Hamra
         experienceRepository.save(Experience.builder()
                 .host(brahim)
-                .title("Dunes Océan-Désert & Kitesurf")
-                .description("Initiation au kitesurf sur la lagune de Laâyoune puis balade au coucher du soleil sur les dunes qui rencontrent l'océan Atlantique.")
+                .title("Ocean-Desert Dunes & Kitesurf")
+                .description("Introduction to kitesurfing on the Laayoune lagoon then a sunset walk on the dunes where the desert meets the Atlantic Ocean.")
                 .price(new BigDecimal("650"))
                 .duration(1)
                 .category("Nature")
@@ -386,7 +386,7 @@ public class ExperienceSeeder implements CommandLineRunner {
                         "https://images.unsplash.com/photo-1574484284002-952d92456975?auto=format&fit=crop&w=1200&q=80"))
                 .dayPrograms(List.of(
                         ExperienceDayProgram.builder().dayNumber(1).title("Kitesurf & dunes")
-                                .description("Cours d'initiation sur la lagune, puis marche sur les dunes au coucher du soleil.")
+                                .description("Introductory lesson on the lagoon, then a walk on the dunes at sunset.")
                                 .build()))
                 .createdAt(LocalDateTime.of(2026, 3, 30, 8, 0))
                 .build());
@@ -394,8 +394,8 @@ public class ExperienceSeeder implements CommandLineRunner {
         // ── 14. World-class Kitesurf Lagoon — Dakhla-Oued Ed-Dahab ─────────
         experienceRepository.save(Experience.builder()
                 .host(youssef)
-                .title("Kitesurf de Classe Mondiale sur Lagune")
-                .description("Deux jours de kitesurf sur la lagune plate et protégée de Dakhla, réputée parmi les meilleurs spots au monde, encadrés par un moniteur local.")
+                .title("World-Class Lagoon Kitesurfing")
+                .description("Two days of kitesurfing on the flat and protected lagoon of Dakhla, renowned among the best spots in the world, supervised by a local instructor.")
                 .price(new BigDecimal("980"))
                 .duration(2)
                 .category("Nature")
@@ -409,11 +409,11 @@ public class ExperienceSeeder implements CommandLineRunner {
                         "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1200&q=80",
                         "https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=1200&q=80"))
                 .dayPrograms(List.of(
-                        ExperienceDayProgram.builder().dayNumber(1).title("Prise en main sur la lagune")
-                                .description("Théorie, sécurité et premiers glissements sur l'eau plate de la lagune.")
+                        ExperienceDayProgram.builder().dayNumber(1).title("Getting started on the lagoon")
+                                .description("Theory, safety and first glides on the flat water of the lagoon.")
                                 .build(),
-                        ExperienceDayProgram.builder().dayNumber(2).title("Sessions libres & bivouac")
-                                .description("Perfectionnement en autonomie encadrée, dîner et nuit sous tente face à la lagune.")
+                        ExperienceDayProgram.builder().dayNumber(2).title("Free sessions & bivouac")
+                                .description("Supervised autonomous improvement, dinner and night in a tent facing the lagoon.")
                                 .build()))
                 .createdAt(LocalDateTime.of(2026, 4, 1, 8, 0))
                 .build());

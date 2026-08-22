@@ -31,6 +31,8 @@ public class CapsuleProcessingService {
 
     @Value("${app.upload.dir}")
     private String uploadDir;
+    @Value("${openai.api-key:}")
+    private String openAiApiKey;
 
     public CapsuleProcessingService(CapsuleRepository capsuleRepository,
             AudioExtractionService audioExtractionService,
@@ -58,6 +60,43 @@ public class CapsuleProcessingService {
     public void process(Long capsuleId) throws Exception {
         Capsule capsule = capsuleRepository.findById(capsuleId)
                 .orElseThrow(() -> new IllegalArgumentException("Capsule " + capsuleId + " introuvable"));
+
+        // Guard #1: Pas de vidéo ou URL non téléchargée localement (ex: YouTube
+        // watch?v=, ou MP4 hébergé externe). On ne sait pas extraire l'audio —
+        // on marque SKIPPED (pas FAILED) pour éviter de fausser l'UI admin.
+        String video = capsule.getVideoUrl() != null ? capsule.getVideoUrl().trim() : null;
+        if (video == null || video.isEmpty()) {
+            log.info("Capsule {} sans videoUrl — traitement IA ignoré (SKIPPED).", capsuleId);
+            capsule.setProcessingStatus("SKIPPED");
+            capsuleRepository.save(capsule);
+            return;
+        }
+        if (!video.startsWith("/uploads/")) {
+            try {
+                java.net.URI uri = new java.net.URI(video);
+                String scheme = uri.getScheme();
+                String path = uri.getPath();
+                if ((scheme != null && (scheme.equalsIgnoreCase("http") || scheme.equalsIgnoreCase("https")))
+                        && (path == null || !path.startsWith("/uploads/"))) {
+                    log.info("Capsule {} : vidéo externe {} — traitement IA non-supporté (SKIPPED).", capsuleId, video);
+                    capsule.setProcessingStatus("SKIPPED");
+                    capsuleRepository.save(capsule);
+                    return;
+                }
+            } catch (java.net.URISyntaxException ignored) {
+                // Ce n'est pas une URI valide → continue (peut-être un chemin).
+            }
+        }
+
+        // Guard #2: Clé OpenAI absente. Pas de transcription/traduction
+        // possible, mais on ne bloque pas la lecture vidéo — on marque
+        // explicitement "SKIPPED_NO_API_KEY".
+        if (openAiApiKey == null || openAiApiKey.isBlank()) {
+            log.warn("Capsule {} : OPENAI_API_KEY absente — pipeline IA ignoré (SKIPPED_NO_KEY).", capsuleId);
+            capsule.setProcessingStatus("SKIPPED_NO_KEY");
+            capsuleRepository.save(capsule);
+            return;
+        }
 
         capsule.setProcessingStatus("PROCESSING");
         capsuleRepository.save(capsule);

@@ -20,6 +20,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 
 @Slf4j
 @Component
@@ -30,6 +32,19 @@ public class VideoAccessFilter extends OncePerRequestFilter {
     private final FormationRepository formationRepository;
     private final FormationPurchaseRepository formationPurchaseRepository;
     private final UserRepository userRepository;
+
+    private String normalizeVideoPath(String raw) {
+        if (raw == null || raw.isBlank()) return raw;
+        String value = raw.trim();
+        if (value.startsWith("/uploads/videos/")) return value;
+        try {
+            URI uri = new URI(value);
+            String path = uri.getPath();
+            return (path != null && !path.isBlank()) ? path : value;
+        } catch (URISyntaxException ignored) {
+            return value;
+        }
+    }
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
@@ -62,13 +77,17 @@ public class VideoAccessFilter extends OncePerRequestFilter {
             }
 
             // Check if it's a preview video (accessible to all authenticated users)
-            if (formationRepository.existsByPreviewVideo(path)) {
+            if (formationRepository.existsByPreviewVideo(path)
+                    || formationRepository.existsByPreviewVideoEndingWith(path)) {
                 filterChain.doFilter(request, response);
                 return;
             }
 
             // Otherwise check if it matches a paid capsule
-            Capsule capsule = capsuleRepository.findByVideoUrl(path).orElse(null);
+            Capsule capsule = capsuleRepository.findByVideoUrl(path)
+                    .or(() -> capsuleRepository.findFirstByVideoUrlEndingWith(path))
+                    .filter(c -> path.equals(normalizeVideoPath(c.getVideoUrl())))
+                    .orElse(null);
             if (capsule != null) {
                 Formation formation = capsule.getChapter().getFormation();
                 boolean purchased = formationPurchaseRepository.existsByUserIdAndFormationId(user.getId(), formation.getId());

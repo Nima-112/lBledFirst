@@ -123,6 +123,10 @@ public class TranscriptionService {
      */
     public TranscriptionResult transcribeWithTimestamps(String audioFilePath, String continuationPrompt)
             throws IOException, InterruptedException {
+        if (apiKey == null || apiKey.isBlank()) {
+            throw new IllegalStateException(
+                    "OPENAI_API_KEY non configurée — transcription Whisper impossible.");
+        }
         Path audioPath = Path.of(audioFilePath);
         byte[] audioBytes = Files.readAllBytes(audioPath);
         String fileName = audioPath.getFileName().toString();
@@ -138,7 +142,7 @@ public class TranscriptionService {
                 .uri(URI.create(WHISPER_URL))
                 .header("Authorization", "Bearer " + apiKey)
                 .header("Content-Type", "multipart/form-data; boundary=" + boundary)
-                .timeout(java.time.Duration.ofMinutes(2))
+                .timeout(java.time.Duration.ofMinutes(10))
                 .POST(HttpRequest.BodyPublishers.ofByteArray(multipartBody))
                 .build();
 

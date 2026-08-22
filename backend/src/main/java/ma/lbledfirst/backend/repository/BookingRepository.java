@@ -18,4 +18,7 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     List<Booking> findByTouristId(Long touristId);
 
     boolean existsByTouristIdAndExperienceIdAndStatusIn(Long touristId, Long experienceId, List<BookingStatus> statuses);
+
+    @Query("SELECT COUNT(b) FROM Booking b WHERE b.experience.id = :experienceId")
+    long countByExperienceId(@Param("experienceId") Long experienceId);
 }

@@ -1,14 +1,17 @@
 package ma.lbledfirst.backend.service;
 
 import ma.lbledfirst.backend.domain.Experience;
+import ma.lbledfirst.backend.domain.ExperienceDayProgram;
 import ma.lbledfirst.backend.domain.ExperienceStatus;
 import ma.lbledfirst.backend.domain.Region;
 import ma.lbledfirst.backend.domain.User;
+import ma.lbledfirst.backend.dto.ExperienceResponse;
 import ma.lbledfirst.backend.repository.BookingRepository;
+import ma.lbledfirst.backend.repository.ExperienceFavoriteRepository;
 import ma.lbledfirst.backend.repository.ExperienceRepository;
 import ma.lbledfirst.backend.repository.RegionRepository;
+import ma.lbledfirst.backend.repository.ReviewRepository;
 import ma.lbledfirst.backend.repository.UserRepository;
-import ma.lbledfirst.backend.repository.ExperienceFavoriteRepository;
 import ma.lbledfirst.backend.domain.ExperienceFavorite;
 import org.hibernate.Hibernate;
 import org.springframework.data.domain.Page;
@@ -19,7 +22,9 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
@@ -32,18 +37,128 @@ public class ExperienceService extends AbstractCrudService<Experience, Long> {
     private final RegionRepository regionRepository;
     private final BookingRepository bookingRepository;
     private final ExperienceFavoriteRepository experienceFavoriteRepository;
+    private final ReviewRepository reviewRepository;
 
     public ExperienceService(ExperienceRepository repository,
                              UserRepository userRepository,
                              RegionRepository regionRepository,
                              BookingRepository bookingRepository,
-                             ExperienceFavoriteRepository experienceFavoriteRepository) {
+                             ExperienceFavoriteRepository experienceFavoriteRepository,
+                             ReviewRepository reviewRepository) {
         super(repository);
         this.experienceRepository = repository;
         this.userRepository = userRepository;
         this.regionRepository = regionRepository;
         this.bookingRepository = bookingRepository;
         this.experienceFavoriteRepository = experienceFavoriteRepository;
+        this.reviewRepository = reviewRepository;
+    }
+
+    @Transactional(readOnly = true)
+    public List<ExperienceResponse> findAllResponses() {
+        List<Experience> list = experienceRepository.findByDeletedFalse();
+        return list.stream().map(this::toResponse).collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public List<ExperienceResponse> findPublishedByRegionResponses(Long regionId) {
+        List<Experience> list = experienceRepository.findByRegionIdAndStatusAndDeletedFalse(
+                regionId, ExperienceStatus.published);
+        return list.stream().map(this::toResponse).collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public Page<ExperienceResponse> findAllPagedResponses(Pageable pageable) {
+        List<ExperienceResponse> all = findAllResponses();
+        List<ExperienceResponse> filtered = new java.util.ArrayList<>(all);
+        filtered.sort(sortResponsesFromPageable(pageable));
+        int total = filtered.size();
+        int start = (int) pageable.getOffset();
+        int end = Math.min(start + pageable.getPageSize(), total);
+        List<ExperienceResponse> pageContent = start >= total ? List.of() : filtered.subList(start, end);
+        return new org.springframework.data.domain.PageImpl<>(pageContent, pageable, total);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<ExperienceResponse> findPublishedPagedResponses(Pageable pageable) {
+        List<ExperienceResponse> all = findAllResponses();
+        List<ExperienceResponse> filtered = all.stream()
+                .filter(e -> "published".equalsIgnoreCase(e.getStatus()))
+                .collect(java.util.stream.Collectors.toCollection(java.util.ArrayList::new));
+        filtered.sort(sortResponsesFromPageable(pageable));
+        int total = filtered.size();
+        int start = (int) pageable.getOffset();
+        int end = Math.min(start + pageable.getPageSize(), total);
+        List<ExperienceResponse> pageContent = start >= total ? List.of() : filtered.subList(start, end);
+        return new org.springframework.data.domain.PageImpl<>(pageContent, pageable, total);
+    }
+
+    @Transactional(readOnly = true)
+    public ExperienceResponse findResponseById(Long id) {
+        return toResponse(findById(id));
+    }
+
+    @Transactional(readOnly = true)
+    public List<ExperienceResponse> getFavoriteExperiencesResponses(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResponseStatusException(BAD_REQUEST, "User not found"));
+        List<ExperienceResponse> list = experienceFavoriteRepository.findByUserId(user.getId()).stream()
+                .map(ExperienceFavorite::getExperience)
+                .filter(e -> !Boolean.TRUE.equals(e.getDeleted()))
+                .map(this::toResponse)
+                .collect(Collectors.toList());
+        return list;
+    }
+
+    private ExperienceResponse toResponse(Experience e) {
+        Hibernate.initialize(e.getCoverImages());
+        Hibernate.initialize(e.getDayPrograms());
+        Hibernate.initialize(e.getHost());
+        if (e.getRegion() != null) Hibernate.initialize(e.getRegion());
+
+        int realBookingsCount = (int) bookingRepository.countByExperienceId(e.getId());
+        int realFavoritesCount = (int) experienceFavoriteRepository.countByExperienceId(e.getId());
+        int realReviewsCount = (int) reviewRepository.countByExperienceId(e.getId());
+        double realAverageRating = reviewRepository.averageRatingByExperienceId(e.getId());
+
+        List<ExperienceResponse.ExperienceDayProgramDto> dayProgramDtos =
+                (e.getDayPrograms() == null ? List.<ExperienceDayProgram>of() : e.getDayPrograms())
+                        .stream()
+                        .map(dp -> new ExperienceResponse.ExperienceDayProgramDto(
+                                dp.getDayNumber(),
+                                dp.getTitle(),
+                                dp.getDescription(),
+                                dp.getImagesCsv() == null || dp.getImagesCsv().isBlank()
+                                        ? List.of()
+                                        : Arrays.stream(dp.getImagesCsv().split(","))
+                                                .filter(s -> s != null && !s.isBlank())
+                                                .collect(Collectors.toList())
+                        ))
+                        .collect(Collectors.toList());
+
+        return new ExperienceResponse(
+                e.getId(),
+                e.getHost() != null ? e.getHost().getId() : null,
+                e.getHost() != null ? e.getHost().getName() : null,
+                e.getTitle(),
+                e.getDescription(),
+                e.getPrice(),
+                e.getDuration(),
+                e.getCategory(),
+                e.getStatus() != null ? e.getStatus().name() : null,
+                e.getCity(),
+                e.getRegion() != null ? e.getRegion().getId() : null,
+                e.getRegion() != null && e.getRegion().getName() != null ? e.getRegion().getName().name() : null,
+                e.getLatitude(),
+                e.getLongitude(),
+                e.getCoverImages() != null ? e.getCoverImages() : List.of(),
+                dayProgramDtos,
+                realBookingsCount,
+                realFavoritesCount,
+                realReviewsCount,
+                realAverageRating,
+                e.getCreatedAt()
+        );
     }
 
     @Override
@@ -96,6 +211,32 @@ public class ExperienceService extends AbstractCrudService<Experience, Long> {
         int end = Math.min(start + pageable.getPageSize(), total);
         List<Experience> pageContent = start >= total ? List.of() : filtered.subList(start, end);
         return new org.springframework.data.domain.PageImpl<>(pageContent, pageable, total);
+    }
+
+    private java.util.Comparator<ExperienceResponse> sortResponsesFromPageable(Pageable pageable) {
+        if (pageable == null || pageable.getSort() == null || pageable.getSort().isUnsorted()) {
+            return (a, b) -> -java.util.Objects.compare(a.getCreatedAt(), b.getCreatedAt(), java.util.Comparator.nullsLast(java.util.Comparator.naturalOrder()));
+        }
+        java.util.Comparator<ExperienceResponse> cmp = null;
+        for (org.springframework.data.domain.Sort.Order order : pageable.getSort()) {
+            java.util.Comparator<ExperienceResponse> fieldCmp = switch (order.getProperty()) {
+                case "createdAt" ->
+                    (a, b) -> java.util.Objects.compare(a.getCreatedAt(), b.getCreatedAt(), java.util.Comparator.nullsLast(java.util.Comparator.naturalOrder()));
+                case "price" ->
+                    (a, b) -> java.util.Objects.compare(a.getPrice(), b.getPrice(), java.util.Comparator.nullsLast(java.util.Comparator.naturalOrder()));
+                case "duration", "durationDays" ->
+                    (a, b) -> java.util.Objects.compare(a.getDuration(), b.getDuration(), java.util.Comparator.nullsLast(java.util.Comparator.naturalOrder()));
+                case "title" ->
+                    (a, b) -> java.util.Objects.compare(a.getTitle(), b.getTitle(), java.util.Comparator.nullsFirst(java.util.Comparator.naturalOrder()));
+                case "city", "region" ->
+                    (a, b) -> java.util.Objects.compare(a.getCity(), b.getCity(), java.util.Comparator.nullsFirst(java.util.Comparator.naturalOrder()));
+                default ->
+                    (a, b) -> java.util.Objects.compare(a.getId(), b.getId(), java.util.Comparator.nullsLast(java.util.Comparator.naturalOrder()));
+            };
+            if (order.isDescending()) fieldCmp = fieldCmp.reversed();
+            cmp = cmp == null ? fieldCmp : cmp.thenComparing(fieldCmp);
+        }
+        return cmp;
     }
 
     private java.util.Comparator<Experience> sortFromPageable(Pageable pageable) {

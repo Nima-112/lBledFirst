@@ -20,10 +20,11 @@ public class FormationSummaryResponse {
     private String language;
     private BigDecimal price;
     private String coverImage;
-    private Integer totalDuration; // minutes, calculé
+    private Integer totalDuration; // minutes, calculé depuis capsules
     private Integer chaptersCount;
     private Integer capsulesCount;
-    private Integer studentsCount;
+    private Integer studentsCount; // nb de purchases réels
+    private Integer favoritesCount; // nb de favoris réels
     private Double averageRating;
     private Integer reviewsCount;
     private InstructorDto instructor;

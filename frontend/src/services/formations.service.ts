@@ -15,6 +15,7 @@ export type ApiFormationSummary = {
   chaptersCount: number;
   capsulesCount: number;
   studentsCount: number;
+  favoritesCount: number;
   averageRating: number;
   reviewsCount: number;
   createdAt?: string;
@@ -190,7 +191,10 @@ const summaryToFront = (s: ApiFormationSummary): Formation => ({
   price: Number(s.price),
   coverImage: s.coverImage,
   totalDuration: s.totalDuration,
+  chaptersCount: s.chaptersCount ?? 0,
+  capsulesCount: s.capsulesCount ?? 0,
   studentsCount: s.studentsCount,
+  favoritesCount: s.favoritesCount ?? 0,
   averageRating: s.averageRating,
   reviewsCount: s.reviewsCount,
   longDescription: "",
@@ -227,47 +231,65 @@ const detailToFront = (d: ApiFormationDetail): Formation => ({
   reviewed: d.reviewed,
 });
 
-const formationToPayload = (f: Formation): ApiFormationPayload => ({
-  slug: f.slug,
-  title: f.title,
-  shortDescription: f.shortDescription,
-  longDescription: f.longDescription,
-  category: f.category,
-  level: toApiLevel(f.level),
-  language: toApiLang(f.language),
-  price: Number(f.price),
-  coverImage: f.coverImage,
-  previewVideo: f.previewVideo ?? null,
-  studentsCount: f.studentsCount ?? 0,
-  averageRating: f.averageRating ?? 0,
-  reviewsCount: f.reviewsCount ?? 0,
-  objectives: f.objectives,
-  skills: f.skills,
-  prerequisites: f.prerequisites,
-  chapters: f.chapters.map((ch) => ({
-    id: typeof ch.id === "number" || /^\d+$/.test(String(ch.id)) ? Number(ch.id) : null,
-    order: ch.order,
-    title: ch.title,
-    capsules: ch.capsules.map((c) => ({
-      id: typeof c.id === "number" || /^\d+$/.test(String(c.id)) ? Number(c.id) : null,
-      order: c.order,
-      title: c.title,
-      description: c.description ?? null,
-      duration: Number(c.duration),
-      thumbnail: c.thumbnail ?? null,
-      videoUrl: c.videoUrl ?? null,
+const formationToPayload = (f: Formation): ApiFormationPayload => {
+  const parsedFormateurId = f.formateurId && String(f.formateurId).trim() !== ""
+    ? Number(f.formateurId)
+    : null;
+  return {
+    slug: f.slug,
+    title: f.title,
+    shortDescription: f.shortDescription,
+    longDescription: f.longDescription,
+    category: f.category,
+    level: toApiLevel(f.level),
+    language: toApiLang(f.language),
+    price: Number(f.price),
+    coverImage: f.coverImage,
+    previewVideo: f.previewVideo ?? null,
+    studentsCount: f.studentsCount ?? 0,
+    averageRating: f.averageRating ?? 0,
+    reviewsCount: f.reviewsCount ?? 0,
+    objectives: f.objectives,
+    skills: f.skills,
+    prerequisites: f.prerequisites,
+    chapters: f.chapters.map((ch) => ({
+      id: typeof ch.id === "number" || /^\d+$/.test(String(ch.id)) ? Number(ch.id) : null,
+      order: ch.order,
+      title: ch.title,
+      capsules: ch.capsules.map((c) => ({
+        id: typeof c.id === "number" || /^\d+$/.test(String(c.id)) ? Number(c.id) : null,
+        order: c.order,
+        title: c.title,
+        description: c.description ?? null,
+        duration: Number(c.duration),
+        thumbnail: c.thumbnail ?? null,
+        videoUrl: c.videoUrl ?? null,
+      })),
     })),
-  })),
-  formateurId: Number(f.formateurId),
-});
+    formateurId: parsedFormateurId,
+    instructor: f.instructor
+      ? {
+          name: f.instructor.name,
+          specialty: f.instructor.specialty ?? null,
+          experienceYears: f.instructor.experienceYears ?? 0,
+          bio: f.instructor.bio ?? null,
+          photo: f.instructor.photo ?? null,
+          totalFormations: f.instructor.totalFormations ?? 0,
+          averageRating: f.instructor.averageRating ?? 0,
+          studentsTrained: f.instructor.studentsTrained ?? 0,
+        }
+      : null,
+  };
+};
 
 export async function getFormationsList(): Promise<Formation[]> {
   const { data } = await api.get<ApiFormationSummary[]>("/formations");
   return data.map(summaryToFront);
 }
 
-export async function getFormationDetail(slug: string): Promise<Formation> {
-  const { data } = await api.get<ApiFormationDetail>(`/formations/${slug}`);
+export async function getFormationDetail(slug: string, opts?: { authenticated?: boolean }): Promise<Formation> {
+  const path = opts?.authenticated ? `/formations/${slug}/for-me` : `/formations/${slug}`;
+  const { data } = await api.get<ApiFormationDetail>(path);
   return detailToFront(data);
 }
 

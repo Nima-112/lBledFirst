@@ -12,6 +12,9 @@ import {
   RefreshCw,
   X,
   Heart,
+  Star,
+  Users,
+  CalendarDays,
 } from "lucide-react";
 import { Navbar } from "@/components/landing/Navbar";
 import { Footer } from "@/components/landing/Footer";
@@ -591,7 +594,7 @@ export function ExperienceCard({
             <MapPin className="h-4 w-4 text-primary" /> {exp.region}
           </span>
           <span className="inline-flex items-center gap-1.5">
-            <Clock className="h-4 w-4 text-primary" /> {exp.durationDays}
+            <CalendarDays className="h-4 w-4 text-primary" /> {exp.durationDays}
             {t("acts.dayShort")}
           </span>
         </div>
@@ -599,6 +602,28 @@ export function ExperienceCard({
         <h3 className="mt-4 font-display text-3xl font-bold leading-tight text-foreground">
           {exp.title}
         </h3>
+
+        <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px] text-muted-foreground">
+          <span className="inline-flex items-center gap-1.5 rounded-2xl border border-border/80 bg-muted/40 px-2.5 py-1.5 shadow-xs">
+            <Clock className="h-3.5 w-3.5" /> {exp.durationDays}
+            {t("acts.dayShort")}
+          </span>
+          <span className="inline-flex items-center gap-1.5 rounded-2xl border border-border/80 bg-muted/40 px-2.5 py-1.5 shadow-xs">
+            <Users className="h-3.5 w-3.5" /> {exp.bookingsCount ?? 0}
+          </span>
+          <span className="inline-flex items-center gap-1.5 rounded-2xl border border-border/80 bg-muted/40 px-2.5 py-1.5 shadow-xs">
+            <Heart className="h-3.5 w-3.5" /> {exp.favoritesCount ?? 0}
+          </span>
+          <span className="inline-flex items-center gap-1.5 rounded-2xl border border-border/80 bg-muted/40 px-2.5 py-1.5 shadow-xs">
+            <Star className="h-3.5 w-3.5 text-saffron" />
+            {(exp.averageRating ?? 0).toFixed(1)}
+            {exp.reviewsCount ? (
+              <span className="text-muted-foreground/70">
+                ({exp.reviewsCount})
+              </span>
+            ) : null}
+          </span>
+        </div>
 
         <p className="mt-4 line-clamp-3 flex-1 text-base leading-relaxed text-muted-foreground">
           {exp.description}

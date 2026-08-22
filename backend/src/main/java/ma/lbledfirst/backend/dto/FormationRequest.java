@@ -53,7 +53,10 @@ public class FormationRequest {
     @Valid
     private List<ChapterDto> chapters;
 
-    @NotNull(message = "Le formateur est obligatoire")
+    /**
+     * Facultatif : si renseigné, le formateur sera chargé depuis la table users (role=formateur).
+     * Si null, le backend utilisera le DTO {@link #instructor} pour créer l'instructeur embarqué.
+     */
     private Long formateurId;
 
     /** Legacy — rempli automatiquement depuis le profil formateur si formateurId est fourni */

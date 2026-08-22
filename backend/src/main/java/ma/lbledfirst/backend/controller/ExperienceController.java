@@ -3,6 +3,7 @@ package ma.lbledfirst.backend.controller;
 import java.util.List;
 
 import ma.lbledfirst.backend.domain.Experience;
+import ma.lbledfirst.backend.dto.ExperienceResponse;
 import ma.lbledfirst.backend.service.ExperienceService;
 
 import org.springframework.data.domain.Page;
@@ -35,12 +36,12 @@ public class ExperienceController {
     }
 
     @GetMapping
-    public List<Experience> findAll() {
-        return service.findAll();
+    public List<ExperienceResponse> findAll() {
+        return service.findAllResponses();
     }
 
     @GetMapping("/paged")
-    public Page<Experience> findAllPaged(
+    public Page<ExperienceResponse> findAllPaged(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "30") int size,
             @RequestParam(defaultValue = "createdAt") String sortBy,
@@ -49,17 +50,17 @@ public class ExperienceController {
                 ? Sort.by(sortBy).ascending()
                 : Sort.by(sortBy).descending();
         Pageable pageable = PageRequest.of(page, size, sort);
-        return service.findPublishedPaged(pageable);
+        return service.findPublishedPagedResponses(pageable);
     }
 
     @GetMapping("/{id}")
-    public Experience findById(@PathVariable Long id) {
-        return service.findById(id);
+    public ExperienceResponse findById(@PathVariable Long id) {
+        return service.findResponseById(id);
     }
 
     @GetMapping("/by-region/{regionId}")
-    public List<Experience> findByRegion(@PathVariable Long regionId) {
-        return service.findPublishedByRegion(regionId);
+    public List<ExperienceResponse> findByRegion(@PathVariable Long regionId) {
+        return service.findPublishedByRegionResponses(regionId);
     }
 
     @PreAuthorize("hasRole('ADMIN')")
@@ -95,7 +96,7 @@ public class ExperienceController {
     }
 
     @GetMapping("/me/favorites")
-    public List<Experience> getMyFavorites(Authentication authentication) {
-        return service.getFavoriteExperiences(authentication.getName());
+    public List<ExperienceResponse> getMyFavorites(Authentication authentication) {
+        return service.getFavoriteExperiencesResponses(authentication.getName());
     }
 }

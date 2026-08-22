@@ -16,14 +16,18 @@ export type ApiRegionRef = {
 
 export type ApiExperience = {
   id: number;
-  host: { id: number; name?: string };
+  hostId?: number;
+  hostName?: string | null;
+  host?: { id: number; name?: string };
   title: string;
   description: string;
   price: number;
   duration: number;
   category: string;
-  status: ExperienceStatus;
+  status: ExperienceStatus | string;
   city: string;
+  regionId?: number | null;
+  regionEnumName?: string | null;
   region?: ApiRegionRef | null;
   latitude?: number | null;
   longitude?: number | null;
@@ -33,7 +37,12 @@ export type ApiExperience = {
     title: string;
     description?: string | null;
     imagesCsv?: string | null;
+    images?: string[];
   }>;
+  bookingsCount?: number;
+  favoritesCount?: number;
+  reviewsCount?: number;
+  averageRating?: number;
   createdAt: string;
 };
 
@@ -73,31 +82,39 @@ export type FrontExperience = {
   status: ExperienceStatus;
   images: string[];
   program: DayProgram[];
+  bookingsCount: number;
+  favoritesCount: number;
+  reviewsCount: number;
+  averageRating: number;
   createdAt: string;
 };
 
 const toFront = (e: ApiExperience): FrontExperience => ({
   id: String(e.id),
-  hostId: String(e?.host?.id ?? 0),
-  hostName: e?.host?.name ?? "",
+  hostId: String(e.hostId ?? e?.host?.id ?? 0),
+  hostName: e.hostName ?? e?.host?.name ?? "",
   title: e?.title ?? "",
   description: e?.description ?? "",
   price: Number(e?.price ?? 0),
   durationDays: e?.duration ?? 1,
   region: e?.city ?? "",
-  regionId: e?.region ? String(e.region.id) : "",
-  regionName: e?.region?.name ?? "",
+  regionId: e.regionId != null ? String(e.regionId) : (e?.region ? String(e.region.id) : ""),
+  regionName: e.regionEnumName ?? e?.region?.name ?? "",
   category: e?.category ?? "",
   latitude: Number(e?.latitude ?? 0),
   longitude: Number(e?.longitude ?? 0),
-  status: e?.status ?? "published",
+  status: (e?.status as ExperienceStatus) ?? "published",
   images: e?.coverImages ?? [],
   program: (e?.dayPrograms ?? []).map((d) => ({
     day: d.dayNumber,
     title: d.title ?? "",
     description: d.description ?? "",
-    images: d.imagesCsv ? d.imagesCsv.split(",").filter(Boolean) : [],
+    images: d.images ?? (d.imagesCsv ? d.imagesCsv.split(",").filter(Boolean) : []),
   })),
+  bookingsCount: e.bookingsCount ?? 0,
+  favoritesCount: e.favoritesCount ?? 0,
+  reviewsCount: e.reviewsCount ?? 0,
+  averageRating: e.averageRating ?? 0,
   createdAt: e?.createdAt ?? new Date().toISOString(),
 });
 

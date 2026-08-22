@@ -23,8 +23,9 @@ public class FormationDetailResponse {
     private BigDecimal price;
     private String coverImage;
     private String previewVideo;
-    private Integer totalDuration; // minutes, calculé
-    private Integer studentsCount;
+    private Integer totalDuration; // minutes, calculé depuis capsules
+    private Integer studentsCount; // nb de purchases réels
+    private Integer favoritesCount; // nb de favoris réels
     private Double averageRating;
     private Integer reviewsCount;
     private List<String> objectives;

@@ -64,8 +64,9 @@ function FormationDetail() {
   const [checkoutTrigger, setCheckoutTrigger] = useState(false);
 
   const { data: f, isLoading } = useQuery({
-    queryKey: ["formations", slug],
-    queryFn: () => getFormationDetail(slug),
+    queryKey: ["formations", slug, user?.email ?? "guest"],
+    queryFn: () => getFormationDetail(slug, { authenticated: !!user }),
+    enabled: authReady,
     retry: false,
   });
   const ready = !isLoading;
@@ -131,6 +132,9 @@ function FormationDetail() {
       navigate({ to: "/auth" });
       return;
     }
+    if (user.role !== "tourist") {
+      return;
+    }
     toggleFavoriteMutation.mutate();
   };
 
@@ -165,6 +169,13 @@ function FormationDetail() {
     if (!user) {
       window.localStorage.setItem("lbf.auth.redirect", `/formations/${f.slug}?checkout=1`);
       navigate({ to: "/auth" });
+      return;
+    }
+    if (user.role === "admin") {
+      navigate({ to: "/admin" });
+      return;
+    }
+    if (user.role !== "tourist") {
       return;
     }
     setCheckoutOpen(true);
@@ -436,7 +447,7 @@ function FormationDetail() {
                                 >
                                   <div className="relative h-14 w-20 shrink-0 overflow-hidden rounded-lg bg-muted">
                                     <img
-                                      src={resolveUploadUrl(c.thumbnail) || c.thumbnail}
+                                      src={resolveUploadUrl(c.thumbnail)}
                                       alt=""
                                       className="h-full w-full object-cover"
                                       loading="lazy"
@@ -515,7 +526,7 @@ function FormationDetail() {
                 <SectionKicker small>Votre formateur</SectionKicker>
                 <div className="mt-4 flex items-center gap-4">
                   <img
-                    src={f.instructor.photo}
+                    src={resolveUploadUrl(f.instructor.photo)}
                     alt={f.instructor.name}
                     className="h-16 w-16 rounded-2xl object-cover ring-2 ring-primary/20"
                   />
