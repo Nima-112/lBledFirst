@@ -16,7 +16,7 @@ export function MeShell({ children, title }: { children: ReactNode; title: strin
   useEffect(() => {
     if (ready && (!user || user.role !== "tourist")) {
       setAuthRedirect(pathname);
-      navigate({ to: "/auth" });
+      navigate({ to: "/auth", search: { redirect: pathname } });
     }
   }, [ready, user, navigate, pathname]);
 

@@ -86,7 +86,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await authService.logout();
     } finally {
       setUserState(null);
-      window.location.href = "/auth";
+      const isDashboard = window.location.pathname.startsWith("/me") || window.location.pathname.startsWith("/admin");
+      window.location.href = isDashboard ? "/" : window.location.pathname + window.location.search;
     }
   }, []);
 

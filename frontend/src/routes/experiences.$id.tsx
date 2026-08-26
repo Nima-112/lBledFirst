@@ -154,7 +154,8 @@ function ExperienceDetail({ exp }: { exp: FrontExperience }) {
 
   const handleToggleFavorite = async () => {
     if (!user) {
-      navigate({ to: "/auth" });
+      setAuthRedirect(`/experiences/${exp.id}`);
+      navigate({ to: "/auth", search: { redirect: `/experiences/${exp.id}` } });
       return;
     }
     const expId = String(exp.id);
@@ -188,7 +189,7 @@ function ExperienceDetail({ exp }: { exp: FrontExperience }) {
   const openCheckout = () => {
     if (!user) {
       setAuthRedirect(`/experiences/${exp.id}?book=1`);
-      navigate({ to: "/auth" });
+      navigate({ to: "/auth", search: { redirect: `/experiences/${exp.id}?book=1` } });
       return;
     }
     setCheckoutOpen(true);

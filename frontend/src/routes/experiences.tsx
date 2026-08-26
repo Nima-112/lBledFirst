@@ -30,6 +30,7 @@ import {
 } from "@/services/experiences.service";
 import { getRegionsList, type FrontRegion } from "@/services/regions.service";
 import { useAuth } from "@/context/AuthContext";
+import { setAuthRedirect } from "@/lib/auth-redirect";
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
 
@@ -121,7 +122,8 @@ function ExperiencesPage() {
 
   const handleToggleFavorite = async (id: string) => {
     if (!user) {
-      navigate({ to: "/auth" });
+      setAuthRedirect(`/experiences`);
+      navigate({ to: "/auth", search: { redirect: `/experiences` } });
       return;
     }
     try {

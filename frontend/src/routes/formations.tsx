@@ -28,6 +28,7 @@ import { Navbar } from "@/components/landing/Navbar";
 import { Footer } from "@/components/landing/Footer";
 import { useI18n } from "@/lib/i18n";
 import { useAuth } from "@/context/AuthContext";
+import { setAuthRedirect } from "@/lib/auth-redirect";
 
 export const Route = createFileRoute("/formations")({
   head: () => ({
@@ -86,7 +87,8 @@ function FormationsPage() {
 
   const handleToggleFavorite = (slug: string) => {
     if (!user) {
-      navigate({ to: "/auth" });
+      setAuthRedirect(`/formations`);
+      navigate({ to: "/auth", search: { redirect: `/formations` } });
       return;
     }
     toggleFavoriteMutation.mutate(slug);

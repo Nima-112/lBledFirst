@@ -10,12 +10,24 @@ import { Combobox } from "@/components/ui/combobox";
 import { useLogin } from "@/hooks/useLogin";
 import { useSignup } from "@/hooks/useSignup";
 import { authService } from "@/services/auth.service";
-import { consumeAuthRedirect } from "@/lib/auth-redirect";
+import { consumeAuthRedirect, setAuthRedirect } from "@/lib/auth-redirect";
 import { API_ORIGIN } from "@/lib/api";
 import { COUNTRIES } from "@/lib/countries";
 import { NATIVE_LANGUAGES } from "@/lib/languages";
+import { useAuth } from "@/context/AuthContext";
+
+type AuthSearch = {
+  redirect?: string;
+  verified?: string;
+  error?: string;
+};
 
 export const Route = createFileRoute("/auth")({
+  validateSearch: (search: Record<string, unknown>): AuthSearch => ({
+    redirect: typeof search.redirect === "string" ? search.redirect : undefined,
+    verified: typeof search.verified === "string" ? search.verified : undefined,
+    error: typeof search.error === "string" ? search.error : undefined,
+  }),
   head: () => ({
     meta: [
       { title: "Se connecter - L'Bled First" },
@@ -85,6 +97,19 @@ function AuthScreen() {
   const c = COPY;
   const { login, loading: loginLoading, error: loginError } = useLogin();
   const { signup, loading: signupLoading, error: signupError } = useSignup();
+  const { user, ready: authReady } = useAuth();
+  const [initialCheckDone, setInitialCheckDone] = useState(false);
+
+  useEffect(() => {
+    if (authReady && !initialCheckDone) {
+      setInitialCheckDone(true);
+      if (user) {
+        const pendingRedirect = consumeAuthRedirect();
+        const target = user.role === "admin" ? "/admin" : pendingRedirect ?? "/me/bookings";
+        window.location.replace(target);
+      }
+    }
+  }, [authReady, user, initialCheckDone]);
 
   const [mode, setMode] = useState<"login" | "signup">("login");
   const [showPassword, setShowPassword] = useState(false);
@@ -111,11 +136,19 @@ function AuthScreen() {
     try {
       const params = new URLSearchParams(window.location.search);
       const errorParam = params.get("error");
+      const verifiedParam = params.get("verified");
+      const redirectParam = params.get("redirect");
+
+      if (redirectParam) {
+        setAuthRedirect(redirectParam);
+      } else if (!verifiedParam && !errorParam) {
+        window.localStorage.removeItem("lbf.auth.redirect");
+      }
+
       if (errorParam === "google") {
         setGoogleFailed(true);
         setClientError("La connexion avec Google a échoué. Réessayez ou utilisez votre email.");
       }
-      const verifiedParam = params.get("verified");
       if (verifiedParam === "1") {
         setVerifiedMessage({
           ok: true,

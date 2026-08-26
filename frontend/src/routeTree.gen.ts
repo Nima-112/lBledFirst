@@ -30,6 +30,7 @@ import { Route as ExperiencesIdRouteImport } from './routes/experiences.$id'
 import { Route as FormationsSlugRouteImport } from './routes/formations.$slug'
 import { Route as MeIndexRouteImport } from './routes/me.index'
 import { Route as MeBookingsRouteImport } from './routes/me.bookings'
+import { Route as MeFavoritesRouteImport } from './routes/me.favorites'
 import { Route as MeFormationsRouteImport } from './routes/me.formations'
 import { Route as MeProfileRouteImport } from './routes/me.profile'
 import { Route as MeReviewsRouteImport } from './routes/me.reviews'
@@ -139,6 +140,11 @@ const MeBookingsRoute = MeBookingsRouteImport.update({
   path: '/me/bookings',
   getParentRoute: () => rootRouteImport,
 } as any)
+const MeFavoritesRoute = MeFavoritesRouteImport.update({
+  id: '/me/favorites',
+  path: '/me/favorites',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const MeFormationsRoute = MeFormationsRouteImport.update({
   id: '/me/formations',
   path: '/me/formations',
@@ -175,6 +181,7 @@ export interface FileRoutesByFullPath {
   '/experiences/$id': typeof ExperiencesIdRoute
   '/formations/$slug': typeof FormationsSlugRoute
   '/me/bookings': typeof MeBookingsRoute
+  '/me/favorites': typeof MeFavoritesRoute
   '/me/formations': typeof MeFormationsRoute
   '/me/profile': typeof MeProfileRoute
   '/me/reviews': typeof MeReviewsRoute
@@ -200,6 +207,7 @@ export interface FileRoutesByTo {
   '/experiences/$id': typeof ExperiencesIdRoute
   '/formations/$slug': typeof FormationsSlugRoute
   '/me/bookings': typeof MeBookingsRoute
+  '/me/favorites': typeof MeFavoritesRoute
   '/me/formations': typeof MeFormationsRoute
   '/me/profile': typeof MeProfileRoute
   '/me/reviews': typeof MeReviewsRoute
@@ -227,6 +235,7 @@ export interface FileRoutesById {
   '/experiences/$id': typeof ExperiencesIdRoute
   '/formations/$slug': typeof FormationsSlugRoute
   '/me/bookings': typeof MeBookingsRoute
+  '/me/favorites': typeof MeFavoritesRoute
   '/me/formations': typeof MeFormationsRoute
   '/me/profile': typeof MeProfileRoute
   '/me/reviews': typeof MeReviewsRoute
@@ -255,6 +264,7 @@ export interface FileRouteTypes {
     | '/experiences/$id'
     | '/formations/$slug'
     | '/me/bookings'
+    | '/me/favorites'
     | '/me/formations'
     | '/me/profile'
     | '/me/reviews'
@@ -280,6 +290,7 @@ export interface FileRouteTypes {
     | '/experiences/$id'
     | '/formations/$slug'
     | '/me/bookings'
+    | '/me/favorites'
     | '/me/formations'
     | '/me/profile'
     | '/me/reviews'
@@ -306,6 +317,7 @@ export interface FileRouteTypes {
     | '/experiences/$id'
     | '/formations/$slug'
     | '/me/bookings'
+    | '/me/favorites'
     | '/me/formations'
     | '/me/profile'
     | '/me/reviews'
@@ -323,6 +335,7 @@ export interface RootRouteChildren {
   ResetPasswordRoute: typeof ResetPasswordRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   MeBookingsRoute: typeof MeBookingsRoute
+  MeFavoritesRoute: typeof MeFavoritesRoute
   MeFormationsRoute: typeof MeFormationsRoute
   MeProfileRoute: typeof MeProfileRoute
   MeReviewsRoute: typeof MeReviewsRoute
@@ -478,6 +491,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MeBookingsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/me/favorites': {
+      id: '/me/favorites'
+      path: '/me/favorites'
+      fullPath: '/me/favorites'
+      preLoaderRoute: typeof MeFavoritesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/me/formations': {
       id: '/me/formations'
       path: '/me/formations'
@@ -562,6 +582,7 @@ const rootRouteChildren: RootRouteChildren = {
   ResetPasswordRoute: ResetPasswordRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   MeBookingsRoute: MeBookingsRoute,
+  MeFavoritesRoute: MeFavoritesRoute,
   MeFormationsRoute: MeFormationsRoute,
   MeProfileRoute: MeProfileRoute,
   MeReviewsRoute: MeReviewsRoute,

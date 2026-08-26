@@ -144,13 +144,40 @@ export function BookingCheckoutModal({
 
   const validate = () => {
     const next: Record<string, string> = {};
-    if (!traveler.firstName.trim()) next.firstName = "First name is required.";
-    if (!traveler.lastName.trim()) next.lastName = "Last name is required.";
-    if (!traveler.email.trim()) next.email = "Email is required.";
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(traveler.email)) next.email = "Invalid email.";
-    if (!traveler.phone.trim()) next.phone = "Phone is required.";
+    if (!traveler.firstName.trim()) {
+      next.firstName = "First name is required.";
+    } else if (traveler.firstName.trim().length > 50) {
+      next.firstName = "First name must be 50 characters or less.";
+    }
+
+    if (!traveler.lastName.trim()) {
+      next.lastName = "Last name is required.";
+    } else if (traveler.lastName.trim().length > 50) {
+      next.lastName = "Last name must be 50 characters or less.";
+    }
+
+    if (!traveler.email.trim()) {
+      next.email = "Email is required.";
+    } else if (traveler.email.trim().length > 100) {
+      next.email = "Email must be 100 characters or less.";
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(traveler.email)) {
+      next.email = "Invalid email.";
+    }
+
+    if (!traveler.phone.trim()) {
+      next.phone = "Phone is required.";
+    } else if (!/^\+?[0-9\s\-()]{7,20}$/.test(traveler.phone.trim())) {
+      next.phone = "Invalid phone format (7 to 20 digits).";
+    }
+
     if (!traveler.country.trim()) next.country = "Country is required.";
-    if (!traveler.city.trim()) next.city = "City is required.";
+
+    if (!traveler.city.trim()) {
+      next.city = "City is required.";
+    } else if (traveler.city.trim().length > 50) {
+      next.city = "City must be 50 characters or less.";
+    }
+
     setFieldErrors(next);
     return Object.keys(next).length === 0;
   };
@@ -267,6 +294,7 @@ export function BookingCheckoutModal({
                           className={inputCls}
                           placeholder="First name"
                           value={traveler.firstName}
+                          maxLength={50}
                           onChange={(e) => setTraveler({ ...traveler, firstName: e.target.value })}
                         />
                       </div>
@@ -279,6 +307,7 @@ export function BookingCheckoutModal({
                           className={inputCls}
                           placeholder="Last name"
                           value={traveler.lastName}
+                          maxLength={50}
                           onChange={(e) => setTraveler({ ...traveler, lastName: e.target.value })}
                         />
                       </div>
@@ -294,6 +323,7 @@ export function BookingCheckoutModal({
                         className={inputCls}
                         placeholder="Email"
                         value={traveler.email}
+                        maxLength={100}
                         onChange={(e) => setTraveler({ ...traveler, email: e.target.value })}
                       />
                     </div>
@@ -307,6 +337,7 @@ export function BookingCheckoutModal({
                         className={inputCls}
                         placeholder="Phone (e.g. +212 6XX XXX XXX)"
                         value={traveler.phone}
+                        maxLength={20}
                         onChange={(e) => setTraveler({ ...traveler, phone: e.target.value })}
                       />
                     </div>
@@ -331,6 +362,7 @@ export function BookingCheckoutModal({
                           className={inputCls}
                           placeholder="City"
                           value={traveler.city}
+                          maxLength={50}
                           onChange={(e) => setTraveler({ ...traveler, city: e.target.value })}
                         />
                       </div>

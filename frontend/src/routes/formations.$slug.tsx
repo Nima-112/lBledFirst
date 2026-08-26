@@ -129,7 +129,8 @@ function FormationDetail() {
 
   const handleToggleFavorite = () => {
     if (!user) {
-      navigate({ to: "/auth" });
+      window.localStorage.setItem("lbf.auth.redirect", `/formations/${slug}`);
+      navigate({ to: "/auth", search: { redirect: `/formations/${slug}` } });
       return;
     }
     if (user.role !== "tourist") {
@@ -168,7 +169,7 @@ function FormationDetail() {
     if (!f || !authReady) return;
     if (!user) {
       window.localStorage.setItem("lbf.auth.redirect", `/formations/${f.slug}?checkout=1`);
-      navigate({ to: "/auth" });
+      navigate({ to: "/auth", search: { redirect: `/formations/${f.slug}?checkout=1` } });
       return;
     }
     if (user.role === "admin") {
@@ -793,6 +794,7 @@ function CertificateModal({
   onClose: () => void;
   formation: Formation;
 }) {
+  const { user } = useAuth();
   const code = useMemo(
     () =>
       `LBF-${formation.slug.slice(0, 4).toUpperCase()}-${Date.now().toString(36).slice(-6).toUpperCase()}`,
@@ -848,10 +850,7 @@ function CertificateModal({
 
               <p className="text-sm text-muted-foreground">Ce certificat est décerné à</p>
               <p className="mt-1 font-display text-3xl font-extrabold text-foreground">
-                {typeof window !== "undefined"
-                  ? (JSON.parse(window.localStorage.getItem("lbf.v2.session") ?? "null")?.name ??
-                    "Étudiant L'Bled First")
-                  : "Étudiant L'Bled First"}
+                {user?.name ?? "Étudiant L'Bled First"}
               </p>
               <p className="mt-4 text-sm text-muted-foreground">
                 pour avoir complété avec succès la formation
@@ -1026,15 +1025,18 @@ function FormationReviews({
                   disabled={!canSubmit || rating === 0 || submitMutation.isPending}
                   className="inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-bold text-primary-foreground shadow-warm transition hover:scale-105 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:scale-100"
                 >
-                  {submitMutation.isPending ? "Envoi…" : "Publier mon avis"}
+                  <span>{submitMutation.isPending ? "Envoi…" : "Publier mon avis"}</span>
                 </button>
               ) : (
                 <button
                   type="button"
-                  onClick={() => navigate({ to: "/auth" })}
+                  onClick={() => {
+                    window.localStorage.setItem("lbf.auth.redirect", `/formations/${formation.slug}`);
+                    navigate({ to: "/auth", search: { redirect: `/formations/${formation.slug}` } });
+                  }}
                   className="inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-bold text-primary-foreground shadow-warm transition hover:scale-105"
                 >
-                  Se connecter
+                  <span>Se connecter</span>
                 </button>
               )}
             </div>
