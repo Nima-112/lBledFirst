@@ -19,7 +19,16 @@ services:
         aliases:
           - db
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p${MYSQL_ROOT_PASSWORD}"]
+      test:
+        [
+          "CMD",
+          "mysqladmin",
+          "ping",
+          "-h",
+          "localhost",
+          "-uroot",
+          "-p${MYSQL_ROOT_PASSWORD}",
+        ]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -56,6 +65,10 @@ services:
       BACKEND_BASE_URL: ${BACKEND_BASE_URL}
       ADMIN_EMAIL: ${ADMIN_EMAIL}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      OPENAI_MODEL_TRANSCRIPTION: ${OPENAI_MODEL_TRANSCRIPTION:-whisper-1}
+      OPENAI_WHISPER_LANGUAGE: ${OPENAI_WHISPER_LANGUAGE:-ar}
+      OPENAI_MODEL_TRANSLATION: ${OPENAI_MODEL_TRANSLATION:-gpt-4o-mini}
     ports:
       - "8080:8080"
     volumes:
