@@ -148,8 +148,22 @@ public class TranscriptionService {
 
         log.info("Envoi de l'audio à Whisper : {} (langue forcée : {})", fileName, languageHint);
         HttpResponse<String> response = null;
+        IOException lastNetworkError = null;
         for (int attempt = 1; attempt <= MAX_RETRIES; attempt++) {
-            response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            try {
+                response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+                lastNetworkError = null;
+            } catch (IOException e) {
+                lastNetworkError = e;
+                if (attempt == MAX_RETRIES) {
+                    throw e;
+                }
+                long backoffMs = 1500L * attempt * attempt;
+                log.warn("Erreur réseau Whisper ({}) (tentative {}/{}), nouvelle tentative dans {} ms",
+                        e.getMessage(), attempt, MAX_RETRIES, backoffMs);
+                Thread.sleep(backoffMs);
+                continue;
+            }
             if (response.statusCode() == 200)
                 break;
             boolean retryable = response.statusCode() == 429 || response.statusCode() >= 500;
@@ -161,7 +175,7 @@ public class TranscriptionService {
             Thread.sleep(backoffMs);
         }
 
-        if (response.statusCode() != 200) {
+        if (response == null || response.statusCode() != 200) {
             log.error("Whisper a échoué ({}): {}", response.statusCode(), response.body());
             throw new RuntimeException("Whisper API error " + response.statusCode() + ": " + response.body());
         }

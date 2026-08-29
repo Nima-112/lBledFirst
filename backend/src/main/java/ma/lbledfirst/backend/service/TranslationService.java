@@ -53,7 +53,18 @@ public class TranslationService {
     private HttpResponse<String> sendWithRetry(HttpRequest request) throws IOException, InterruptedException {
         HttpResponse<String> response = null;
         for (int attempt = 1; attempt <= MAX_RETRIES; attempt++) {
-            response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            try {
+                response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            } catch (IOException e) {
+                if (attempt == MAX_RETRIES) {
+                    throw e;
+                }
+                long backoffMs = 1500L * attempt * attempt;
+                log.warn("Erreur réseau OpenAI ({}) (tentative {}/{}), nouvelle tentative dans {} ms",
+                        e.getMessage(), attempt, MAX_RETRIES, backoffMs);
+                Thread.sleep(backoffMs);
+                continue;
+            }
             if (response.statusCode() == 200)
                 return response;
             boolean retryable = response.statusCode() == 429 || response.statusCode() >= 500;
@@ -142,7 +153,8 @@ public class TranslationService {
                         Map.of("role", "system", "content", systemPrompt),
                         Map.of("role", "user", "content", userContent)
                 },
-                "temperature", 0.3));
+                "temperature", 0.3,
+                "max_tokens", 4096));
 
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(CHAT_URL))
@@ -181,7 +193,7 @@ public class TranslationService {
         return translated;
     }
 
-    private static final int SAFE_BATCH_SIZE = 20;
+    private static final int SAFE_BATCH_SIZE = 12;
 
     /**
      * A valid translation must contain at least one real letter — catches GPT

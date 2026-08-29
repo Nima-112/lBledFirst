@@ -3,6 +3,7 @@ services:
     image: mysql:8.0
     container_name: lbledfirst-mysql
     restart: unless-stopped
+    command: --sort_buffer_size=4M --max_allowed_packet=128M
     env_file:
       - .env
     environment:

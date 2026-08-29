@@ -9,6 +9,10 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.core.task.TaskExecutor;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -34,14 +38,18 @@ public class CapsuleProcessingService {
     @Value("${openai.api-key:}")
     private String openAiApiKey;
 
+    private final TaskExecutor translationExecutor;
+
     public CapsuleProcessingService(CapsuleRepository capsuleRepository,
             AudioExtractionService audioExtractionService,
             TranscriptionService transcriptionService,
-            TranslationService translationService) {
+            TranslationService translationService,
+            @Qualifier("translationExecutor") TaskExecutor translationExecutor) {
         this.capsuleRepository = capsuleRepository;
         this.audioExtractionService = audioExtractionService;
         this.transcriptionService = transcriptionService;
         this.translationService = translationService;
+        this.translationExecutor = translationExecutor;
     }
 
     @Async("capsuleProcessingExecutor")
@@ -154,13 +162,32 @@ public class CapsuleProcessingService {
         Map<String, Object> captions = new LinkedHashMap<>();
         captions.put("original", toSegmentMaps(allSegments, originalTexts));
 
+        Map<String, List<String>> translationsByCode = new ConcurrentHashMap<>();
+        List<CompletableFuture<Void>> futures = new ArrayList<>();
+
         for (var entry : TranslationService.TARGET_LANGUAGES.entrySet()) {
             String code = entry.getKey();
             String name = entry.getValue();
-            List<String> translatedTexts = name.equalsIgnoreCase(detectedLanguage)
-                    ? originalTexts
-                    : translationService.translateBatchSafe(originalTexts, name);
-            captions.put(code, toSegmentMaps(allSegments, translatedTexts));
+            if (name.equalsIgnoreCase(detectedLanguage)) {
+                translationsByCode.put(code, originalTexts);
+                continue;
+            }
+            futures.add(CompletableFuture.runAsync(() -> {
+                try {
+                    List<String> translatedTexts = translationService.translateBatchSafe(originalTexts, name);
+                    translationsByCode.put(code, translatedTexts);
+                } catch (Exception e) {
+                    log.error("Échec de la traduction vers {} pour la capsule {}", name, capsuleId, e);
+                    // On garde le texte original plutôt que de faire échouer toute la capsule
+                    translationsByCode.put(code, originalTexts);
+                }
+            }, translationExecutor));
+        }
+
+        CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
+
+        for (String code : TranslationService.TARGET_LANGUAGES.keySet()) {
+            captions.put(code, toSegmentMaps(allSegments, translationsByCode.get(code)));
         }
 
         String transcriptResult = transcript;

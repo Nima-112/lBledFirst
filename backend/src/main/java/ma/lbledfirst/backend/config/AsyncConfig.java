@@ -23,6 +23,16 @@ public class AsyncConfig implements AsyncConfigurer {
         return executor;
     }
 
+    @Bean(name = "translationExecutor")
+    public ThreadPoolTaskExecutor translationExecutor() {
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+        executor.setCorePoolSize(8);
+        executor.setMaxPoolSize(8);
+        executor.setQueueCapacity(50);
+        executor.setThreadNamePrefix("translation-");
+        executor.initialize();
+        return executor;
+    }
     @Override
     public Executor getAsyncExecutor() {
         return capsuleProcessingExecutor();

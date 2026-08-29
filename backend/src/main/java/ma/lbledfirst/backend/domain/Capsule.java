@@ -1,6 +1,10 @@
 package ma.lbledfirst.backend.domain;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+
+import jakarta.persistence.Basic;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.Basic;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -40,12 +44,13 @@ public class Capsule {
     // ayant acheté la formation (cf. FormationService)
     private String videoUrl;
 
+    @Basic(fetch = FetchType.LAZY)
     @Column(columnDefinition = "TEXT")
     private String transcript;
 
+    @Basic(fetch = FetchType.LAZY)
     @Column(name = "translation_json", columnDefinition = "json")
     private String translationJson; // stored as raw JSON string, parsed/built via Jackson in the service
-
     @Column(name = "original_language", length = 10)
     private String originalLanguage;
 
