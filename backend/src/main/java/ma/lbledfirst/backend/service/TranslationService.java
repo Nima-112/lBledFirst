@@ -22,7 +22,13 @@ import java.util.List;
 public class TranslationService {
 
     private static final Logger log = LoggerFactory.getLogger(TranslationService.class);
-    private static final String CHAT_URL = "https://api.openai.com/v1/chat/completions";
+
+    @Value("${openai.base-url:https://api.groq.com/openai/v1}")
+    private String baseUrl;
+
+    private String getChatUrl() {
+        return (baseUrl.endsWith("/") ? baseUrl.substring(0, baseUrl.length() - 1) : baseUrl) + "/chat/completions";
+    }
 
     // code -> full name Whisper/GPT understands unambiguously
     public static final Map<String, String> TARGET_LANGUAGES = new LinkedHashMap<>();
@@ -77,7 +83,6 @@ public class TranslationService {
         }
         return response;
     }
-
     /**
      * Translates originalText into every target language except the original one.
      * Returns a map of languageCode -> translatedText.
@@ -115,7 +120,7 @@ public class TranslationService {
                 "temperature", 0.3));
 
         HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(CHAT_URL))
+                .uri(URI.create(getChatUrl()))
                 .header("Authorization", "Bearer " + apiKey)
                 .header("Content-Type", "application/json")
                 .timeout(java.time.Duration.ofMinutes(10))
@@ -157,7 +162,7 @@ public class TranslationService {
                 "max_tokens", 4096));
 
         HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(CHAT_URL))
+                .uri(URI.create(getChatUrl()))
                 .header("Authorization", "Bearer " + apiKey)
                 .header("Content-Type", "application/json")
                 .timeout(java.time.Duration.ofMinutes(10))

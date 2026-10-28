@@ -267,18 +267,22 @@ const formationToPayload = (f: Formation): ApiFormationPayload => {
       })),
     })),
     formateurId: parsedFormateurId,
-    instructor: f.instructor
-      ? {
-          name: f.instructor.name,
-          specialty: f.instructor.specialty ?? null,
-          experienceYears: f.instructor.experienceYears ?? 0,
-          bio: f.instructor.bio ?? null,
-          photo: f.instructor.photo ?? null,
-          totalFormations: f.instructor.totalFormations ?? 0,
-          averageRating: f.instructor.averageRating ?? 0,
-          studentsTrained: f.instructor.studentsTrained ?? 0,
-        }
-      : null,
+    // Only send the instructor sub-object when a name is explicitly filled.
+    // If a formateurId is selected, the backend resolves the instructor profile
+    // from the linked User — sending an empty name would fail @NotBlank validation.
+    instructor:
+      f.instructor?.name?.trim()
+        ? {
+            name: f.instructor.name,
+            specialty: f.instructor.specialty ?? null,
+            experienceYears: f.instructor.experienceYears ?? 0,
+            bio: f.instructor.bio ?? null,
+            photo: f.instructor.photo ?? null,
+            totalFormations: f.instructor.totalFormations ?? 0,
+            averageRating: f.instructor.averageRating ?? 0,
+            studentsTrained: f.instructor.studentsTrained ?? 0,
+          }
+        : null,
   };
 };
 

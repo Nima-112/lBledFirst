@@ -86,7 +86,8 @@ app:
     base-url: ${BACKEND_BASE_URL:http://localhost:8080}
 
 openai:
+  base-url: ${OPENAI_BASE_URL:https://api.groq.com/openai/v1}
   api-key: ${OPENAI_API_KEY:}
-  model-transcription: whisper-1
-  model-translation: gpt-4o-mini
+  model-transcription: ${OPENAI_MODEL_TRANSCRIPTION:whisper-large-v3}
+  model-translation: ${OPENAI_MODEL_TRANSLATION:openai/gpt-oss-120b}
   # whisper-language: ar

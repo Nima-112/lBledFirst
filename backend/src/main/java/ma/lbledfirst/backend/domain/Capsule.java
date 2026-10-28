@@ -44,10 +44,12 @@ public class Capsule {
     // ayant acheté la formation (cf. FormationService)
     private String videoUrl;
 
+    @JsonIgnore
     @Basic(fetch = FetchType.LAZY)
     @Column(columnDefinition = "TEXT")
     private String transcript;
 
+    @JsonIgnore
     @Basic(fetch = FetchType.LAZY)
     @Column(name = "translation_json", columnDefinition = "json")
     private String translationJson; // stored as raw JSON string, parsed/built via Jackson in the service

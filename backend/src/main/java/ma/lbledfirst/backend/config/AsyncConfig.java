@@ -16,7 +16,7 @@ public class AsyncConfig implements AsyncConfigurer {
     public ThreadPoolTaskExecutor capsuleProcessingExecutor() {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
         executor.setCorePoolSize(2);
-        executor.setMaxPoolSize(4);
+        executor.setMaxPoolSize(2);
         executor.setQueueCapacity(50);
         executor.setThreadNamePrefix("capsule-ai-");
         executor.initialize();
@@ -26,13 +26,14 @@ public class AsyncConfig implements AsyncConfigurer {
     @Bean(name = "translationExecutor")
     public ThreadPoolTaskExecutor translationExecutor() {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
-        executor.setCorePoolSize(8);
-        executor.setMaxPoolSize(8);
+        executor.setCorePoolSize(6);
+        executor.setMaxPoolSize(6);
         executor.setQueueCapacity(50);
         executor.setThreadNamePrefix("translation-");
         executor.initialize();
         return executor;
     }
+
     @Override
     public Executor getAsyncExecutor() {
         return capsuleProcessingExecutor();

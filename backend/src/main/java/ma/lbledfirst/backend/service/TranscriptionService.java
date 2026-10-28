@@ -22,7 +22,13 @@ import java.util.UUID;
 public class TranscriptionService {
 
     private static final Logger log = LoggerFactory.getLogger(TranscriptionService.class);
-    private static final String WHISPER_URL = "https://api.openai.com/v1/audio/transcriptions";
+
+    @Value("${openai.base-url:https://api.groq.com/openai/v1}")
+    private String baseUrl;
+
+    private String getWhisperUrl() {
+        return (baseUrl.endsWith("/") ? baseUrl.substring(0, baseUrl.length() - 1) : baseUrl) + "/audio/transcriptions";
+    }
 
     // Whisper's own recommended heuristics (from OpenAI's reference decoder) for
     // flagging a segment as hallucinated/non-speech rather than real transcription.
@@ -109,7 +115,7 @@ public class TranscriptionService {
         return transcribeWithTimestamps(audioFilePath, null);
     }
 
-    private static final int MAX_RETRIES = 3;
+    private static final int MAX_RETRIES = 5;
 
     /**
      * @param continuationPrompt the tail of the previous chunk's transcript (if
@@ -121,6 +127,8 @@ public class TranscriptionService {
      *                           at
      *                           the 10-minute seams.
      */
+    private final java.util.concurrent.Semaphore whisperSemaphore = new java.util.concurrent.Semaphore(1);
+
     public TranscriptionResult transcribeWithTimestamps(String audioFilePath, String continuationPrompt)
             throws IOException, InterruptedException {
         if (apiKey == null || apiKey.isBlank()) {
@@ -139,7 +147,7 @@ public class TranscriptionService {
         var multipartBody = buildMultipartBody(boundary, fileName, audioBytes, model, effectivePrompt);
 
         HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(WHISPER_URL))
+                .uri(URI.create(getWhisperUrl()))
                 .header("Authorization", "Bearer " + apiKey)
                 .header("Content-Type", "multipart/form-data; boundary=" + boundary)
                 .timeout(java.time.Duration.ofMinutes(10))
@@ -147,37 +155,52 @@ public class TranscriptionService {
                 .build();
 
         log.info("Envoi de l'audio à Whisper : {} (langue forcée : {})", fileName, languageHint);
+
         HttpResponse<String> response = null;
-        IOException lastNetworkError = null;
-        for (int attempt = 1; attempt <= MAX_RETRIES; attempt++) {
-            try {
-                response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-                lastNetworkError = null;
-            } catch (IOException e) {
-                lastNetworkError = e;
-                if (attempt == MAX_RETRIES) {
-                    throw e;
+        whisperSemaphore.acquire();
+        try {
+            for (int attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+                try {
+                    response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+                } catch (IOException e) {
+                    if (attempt == MAX_RETRIES) {
+                        throw e;
+                    }
+                    long backoffMs = 2000L * attempt * attempt;
+                    log.warn("Erreur réseau Whisper ({}) (tentative {}/{}), nouvelle tentative dans {} ms",
+                            e.getMessage(), attempt, MAX_RETRIES, backoffMs);
+                    Thread.sleep(backoffMs);
+                    continue;
                 }
-                long backoffMs = 1500L * attempt * attempt;
-                log.warn("Erreur réseau Whisper ({}) (tentative {}/{}), nouvelle tentative dans {} ms",
-                        e.getMessage(), attempt, MAX_RETRIES, backoffMs);
+
+                if (response.statusCode() == 200) {
+                    break;
+                }
+
+                boolean transientOpenAiError = response.statusCode() == 429
+                        || response.statusCode() >= 500
+                        || (response.statusCode() == 400
+                            && response.body() != null
+                            && response.body().contains("something went wrong reading your request"));
+
+                if (!transientOpenAiError || attempt == MAX_RETRIES) {
+                    break;
+                }
+
+                long backoffMs = 2000L * attempt * attempt;
+                log.warn("Whisper a répondu {} (tentative {}/{}), nouvelle tentative dans {} ms",
+                        response.statusCode(), attempt, MAX_RETRIES, backoffMs);
                 Thread.sleep(backoffMs);
-                continue;
             }
-            if (response.statusCode() == 200)
-                break;
-            boolean retryable = response.statusCode() == 429 || response.statusCode() >= 500;
-            if (!retryable || attempt == MAX_RETRIES)
-                break;
-            long backoffMs = 1500L * attempt * attempt;
-            log.warn("Whisper a répondu {} (tentative {}/{}), nouvelle tentative dans {} ms",
-                    response.statusCode(), attempt, MAX_RETRIES, backoffMs);
-            Thread.sleep(backoffMs);
+        } finally {
+            whisperSemaphore.release();
         }
 
         if (response == null || response.statusCode() != 200) {
-            log.error("Whisper a échoué ({}): {}", response.statusCode(), response.body());
-            throw new RuntimeException("Whisper API error " + response.statusCode() + ": " + response.body());
+            String status = response == null ? "aucune réponse (erreur réseau)" : String.valueOf(response.statusCode());
+            String body = response == null ? "" : response.body();
+            log.error("Whisper a échoué ({}): {}", status, body);
+            throw new RuntimeException("Whisper API error " + status + ": " + body);
         }
 
         JsonNode root = objectMapper.readTree(response.body());
@@ -224,7 +247,6 @@ public class TranscriptionService {
                 segments.size(), droppedCount, language);
         return new TranscriptionResult(text, language, segments);
     }
-
     private byte[] buildMultipartBody(String boundary, String fileName, byte[] fileBytes, String model,
             String continuationPrompt) throws IOException {
         var out = new java.io.ByteArrayOutputStream();
