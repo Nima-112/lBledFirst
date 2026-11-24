@@ -127,8 +127,17 @@ npm run build
 
 ## Development approach and contributions
 
-Work is organized into small tasks with clear ownership, clean Git commits and review before integration. AI-assisted suggestions must be understood, adapted to project conventions and tested before delivery.
+This project was developed collaboratively by a team of four developers, using Git for version control and task-based collaboration. AI-assisted code was reviewed, understood and tested before integration.
 
-This is a **collaborative project**. [Anass Hadioui](https://github.com/AnassHadioui) contributed to backend development, API/security and AI integration. His contributions can be reviewed in the [repository commit history](https://github.com/Nima-112/lBledFirst/commits/ai-integration/?author=AnassHadioui).
+### Team contributions
 
-This README describes code visible in the `ai-integration` branch; it does not imply every external integration or end-to-end test currently passes.
+| Team member | Main responsibilities |
+|---|---|
+| **[Anass Hadioui](https://github.com/AnassHadioui)** | Backend development, REST API testing and security, AI transcription and translation pipeline integration. |
+| **Naima Chou** | Frontend development and integration with backend entities and APIs. |
+| **Douae Zouake** | Frontend development and integration with backend entities and APIs. |
+| **Hajar Slimani** | Backend development and implementation of server-side features. |
+
+Contributions can also be explored through the [repository commit history](https://github.com/Nima-112/lBledFirst/commits/ai-integration).
+
+This README documents the `ai-integration` branch. External services and end-to-end functionality require additional configuration and validation.
