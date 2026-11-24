@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -38,6 +39,7 @@ public class User {
     @Column(nullable = false, unique = true)
     private String email;
 
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     @Column(nullable = false)
     private String password;
 
@@ -49,6 +51,19 @@ public class User {
     private String avatar;
     private String country;
     private String language;
+
+    @Column(columnDefinition = "TEXT")
+    private String bio;
+
+    private String specialty;
+
+    private Integer experienceYears;
+
+    private String hostRegion;
+
+    @Builder.Default
+    @Column(nullable = false)
+    private boolean emailVerified = false;
 
     @Builder.Default
     @Column(nullable = false)
@@ -67,18 +82,7 @@ public class User {
     private List<Review> reviews;
 
     @JsonIgnore
-    @OneToMany(mappedBy = "sender")
-    private List<Message> sentMessages;
-
-    @JsonIgnore
-    @OneToMany(mappedBy = "receiver")
-    private List<Message> receivedMessages;
-
-    @JsonIgnore
     @OneToMany(mappedBy = "host")
     private List<Video> videos;
 
-    @JsonIgnore
-    @OneToMany(mappedBy = "user")
-    private List<Notification> notifications;
 }

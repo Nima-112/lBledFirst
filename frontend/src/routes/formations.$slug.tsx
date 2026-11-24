@@ -1,6 +1,8 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { resolveUploadUrl } from "@/lib/asset-url";
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useMemo, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Award,
   BookOpen,
@@ -10,26 +12,34 @@ import {
   CreditCard,
   Download,
   Lock,
+  MessageSquare,
   Play,
   ShieldCheck,
   Star,
   Users,
   X,
+  Heart,
 } from "lucide-react";
+import { BookingCheckoutModal } from "@/components/booking/BookingCheckoutModal";
+import { formatDuration, totalCapsules, type Formation, type Capsule } from "@/lib/formations";
 import {
-  findFormation,
-  formatDuration,
-  totalCapsules,
-  isPurchased,
-  purchaseFormation,
-  getProgress,
-  toggleCapsuleCompletion,
-  type Formation,
-  type Capsule,
-} from "@/lib/formations";
+  getFormationDetail,
+  purchaseFormationApi,
+  getFormationProgressApi,
+  toggleCapsuleCompletionApi,
+  getCapsuleCaptionsApi,
+  toggleFormationFavoriteApi,
+  getMyFavoriteFormations,
+} from "@/services/formations.service";
+import { CaptionedVideoPlayer } from "@/components/formations/CaptionedVideoPlayer";
+import {
+  getReviewsForFormation,
+  createFormationReview,
+  type FrontReview,
+} from "@/services/reviews.service";
 import { Navbar } from "@/components/landing/Navbar";
 import { Footer } from "@/components/landing/Footer";
-import { useAuth } from "@/lib/mock-auth";
+import { useAuth } from "@/context/AuthContext";
 
 export const Route = createFileRoute("/formations/$slug")({
   head: ({ params }) => ({
@@ -50,17 +60,33 @@ function FormationDetail() {
   const { slug } = Route.useParams();
   const navigate = useNavigate();
   const { user, ready: authReady } = useAuth();
-  const [tick, setTick] = useState(0);
-  const [ready, setReady] = useState(false);
-  const [f, setF] = useState<Formation | null>(null);
+  const queryClient = useQueryClient();
+  const [checkoutTrigger, setCheckoutTrigger] = useState(false);
 
-  // Client-only lookup — avoids SSR loader crashes on the shared preview and
-  // lets the admin edit formations locally without a route reload.
+  const { data: f, isLoading } = useQuery({
+    queryKey: ["formations", slug, user?.email ?? "guest"],
+    queryFn: () => getFormationDetail(slug, { authenticated: !!user }),
+    enabled: authReady,
+    retry: false,
+  });
+  const ready = !isLoading;
+
   useEffect(() => {
-    const found = findFormation(slug);
-    setF(found ?? null);
-    setReady(true);
-    window.scrollTo({ top: 0, behavior: "instant" as ScrollBehavior });
+    if (typeof window !== "undefined") {
+      window.scrollTo({ top: 0, behavior: "instant" as ScrollBehavior });
+    }
+  }, [slug]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const checkoutParam = new URLSearchParams(window.location.search).get("checkout");
+      if (checkoutParam === "1") {
+        setCheckoutTrigger(true);
+      }
+    } catch {
+      // ignore
+    }
   }, [slug]);
 
   const [openChapter, setOpenChapter] = useState<string | null>(null);
@@ -72,17 +98,68 @@ function FormationDetail() {
     if (f && !openChapter) setOpenChapter(f.chapters[0]?.id ?? null);
   }, [f, openChapter]);
 
-  const purchased = useMemo(() => (f ? isPurchased(f.slug) : false), [f, tick]);
-  const progress = useMemo(() => (f ? getProgress(f.slug) : []), [f, tick]);
+  const purchased = f?.purchased ?? false;
+
+  const { data: progress = [] } = useQuery({
+    queryKey: ["formations", slug, "progress"],
+    queryFn: () => getFormationProgressApi(slug),
+    enabled: !!user && purchased,
+  });
+
+  const purchaseMutation = useMutation({
+    mutationFn: () => purchaseFormationApi(slug),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["formations", slug] });
+    },
+  });
+
+  const { data: favoriteFormations = [] } = useQuery({
+    queryKey: ["formations", "favorites"],
+    queryFn: getMyFavoriteFormations,
+    enabled: !!user,
+  });
+  const isFavorited = favoriteFormations.some((fav) => fav.slug === slug);
+
+  const toggleFavoriteMutation = useMutation({
+    mutationFn: () => toggleFormationFavoriteApi(slug),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["formations", "favorites"] });
+    },
+  });
+
+  const handleToggleFavorite = () => {
+    if (!user) {
+      window.localStorage.setItem("lbf.auth.redirect", `/formations/${slug}`);
+      navigate({ to: "/auth", search: { redirect: `/formations/${slug}` } });
+      return;
+    }
+    if (user.role !== "tourist") {
+      return;
+    }
+    toggleFavoriteMutation.mutate();
+  };
+
+  const toggleCapsuleMutation = useMutation({
+    mutationFn: (capsuleId: string) => toggleCapsuleCompletionApi(slug, capsuleId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["formations", slug, "progress"] });
+    },
+  });
 
   useEffect(() => {
     if (!f || !authReady || !user || purchased) return;
-    const search = new URLSearchParams(window.location.search);
-    if (search.get("checkout") === "1") {
+    if (checkoutTrigger) {
       setCheckoutOpen(true);
-      window.history.replaceState(null, "", window.location.pathname);
+      setCheckoutTrigger(false);
+      if (typeof window !== "undefined") {
+        try {
+          window.history.replaceState(null, "", window.location.pathname);
+        } catch {
+          /* ignore */
+        }
+      }
     }
-  }, [authReady, f, purchased, user]);
+  }, [authReady, f, purchased, user, checkoutTrigger, navigate]);
 
   const capsuleCount = f ? totalCapsules(f) : 0;
   const progressPct = capsuleCount === 0 ? 0 : Math.round((progress.length / capsuleCount) * 100);
@@ -92,7 +169,14 @@ function FormationDetail() {
     if (!f || !authReady) return;
     if (!user) {
       window.localStorage.setItem("lbf.auth.redirect", `/formations/${f.slug}?checkout=1`);
-      navigate({ to: "/auth" });
+      navigate({ to: "/auth", search: { redirect: `/formations/${f.slug}?checkout=1` } });
+      return;
+    }
+    if (user.role === "admin") {
+      navigate({ to: "/admin" });
+      return;
+    }
+    if (user.role !== "tourist") {
       return;
     }
     setCheckoutOpen(true);
@@ -127,7 +211,6 @@ function FormationDetail() {
     );
   }
 
-
   return (
     <div className="bg-grain min-h-screen bg-background">
       <Navbar onDiscover={() => {}} />
@@ -135,7 +218,12 @@ function FormationDetail() {
       {/* Banner */}
       <section className="relative isolate overflow-hidden pt-24 pb-14 sm:pt-32 sm:pb-20">
         <div className="absolute inset-0 -z-10">
-          <img src={f.coverImage} alt="" className="h-full w-full object-cover" aria-hidden />
+          <img
+            src={resolveUploadUrl(f.coverImage) || f.coverImage}
+            alt=""
+            className="h-full w-full object-cover"
+            aria-hidden
+          />
           <div className="absolute inset-0 bg-gradient-to-r from-ink/85 via-ink/70 to-ink/55" />
           <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
         </div>
@@ -160,9 +248,22 @@ function FormationDetail() {
                 <BannerChip tone="saffron">{f.level}</BannerChip>
                 <BannerChip>{f.language}</BannerChip>
               </div>
-              <h1 className="mt-5 font-display text-3xl font-extrabold leading-tight sm:text-5xl">
-                {f.title}
-              </h1>
+              <div className="flex items-start justify-between gap-4">
+                <h1 className="mt-5 font-display text-3xl font-extrabold leading-tight sm:text-5xl">
+                  {f.title}
+                </h1>
+                {(!user || user.role === "tourist") && (
+                  <button
+                    onClick={handleToggleFavorite}
+                    className="mt-5 inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white/10 hover:bg-white/20 text-white shadow backdrop-blur transition hover:scale-110"
+                    aria-label="Ajouter aux favoris"
+                  >
+                    <Heart
+                      className={`h-5 w-5 ${isFavorited ? "fill-white text-white" : "text-white"}`}
+                    />
+                  </button>
+                )}
+              </div>
               <p className="mt-4 max-w-2xl text-base text-card/85 sm:text-lg">
                 {f.shortDescription}
               </p>
@@ -180,7 +281,8 @@ function FormationDetail() {
                   <Clock className="h-4 w-4" /> {formatDuration(f.totalDuration)}
                 </span>
                 <span className="inline-flex items-center gap-1.5">
-                  <BookOpen className="h-4 w-4" /> {capsuleCount} capsules · {f.chapters.length} chapitres
+                  <BookOpen className="h-4 w-4" /> {capsuleCount} capsules · {f.chapters.length}{" "}
+                  chapitres
                 </span>
               </div>
             </motion.div>
@@ -316,7 +418,9 @@ function FormationDetail() {
                           </p>
                           <p className="text-xs text-muted-foreground">
                             {ch.capsules.length} capsules ·{" "}
-                            {formatDuration(ch.capsules.reduce((s: number, c: Capsule) => s + c.duration, 0))}
+                            {formatDuration(
+                              ch.capsules.reduce((s: number, c: Capsule) => s + c.duration, 0),
+                            )}
                           </p>
                         </div>
                         <ChevronDown
@@ -344,7 +448,7 @@ function FormationDetail() {
                                 >
                                   <div className="relative h-14 w-20 shrink-0 overflow-hidden rounded-lg bg-muted">
                                     <img
-                                      src={c.thumbnail}
+                                      src={resolveUploadUrl(c.thumbnail)}
                                       alt=""
                                       className="h-full w-full object-cover"
                                       loading="lazy"
@@ -423,7 +527,7 @@ function FormationDetail() {
                 <SectionKicker small>Votre formateur</SectionKicker>
                 <div className="mt-4 flex items-center gap-4">
                   <img
-                    src={f.instructor.photo}
+                    src={resolveUploadUrl(f.instructor.photo)}
                     alt={f.instructor.name}
                     className="h-16 w-16 rounded-2xl object-cover ring-2 ring-primary/20"
                   />
@@ -461,27 +565,38 @@ function FormationDetail() {
         </div>
       </section>
 
+      <FormationReviews formation={f} completed={completed} isLoggedIn={!!user} />
+
       <Footer />
 
-      {/* Checkout modal */}
-      <CheckoutModal
+      <BookingCheckoutModal
         open={checkoutOpen}
         onClose={() => setCheckoutOpen(false)}
-        formation={f}
-        onPaid={() => {
-          purchaseFormation(f.slug);
-          setCheckoutOpen(false);
-          setTick((v) => v + 1);
+        variant="formation"
+        item={{
+          id: String(f.id ?? slug),
+          title: f.title,
+          hostName: f.instructor.name,
+          region: f.category,
+          guests: 1,
+          unitPrice: f.price,
+          coverImage: resolveUploadUrl(f.coverImage) || f.coverImage,
+        }}
+        defaultEmail={user?.email}
+        defaultName={user?.name}
+        onConfirm={async () => {
+          await purchaseMutation.mutateAsync();
+          setTimeout(() => setCheckoutOpen(false), 1200);
         }}
       />
 
       {/* Video player modal */}
       <VideoModal
+        slug={slug}
         capsule={activeCapsule}
         onClose={() => setActiveCapsule(null)}
         onComplete={(id) => {
-          toggleCapsuleCompletion(f.slug, id);
-          setTick((v) => v + 1);
+          toggleCapsuleMutation.mutate(id);
         }}
         isDone={(id) => progress.includes(id)}
       />
@@ -502,12 +617,20 @@ function SectionKicker({ children, small }: { children: React.ReactNode; small?:
       <span className="font-hand text-primary" style={{ fontSize: small ? "1.25rem" : "1.75rem" }}>
         {children}
       </span>
-      <div className={`mt-1 h-1 rounded-full bg-gradient-to-r from-primary to-saffron ${small ? "w-10" : "w-16"}`} />
+      <div
+        className={`mt-1 h-1 rounded-full bg-gradient-to-r from-primary to-saffron ${small ? "w-10" : "w-16"}`}
+      />
     </div>
   );
 }
 
-function BannerChip({ children, tone = "default" }: { children: React.ReactNode; tone?: "default" | "saffron" }) {
+function BannerChip({
+  children,
+  tone = "default",
+}: {
+  children: React.ReactNode;
+  tone?: "default" | "saffron";
+}) {
   const cls =
     tone === "saffron"
       ? "bg-saffron text-ink"
@@ -563,182 +686,28 @@ function InstructorStat({ label, value }: { label: string; value: React.ReactNod
   );
 }
 
-function CheckoutModal({
-  open,
-  onClose,
-  formation,
-  onPaid,
-}: {
-  open: boolean;
-  onClose: () => void;
-  formation: Formation;
-  onPaid: () => void;
-}) {
-  const [method, setMethod] = useState<"card" | "paypal" | "wire">("card");
-  const [processing, setProcessing] = useState(false);
-  const [done, setDone] = useState(false);
-
-  useEffect(() => {
-    if (open) {
-      setProcessing(false);
-      setDone(false);
-    }
-  }, [open]);
-
-  const submit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setProcessing(true);
-    setTimeout(() => {
-      setDone(true);
-      setTimeout(() => onPaid(), 900);
-    }, 1200);
-  };
-
-  return (
-    <AnimatePresence>
-      {open && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          onClick={onClose}
-          className="fixed inset-0 z-[70] flex items-end justify-center bg-ink/60 p-0 backdrop-blur-sm sm:items-center sm:p-4"
-        >
-          <motion.div
-            initial={{ y: 40, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ y: 40, opacity: 0 }}
-            transition={{ type: "spring", stiffness: 320, damping: 32 }}
-            onClick={(e) => e.stopPropagation()}
-            className="max-h-[92vh] w-full max-w-md overflow-y-auto rounded-t-3xl border border-border bg-card p-6 shadow-warm sm:rounded-3xl"
-          >
-            <div className="flex items-center justify-between">
-              <h2 className="font-display text-xl font-extrabold text-foreground">
-                Finaliser l'achat
-              </h2>
-              <button
-                onClick={onClose}
-                aria-label="Fermer"
-                className="inline-flex h-9 w-9 items-center justify-center rounded-full text-muted-foreground hover:bg-muted"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-
-            <div className="mt-5 flex items-center gap-3 rounded-2xl border border-border bg-background/60 p-3">
-              <img
-                src={formation.coverImage}
-                alt=""
-                className="h-14 w-14 rounded-xl object-cover"
-              />
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-bold text-foreground">{formation.title}</p>
-                <p className="text-xs text-muted-foreground">{formation.instructor.name}</p>
-              </div>
-              <span className="font-display text-lg font-extrabold text-primary">
-                {formation.price} MAD
-              </span>
-            </div>
-
-            {done ? (
-              <div className="mt-8 flex flex-col items-center gap-3 py-4 text-center">
-                <span className="inline-flex h-14 w-14 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-600">
-                  <Check className="h-7 w-7" />
-                </span>
-                <p className="font-display text-xl font-extrabold">Paiement confirmé !</p>
-                <p className="text-sm text-muted-foreground">
-                  Vous recevrez une facture par email. Accès immédiat.
-                </p>
-              </div>
-            ) : (
-              <form onSubmit={submit} className="mt-5 space-y-4">
-                <div className="grid grid-cols-3 gap-2">
-                  {(["card", "paypal", "wire"] as const).map((m) => (
-                    <button
-                      key={m}
-                      type="button"
-                      onClick={() => setMethod(m)}
-                      className={`rounded-xl border px-3 py-2 text-xs font-bold transition ${
-                        method === m
-                          ? "border-primary bg-primary/10 text-primary"
-                          : "border-border text-muted-foreground hover:bg-muted"
-                      }`}
-                    >
-                      {m === "card" ? "Carte" : m === "paypal" ? "PayPal" : "Virement"}
-                    </button>
-                  ))}
-                </div>
-
-                {method === "card" && (
-                  <div className="space-y-3">
-                    <input
-                      required
-                      placeholder="Nom sur la carte"
-                      className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
-                    />
-                    <input
-                      required
-                      placeholder="Numéro de carte"
-                      inputMode="numeric"
-                      className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
-                    />
-                    <div className="grid grid-cols-2 gap-3">
-                      <input
-                        required
-                        placeholder="MM/AA"
-                        className="rounded-xl border border-border bg-background px-4 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
-                      />
-                      <input
-                        required
-                        placeholder="CVC"
-                        className="rounded-xl border border-border bg-background px-4 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
-                      />
-                    </div>
-                  </div>
-                )}
-                {method === "paypal" && (
-                  <p className="rounded-xl border border-dashed border-border bg-background p-4 text-xs text-muted-foreground">
-                    Vous serez redirigé vers PayPal pour finaliser le paiement.
-                  </p>
-                )}
-                {method === "wire" && (
-                  <p className="rounded-xl border border-dashed border-border bg-background p-4 text-xs text-muted-foreground">
-                    Les coordonnées bancaires vous seront envoyées par email. L'accès
-                    sera débloqué à réception du virement.
-                  </p>
-                )}
-
-                <button
-                  type="submit"
-                  disabled={processing}
-                  className="flex w-full items-center justify-center gap-2 rounded-full bg-primary px-5 py-3 text-sm font-bold text-primary-foreground shadow-warm transition hover:scale-[1.02] disabled:opacity-70"
-                >
-                  {processing ? "Traitement…" : `Payer ${formation.price} MAD`}
-                </button>
-                <p className="text-center text-[11px] text-muted-foreground">
-                  <ShieldCheck className="mr-1 inline h-3 w-3 text-emerald-600" />
-                  Paiement 100% sécurisé — démo frontend (aucun paiement réel).
-                </p>
-              </form>
-            )}
-          </motion.div>
-        </motion.div>
-      )}
-    </AnimatePresence>
-  );
-}
-
 function VideoModal({
+  slug,
   capsule,
   onClose,
   onComplete,
   isDone,
 }: {
+  slug: string;
   capsule: Capsule | null;
   onClose: () => void;
   onComplete: (id: string) => void;
   isDone: (id: string) => boolean;
 }) {
+  // Captions are only available once the AI pipeline has finished processing
+  // this capsule's video (processingStatus === "DONE"). Fetching earlier
+  // would 404 or return an empty translation_json.
+  const captionsQuery = useQuery({
+    queryKey: ["formations", slug, "capsules", capsule?.id, "captions"],
+    queryFn: () => getCapsuleCaptionsApi(slug, capsule!.id),
+    enabled: !!capsule && capsule.processingStatus === "DONE",
+  });
+
   return (
     <AnimatePresence>
       {capsule && (
@@ -757,16 +726,26 @@ function VideoModal({
             className="w-full max-w-3xl overflow-hidden rounded-3xl border border-border bg-card shadow-warm"
           >
             <div className="relative aspect-video bg-ink">
-              <img
-                src={capsule.thumbnail}
-                alt=""
-                className="h-full w-full object-cover opacity-70"
-              />
-              <div className="absolute inset-0 flex items-center justify-center">
-                <span className="inline-flex h-20 w-20 items-center justify-center rounded-full bg-primary/90 text-primary-foreground shadow-warm">
-                  <Play className="h-8 w-8 fill-current" />
-                </span>
-              </div>
+              {capsule.videoUrl ? (
+                <CaptionedVideoPlayer
+                  src={resolveUploadUrl(capsule.videoUrl) || capsule.videoUrl}
+                  poster={resolveUploadUrl(capsule.thumbnail) || undefined}
+                  captions={captionsQuery.data}
+                />
+              ) : (
+                <>
+                  <img
+                    src={resolveUploadUrl(capsule.thumbnail) || capsule.thumbnail}
+                    alt=""
+                    className="h-full w-full object-cover opacity-70"
+                  />
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <span className="inline-flex h-20 w-20 items-center justify-center rounded-full bg-primary/90 text-primary-foreground shadow-warm">
+                      <Play className="h-8 w-8 fill-current" />
+                    </span>
+                  </div>
+                </>
+              )}
               <button
                 onClick={onClose}
                 aria-label="Fermer"
@@ -815,8 +794,10 @@ function CertificateModal({
   onClose: () => void;
   formation: Formation;
 }) {
+  const { user } = useAuth();
   const code = useMemo(
-    () => `LBF-${formation.slug.slice(0, 4).toUpperCase()}-${Date.now().toString(36).slice(-6).toUpperCase()}`,
+    () =>
+      `LBF-${formation.slug.slice(0, 4).toUpperCase()}-${Date.now().toString(36).slice(-6).toUpperCase()}`,
     [formation.slug, open],
   );
   const today = new Date().toLocaleDateString("fr-FR", {
@@ -850,7 +831,8 @@ function CertificateModal({
               <X className="h-5 w-5" />
             </button>
 
-            <div className="absolute inset-0 -z-10 opacity-[0.06]"
+            <div
+              className="absolute inset-0 -z-10 opacity-[0.06]"
               style={{
                 backgroundImage:
                   "radial-gradient(circle at 20% 30%, currentColor 0, transparent 40%), radial-gradient(circle at 80% 70%, currentColor 0, transparent 40%)",
@@ -868,10 +850,7 @@ function CertificateModal({
 
               <p className="text-sm text-muted-foreground">Ce certificat est décerné à</p>
               <p className="mt-1 font-display text-3xl font-extrabold text-foreground">
-                {typeof window !== "undefined"
-                  ? (JSON.parse(window.localStorage.getItem("lbf.v2.session") ?? "null")?.name ??
-                    "Étudiant L'Bled First")
-                  : "Étudiant L'Bled First"}
+                {user?.name ?? "Étudiant L'Bled First"}
               </p>
               <p className="mt-4 text-sm text-muted-foreground">
                 pour avoir complété avec succès la formation
@@ -880,7 +859,8 @@ function CertificateModal({
                 « {formation.title} »
               </p>
               <p className="mt-3 text-sm text-muted-foreground">
-                animée par <span className="font-semibold text-foreground">{formation.instructor.name}</span>
+                animée par{" "}
+                <span className="font-semibold text-foreground">{formation.instructor.name}</span>
               </p>
 
               <div className="mt-8 flex items-end justify-between gap-4 border-t border-border/60 pt-6 text-left">
@@ -919,5 +899,194 @@ function CertificateModal({
         </motion.div>
       )}
     </AnimatePresence>
+  );
+}
+
+// ----------------------------------------------------------------------------
+// Section avis — visible par tout le monde. Le formulaire est toujours
+// affiché, mais ne peut être soumis (côté serveur ET côté client) que si
+// l'utilisateur a acheté ET terminé toutes les capsules de la formation.
+// ----------------------------------------------------------------------------
+function FormationReviews({
+  formation,
+  completed,
+  isLoggedIn,
+}: {
+  formation: Formation;
+  completed: boolean;
+  isLoggedIn: boolean;
+}) {
+  const queryClient = useQueryClient();
+  const navigate = useNavigate();
+  const [rating, setRating] = useState(0);
+  const [hoverRating, setHoverRating] = useState(0);
+  const [comment, setComment] = useState("");
+
+  const reviewsQuery = useQuery({
+    queryKey: ["formations", formation.slug, "reviews"],
+    queryFn: () => getReviewsForFormation(formation.id!),
+    enabled: !!formation.id,
+  });
+
+  const reviews = reviewsQuery.data ?? [];
+  const alreadyReviewed = formation.reviewed ?? false;
+  const canSubmit = isLoggedIn && completed && !alreadyReviewed;
+
+  const submitMutation = useMutation({
+    mutationFn: () => createFormationReview(formation.id!, rating, comment),
+    onSuccess: () => {
+      setRating(0);
+      setComment("");
+      queryClient.invalidateQueries({ queryKey: ["formations", formation.slug, "reviews"] });
+      queryClient.invalidateQueries({ queryKey: ["formations", formation.slug] });
+    },
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!canSubmit || rating === 0) return;
+    submitMutation.mutate();
+  };
+
+  return (
+    <section className="border-t border-border py-14 sm:py-20">
+      <div className="mx-auto max-w-5xl px-4 sm:px-6">
+        <SectionKicker>Avis des étudiants</SectionKicker>
+        <div className="mt-3 flex items-center gap-3">
+          <h2 className="font-display text-2xl font-extrabold text-foreground sm:text-3xl">
+            {formation.reviewsCount > 0
+              ? `${formation.averageRating.toFixed(1)} / 5 · ${formation.reviewsCount} avis`
+              : "Aucun avis pour le moment"}
+          </h2>
+        </div>
+
+        {/* Formulaire — toujours visible, activé seulement si éligible */}
+        <div className="mt-8 rounded-3xl border border-border bg-card p-6 shadow-card">
+          <p className="font-display text-lg font-bold text-foreground">Laisser un avis</p>
+
+          {!isLoggedIn && (
+            <p className="mt-2 text-sm text-muted-foreground">
+              Connectez-vous pour laisser un avis sur cette formation.
+            </p>
+          )}
+          {isLoggedIn && !completed && (
+            <p className="mt-2 text-sm text-muted-foreground">
+              Vous pourrez publier un avis une fois que vous aurez terminé toutes les capsules de la
+              formation.
+            </p>
+          )}
+          {isLoggedIn && completed && alreadyReviewed && (
+            <p className="mt-2 text-sm text-muted-foreground">
+              Vous avez déjà laissé un avis pour cette formation — merci !
+            </p>
+          )}
+
+          <form onSubmit={handleSubmit} className="mt-4">
+            <div className="flex items-center gap-1">
+              {[1, 2, 3, 4, 5].map((n) => (
+                <button
+                  key={n}
+                  type="button"
+                  disabled={!canSubmit}
+                  onClick={() => setRating(n)}
+                  onMouseEnter={() => setHoverRating(n)}
+                  onMouseLeave={() => setHoverRating(0)}
+                  className="disabled:cursor-not-allowed disabled:opacity-40"
+                  aria-label={`${n} étoile${n > 1 ? "s" : ""}`}
+                >
+                  <Star
+                    className={`h-6 w-6 transition ${
+                      n <= (hoverRating || rating) ? "fill-saffron text-saffron" : "text-muted"
+                    }`}
+                  />
+                </button>
+              ))}
+            </div>
+
+            <textarea
+              value={comment}
+              onChange={(e) => setComment(e.target.value)}
+              disabled={!canSubmit}
+              placeholder="Qu'avez-vous pensé de cette formation ?"
+              rows={3}
+              className="mt-3 w-full rounded-2xl border border-border bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-60"
+            />
+
+            {submitMutation.isError && (
+              <p className="mt-2 text-sm text-red-500">
+                Une erreur est survenue lors de l'envoi de votre avis. Réessayez.
+              </p>
+            )}
+
+            <div className="mt-3 flex items-center gap-3">
+              {isLoggedIn ? (
+                <button
+                  type="submit"
+                  disabled={!canSubmit || rating === 0 || submitMutation.isPending}
+                  className="inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-bold text-primary-foreground shadow-warm transition hover:scale-105 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:scale-100"
+                >
+                  <span>{submitMutation.isPending ? "Envoi…" : "Publier mon avis"}</span>
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => {
+                    window.localStorage.setItem("lbf.auth.redirect", `/formations/${formation.slug}`);
+                    navigate({ to: "/auth", search: { redirect: `/formations/${formation.slug}` } });
+                  }}
+                  className="inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-bold text-primary-foreground shadow-warm transition hover:scale-105"
+                >
+                  <span>Se connecter</span>
+                </button>
+              )}
+            </div>
+          </form>
+        </div>
+
+        {/* Liste des avis */}
+        <div className="mt-8 space-y-4">
+          {reviews.length === 0 && !reviewsQuery.isLoading && (
+            <p className="rounded-2xl border border-dashed border-border bg-card px-6 py-10 text-center text-sm text-muted-foreground">
+              Cette formation n'a pas encore reçu d'avis.
+            </p>
+          )}
+          {reviews.map((r: FrontReview) => (
+            <div key={r.id} className="rounded-2xl border border-border bg-card p-5 shadow-card">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 font-display font-bold text-primary">
+                    {(r.touristName ?? "?").charAt(0)}
+                  </span>
+                  <div>
+                    <p className="text-sm font-semibold text-foreground">
+                      {r.touristName ?? "Étudiant"}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {new Date(r.createdAt).toLocaleDateString()}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex shrink-0 items-center gap-0.5">
+                  {[1, 2, 3, 4, 5].map((n) => (
+                    <Star
+                      key={n}
+                      className={`h-3.5 w-3.5 ${
+                        n <= r.rating ? "fill-saffron text-saffron" : "text-muted"
+                      }`}
+                    />
+                  ))}
+                </div>
+              </div>
+              {r.comment && (
+                <div className="mt-3 flex items-start gap-2">
+                  <MessageSquare className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+                  <p className="text-sm leading-relaxed text-foreground/80">{r.comment}</p>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
   );
 }

@@ -1,4 +1,5 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+
 import { Navbar } from "@/components/landing/Navbar";
 import { Hero } from "@/components/landing/Hero";
 import { WhatIs } from "@/components/landing/WhatIs";
@@ -7,6 +8,7 @@ import { Experiences } from "@/components/landing/Experiences";
 import { HorizontalGallery } from "@/components/landing/HorizontalGallery";
 import { Timeline } from "@/components/landing/Timeline";
 import { Activities } from "@/components/landing/Activities";
+import { Training } from "@/components/landing/Training";
 import { Testimonials } from "@/components/landing/Testimonials";
 import { Footer } from "@/components/landing/Footer";
 
@@ -37,17 +39,23 @@ function scrollTo(id: string) {
 }
 
 function Index() {
+  const navigate = useNavigate();
   return (
     <div className="min-h-screen bg-background">
-      <Navbar onDiscover={() => scrollTo("map")} />
+      <Navbar hero onDiscover={() => scrollTo("map")} />
       <main>
         <Hero onDiscover={() => scrollTo("map")} />
         <WhatIs />
-        <MoroccoMap onSelectRegion={() => scrollTo("experiences")} />
+        <MoroccoMap
+          onSelectRegion={(regionId) => {
+            window.location.href = `/experiences?region=${encodeURIComponent(regionId)}`;
+          }}
+        />
         <Experiences />
         <HorizontalGallery />
         <Timeline />
         <Activities />
+        <Training />
         <Testimonials />
       </main>
       <Footer />

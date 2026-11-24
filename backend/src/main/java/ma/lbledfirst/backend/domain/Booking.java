@@ -5,6 +5,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -38,6 +39,7 @@ public class Booking {
     private User tourist;
 
     @ManyToOne(optional = false)
+    @JsonIgnoreProperties({"coverImages", "dayPrograms", "region", "programs", "bookings", "reviews", "media", "videos"})
     private Experience experience;
 
     @Column(nullable = false)
@@ -49,6 +51,10 @@ public class Booking {
 
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal totalPrice;
+
+    @Builder.Default
+    @Column(nullable = false)
+    private Integer guests = 1;
 
     @Builder.Default
     @Column(nullable = false)

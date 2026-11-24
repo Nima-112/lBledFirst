@@ -86,7 +86,7 @@ export function Hero({ onDiscover }: { onDiscover: () => void }) {
               <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1 rtl:rotate-180 rtl:group-hover:-translate-x-1" />
             </button>
             <a
-              href="#story"
+              href="#testimonials"
               className="inline-flex items-center gap-2 rounded-full border border-card/30 bg-card/10 px-6 py-3.5 text-base font-semibold text-card backdrop-blur-md transition-colors hover:bg-card/20"
             >
               <Play className="h-4 w-4 fill-current" />

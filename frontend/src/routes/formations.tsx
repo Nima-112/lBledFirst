@@ -1,6 +1,8 @@
-import { createFileRoute, Link, Outlet, useMatches } from "@tanstack/react-router";
+import { createFileRoute, Link, Outlet, useMatches, useNavigate } from "@tanstack/react-router";
+import { resolveUploadUrl } from "@/lib/asset-url";
 import { motion } from "framer-motion";
 import { useMemo, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   BookOpen,
   Clock,
@@ -11,20 +13,22 @@ import {
   Heart,
 } from "lucide-react";
 import {
-  FORMATIONS,
-  CATEGORIES,
   LEVELS,
   LANGUAGES,
   formatDuration,
-  totalCapsules,
-  getFavorites,
-  toggleFavorite,
   type Level,
   type Language,
 } from "@/lib/formations";
+import {
+  getFormationsList,
+  getMyFavoriteFormations,
+  toggleFormationFavoriteApi,
+} from "@/services/formations.service";
 import { Navbar } from "@/components/landing/Navbar";
 import { Footer } from "@/components/landing/Footer";
 import { useI18n } from "@/lib/i18n";
+import { useAuth } from "@/context/AuthContext";
+import { setAuthRedirect } from "@/lib/auth-redirect";
 
 export const Route = createFileRoute("/formations")({
   head: () => ({
@@ -52,17 +56,51 @@ function FormationsPage() {
   const matches = useMatches();
   const showingDetail = matches.some((match) => match.routeId === "/formations/$slug");
   const { t } = useI18n();
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState<string | null>(null);
   const [level, setLevel] = useState<Level | null>(null);
   const [language, setLanguage] = useState<Language | null>(null);
   const [maxPrice, setMaxPrice] = useState<number>(1500);
   const [sort, setSort] = useState<SortKey>("popular");
-  const [favTick, setFavTick] = useState(0);
-  const favorites = useMemo(() => getFavorites(), [favTick]);
+
+  const { data: allFormations = [], isLoading } = useQuery({
+    queryKey: ["formations"],
+    queryFn: getFormationsList,
+  });
+
+  const { data: favoriteFormations = [] } = useQuery({
+    queryKey: ["formations", "favorites"],
+    queryFn: getMyFavoriteFormations,
+    enabled: !!user,
+  });
+  const favorites = useMemo(() => favoriteFormations.map((f) => f.slug), [favoriteFormations]);
+
+  const toggleFavoriteMutation = useMutation({
+    mutationFn: toggleFormationFavoriteApi,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["formations", "favorites"] });
+    },
+  });
+
+  const handleToggleFavorite = (slug: string) => {
+    if (!user) {
+      setAuthRedirect(`/formations`);
+      navigate({ to: "/auth", search: { redirect: `/formations` } });
+      return;
+    }
+    toggleFavoriteMutation.mutate(slug);
+  };
+
+  const CATEGORIES = useMemo(
+    () => Array.from(new Set(allFormations.map((f) => f.category))).sort(),
+    [allFormations],
+  );
 
   const filtered = useMemo(() => {
-    let list = [...FORMATIONS];
+    let list = [...allFormations];
     if (query.trim()) {
       const q = query.toLowerCase();
       list = list.filter(
@@ -94,7 +132,7 @@ function FormationsPage() {
         list.sort((a, b) => b.studentsCount - a.studentsCount);
     }
     return list;
-  }, [query, category, level, language, maxPrice, sort]);
+  }, [allFormations, query, category, level, language, maxPrice, sort]);
 
   const activeFilters = [category, level, language].filter(Boolean).length;
 
@@ -217,7 +255,13 @@ function FormationsPage() {
             {filtered.length > 1 ? "s" : ""}
           </p>
 
-          {filtered.length === 0 ? (
+          {isLoading ? (
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="h-96 animate-pulse rounded-3xl border border-border bg-card" />
+              ))}
+            </div>
+          ) : filtered.length === 0 ? (
             <div className="rounded-3xl border border-dashed border-border bg-card p-16 text-center">
               <p className="font-display text-xl font-bold">Aucune formation trouvée</p>
               <p className="mt-2 text-sm text-muted-foreground">
@@ -237,7 +281,7 @@ function FormationsPage() {
                 >
                   <div className="relative h-52 overflow-hidden">
                     <img
-                      src={f.coverImage}
+                      src={resolveUploadUrl(f.coverImage) || f.coverImage}
                       alt={f.title}
                       className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
                       loading="lazy"
@@ -246,8 +290,7 @@ function FormationsPage() {
                     <button
                       onClick={(e) => {
                         e.preventDefault();
-                        toggleFavorite(f.slug);
-                        setFavTick((v) => v + 1);
+                        handleToggleFavorite(f.slug);
                       }}
                       className="absolute right-3 top-3 inline-flex h-9 w-9 items-center justify-center rounded-full bg-background/90 text-primary shadow-card backdrop-blur transition hover:scale-110"
                       aria-label="Ajouter aux favoris"
@@ -272,7 +315,7 @@ function FormationsPage() {
 
                     <div className="mt-4 flex items-center gap-3 border-t border-border/70 pt-4">
                       <img
-                        src={f.instructor.photo}
+                        src={resolveUploadUrl(f.instructor.photo) || f.instructor.photo}
                         alt={f.instructor.name}
                         className="h-9 w-9 rounded-full object-cover"
                         loading="lazy"
@@ -287,15 +330,18 @@ function FormationsPage() {
                       </div>
                     </div>
 
-                    <div className="mt-4 grid grid-cols-3 gap-2 text-[11px] text-muted-foreground">
+                    <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px] text-muted-foreground">
                       <MetaCell icon={<Clock className="h-3.5 w-3.5" />}>
                         {formatDuration(f.totalDuration)}
                       </MetaCell>
                       <MetaCell icon={<BookOpen className="h-3.5 w-3.5" />}>
-                        {totalCapsules(f)} caps.
+                        {(f.capsulesCount ?? 0)} caps.
                       </MetaCell>
                       <MetaCell icon={<Users className="h-3.5 w-3.5" />}>
                         {f.studentsCount}
+                      </MetaCell>
+                      <MetaCell icon={<Heart className="h-3.5 w-3.5" />}>
+                        {f.favoritesCount ?? 0}
                       </MetaCell>
                     </div>
 

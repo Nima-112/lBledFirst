@@ -1,25 +1,44 @@
-import { useState } from "react";
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useState, type ChangeEvent, type FormEvent, useEffect } from "react";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, Eye, EyeOff, Loader2 } from "lucide-react";
+
 import heroAtlas from "@/assets/hero-atlas.jpg";
 import { Logo } from "@/components/landing/Logo";
 import { LanguageSelector } from "@/components/landing/LanguageSelector";
-import { useI18n, type Lang } from "@/lib/i18n";
-import { useAuth } from "@/lib/mock-auth";
+import { Combobox } from "@/components/ui/combobox";
+import { useLogin } from "@/hooks/useLogin";
+import { useSignup } from "@/hooks/useSignup";
+import { authService } from "@/services/auth.service";
+import { consumeAuthRedirect, setAuthRedirect } from "@/lib/auth-redirect";
+import { API_ORIGIN } from "@/lib/api";
+import { COUNTRIES } from "@/lib/countries";
+import { NATIVE_LANGUAGES } from "@/lib/languages";
+import { useAuth } from "@/context/AuthContext";
+
+type AuthSearch = {
+  redirect?: string;
+  verified?: string;
+  error?: string;
+};
 
 export const Route = createFileRoute("/auth")({
+  validateSearch: (search: Record<string, unknown>): AuthSearch => ({
+    redirect: typeof search.redirect === "string" ? search.redirect : undefined,
+    verified: typeof search.verified === "string" ? search.verified : undefined,
+    error: typeof search.error === "string" ? search.error : undefined,
+  }),
   head: () => ({
     meta: [
-      { title: "Se connecter — L'Bled First" },
+      { title: "Se connecter - L'Bled First" },
       {
         name: "description",
         content:
-          "Connectez-vous ou créez votre compte L'Bled First pour découvrir et réserver des expériences rurales authentiques au Maroc.",
+          "Connectez-vous ou creez votre compte L'Bled First pour decouvrir et reserver des experiences rurales authentiques au Maroc.",
       },
     ],
   }),
-  component: AuthRoute,
+  component: AuthScreen,
 });
 
 type Copy = {
@@ -33,232 +52,227 @@ type Copy = {
   fullName: string;
   email: string;
   password: string;
+  confirmPassword: string;
   country: string;
   nativeLanguage: string;
+  countryPh: string;
+  languagePh: string;
   loginBtn: string;
   signupBtn: string;
   google: string;
   or: string;
   noAccount: string;
   hasAccount: string;
-  demoHint: string;
-  errNoAccount: string;
-  errBadPassword: string;
-  errExists: string;
   errRequired: string;
-  roleQuestion: string;
-  roleTourist: string;
-  roleTouristDesc: string;
-  roleHost: string;
-  roleHostDesc: string;
+  errPasswordMismatch: string;
 };
 
-const COPY: Record<Lang, Copy> = {
-  fr: {
-    back: "Retour à l'accueil",
-    welcome: "Bienvenue au bled",
-    tagline: "Rencontrez le vrai Maroc rural, filmé et raconté par ses habitants.",
-    loginTab: "Connexion",
-    signupTab: "Inscription",
-    loginTitle: "Content de vous revoir",
-    signupTitle: "Créez votre compte",
-    fullName: "Nom complet",
-    email: "Adresse e-mail",
-    password: "Mot de passe",
-    country: "Pays d'origine",
-    nativeLanguage: "Langue maternelle",
-    loginBtn: "Se connecter",
-    signupBtn: "Créer mon compte",
-    google: "Continuer avec Google",
-    or: "ou",
-    noAccount: "Pas encore de compte ?",
-    hasAccount: "Déjà inscrit ?",
-    demoHint: "Démo admin : admin@lbledfirst.ma / admin123",
-    errNoAccount: "Aucun compte pour cet e-mail.",
-    errBadPassword: "Mot de passe incorrect.",
-    errExists: "Un compte existe déjà avec cet e-mail.",
-    errRequired: "Merci de remplir tous les champs.",
-    roleQuestion: "Je m'inscris en tant que",
-    roleTourist: "Touriste",
-    roleTouristDesc: "Découvrir & réserver des expériences",
-    roleHost: "Hôte",
-    roleHostDesc: "Proposer mes expériences & vidéos",
-  },
-  en: {
-    back: "Back to home",
-    welcome: "Welcome to the bled",
-    tagline: "Meet the real rural Morocco, filmed and told by its people.",
-    loginTab: "Log in",
-    signupTab: "Sign up",
-    loginTitle: "Good to see you again",
-    signupTitle: "Create your account",
-    fullName: "Full name",
-    email: "Email address",
-    password: "Password",
-    country: "Country of origin",
-    nativeLanguage: "Native language",
-    loginBtn: "Log in",
-    signupBtn: "Create my account",
-    google: "Continue with Google",
-    or: "or",
-    noAccount: "No account yet?",
-    hasAccount: "Already registered?",
-    demoHint: "Admin demo: admin@lbledfirst.ma / admin123",
-    errNoAccount: "No account for this email.",
-    errBadPassword: "Incorrect password.",
-    errExists: "An account already exists with this email.",
-    errRequired: "Please fill in all fields.",
-    roleQuestion: "I'm signing up as a",
-    roleTourist: "Tourist",
-    roleTouristDesc: "Discover & book experiences",
-    roleHost: "Host",
-    roleHostDesc: "Offer my experiences & videos",
-  },
-  es: {
-    back: "Volver al inicio",
-    welcome: "Bienvenido al bled",
-    tagline: "Conoce el verdadero Marruecos rural, filmado y contado por su gente.",
-    loginTab: "Entrar",
-    signupTab: "Registrarse",
-    loginTitle: "Encantado de verte de nuevo",
-    signupTitle: "Crea tu cuenta",
-    fullName: "Nombre completo",
-    email: "Correo electrónico",
-    password: "Contraseña",
-    country: "País de origen",
-    nativeLanguage: "Lengua materna",
-    loginBtn: "Entrar",
-    signupBtn: "Crear mi cuenta",
-    google: "Continuar con Google",
-    or: "o",
-    noAccount: "¿Aún no tienes cuenta?",
-    hasAccount: "¿Ya registrado?",
-    demoHint: "Demo admin: admin@lbledfirst.ma / admin123",
-    errNoAccount: "No hay cuenta para este correo.",
-    errBadPassword: "Contraseña incorrecta.",
-    errExists: "Ya existe una cuenta con este correo.",
-    errRequired: "Por favor, completa todos los campos.",
-    roleQuestion: "Me registro como",
-    roleTourist: "Turista",
-    roleTouristDesc: "Descubrir y reservar experiencias",
-    roleHost: "Anfitrión",
-    roleHostDesc: "Ofrecer mis experiencias y vídeos",
-  },
-  ar: {
-    back: "العودة إلى الرئيسية",
-    welcome: "مرحباً بك في البلاد",
-    tagline: "تعرّف على المغرب القروي الحقيقي، مصوَّراً ومحكياً من أهله.",
-    loginTab: "تسجيل الدخول",
-    signupTab: "إنشاء حساب",
-    loginTitle: "سعداء بعودتك",
-    signupTitle: "أنشئ حسابك",
-    fullName: "الاسم الكامل",
-    email: "البريد الإلكتروني",
-    password: "كلمة المرور",
-    country: "بلد المنشأ",
-    nativeLanguage: "اللغة الأم",
-    loginBtn: "تسجيل الدخول",
-    signupBtn: "إنشاء حسابي",
-    google: "المتابعة مع Google",
-    or: "أو",
-    noAccount: "ليس لديك حساب بعد؟",
-    hasAccount: "مسجّل بالفعل؟",
-    demoHint: "حساب المشرف التجريبي: admin@lbledfirst.ma / admin123",
-    errNoAccount: "لا يوجد حساب لهذا البريد.",
-    errBadPassword: "كلمة المرور غير صحيحة.",
-    errExists: "يوجد حساب بالفعل بهذا البريد.",
-    errRequired: "يرجى ملء جميع الحقول.",
-    roleQuestion: "أسجّل بصفتي",
-    roleTourist: "سائح",
-    roleTouristDesc: "اكتشاف وحجز التجارب",
-    roleHost: "مضيف",
-    roleHostDesc: "عرض تجاربي وفيديوهاتي",
-  },
+const COPY: Copy = {
+  back: "Back to home",
+  welcome: "Welcome to the bled",
+  tagline: "Meet the real rural Morocco, filmed and told by its people.",
+  loginTab: "Log in",
+  signupTab: "Sign up",
+  loginTitle: "Good to see you again",
+  signupTitle: "Create your account",
+  fullName: "Full name",
+  email: "Email address",
+  password: "Password",
+  confirmPassword: "Confirm password",
+  country: "Country of origin",
+  nativeLanguage: "Native language",
+  countryPh: "Pick your country...",
+  languagePh: "Pick your language...",
+  loginBtn: "Log in",
+  signupBtn: "Create my account",
+  google: "Continue with Google",
+  or: "or",
+  noAccount: "No account yet?",
+  hasAccount: "Already registered?",
+  errRequired: "Please fill in all fields.",
+  errPasswordMismatch: "Passwords do not match.",
 };
-
-function AuthRoute() {
-  return <AuthScreen />;
-}
 
 function AuthScreen() {
-  const { lang } = useI18n();
-  const c = COPY[lang];
-  const navigate = useNavigate();
-  const { login, signup } = useAuth();
+  const c = COPY;
+  const { login, loading: loginLoading, error: loginError } = useLogin();
+  const { signup, loading: signupLoading, error: signupError } = useSignup();
+  const { user, ready: authReady } = useAuth();
+  const [initialCheckDone, setInitialCheckDone] = useState(false);
+
+  useEffect(() => {
+    if (authReady && !initialCheckDone) {
+      setInitialCheckDone(true);
+      if (user) {
+        const pendingRedirect = consumeAuthRedirect();
+        const target = user.role === "admin" ? "/admin" : pendingRedirect ?? "/me/bookings";
+        window.location.replace(target);
+      }
+    }
+  }, [authReady, user, initialCheckDone]);
 
   const [mode, setMode] = useState<"login" | "signup">("login");
-  const [showPw, setShowPw] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [clientError, setClientError] = useState<string | null>(null);
+  const [googleFailed, setGoogleFailed] = useState(false);
+  const [verifiedMessage, setVerifiedMessage] = useState<{ ok: boolean; text: string } | null>(
+    null,
+  );
+  const [resendLoading, setResendLoading] = useState(false);
+  const [showResend, setShowResend] = useState(false);
+  const [resendEmail, setResendEmail] = useState("");
   const [form, setForm] = useState({
     fullName: "",
     email: "",
     password: "",
+    confirmPassword: "",
     country: "",
     nativeLanguage: "",
   });
 
-  const set = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement>) =>
-    setForm((f) => ({ ...f, [k]: e.target.value }));
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const errorParam = params.get("error");
+      const verifiedParam = params.get("verified");
+      const redirectParam = params.get("redirect");
 
-  const errText = (code?: string) => {
-    switch (code) {
-      case "no-account":
-        return c.errNoAccount;
-      case "bad-password":
-        return c.errBadPassword;
-      case "exists":
-        return c.errExists;
-      default:
-        return c.errRequired;
+      if (redirectParam) {
+        setAuthRedirect(redirectParam);
+      } else if (!verifiedParam && !errorParam) {
+        window.localStorage.removeItem("lbf.auth.redirect");
+      }
+
+      if (errorParam === "google") {
+        setGoogleFailed(true);
+        setClientError("La connexion avec Google a échoué. Réessayez ou utilisez votre email.");
+      }
+      if (verifiedParam === "1") {
+        setVerifiedMessage({
+          ok: true,
+          text: "Votre email a bien été confirmé — vous pouvez vous connecter.",
+        });
+      } else if (verifiedParam === "0") {
+        setVerifiedMessage({
+          ok: false,
+          text: "Ce lien de confirmation est invalide ou a expiré.",
+        });
+      }
+    } catch {
+      // ignore
     }
+  }, []);
+
+  const set = (key: keyof typeof form) => (event: ChangeEvent<HTMLInputElement>) => {
+    setForm((prev) => ({ ...prev, [key]: event.target.value }));
   };
 
-  const submit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
+  const loading = loginLoading || signupLoading;
+  const error =
+    (googleFailed
+      ? "La connexion avec Google a échoué. Réessayez ou utilisez votre email."
+      : null) ||
+    clientError ||
+    loginError ||
+    signupError;
+  const countryOptions = COUNTRIES.map((country) => ({
+    value: country.name,
+    label: country.name,
+    hint: country.flag,
+  }));
+  const languageOptions = NATIVE_LANGUAGES.map((language) => ({
+    value: language.name,
+    label: language.name,
+  }));
+
+  const finishAuth = (role?: "admin" | "tourist") => {
+    const pendingRedirect = consumeAuthRedirect();
+    const target =
+      role === "admin" ? "/admin" : pendingRedirect ?? "/me/bookings";
+    // Full navigation so route guards see the cookie-backed session after login
+    // (SPA navigate can run before React applies setAuth from the same submit).
+    window.location.assign(target);
+  };
+
+  const submit = async (event: FormEvent) => {
+    event.preventDefault();
+    setClientError(null);
+    setShowResend(false);
 
     if (mode === "login") {
-      if (!form.email || !form.password) return setError(c.errRequired);
-    } else if (
+      if (!form.email || !form.password) {
+        setClientError(c.errRequired);
+        return;
+      }
+
+      const result = await login({ email: form.email, password: form.password });
+      if (!result.ok) {
+        if (result.emailNotVerified) {
+          setShowResend(true);
+          setResendEmail(form.email);
+        }
+        return;
+      }
+      finishAuth(result.role);
+      return;
+    }
+
+    if (
       !form.fullName ||
       !form.email ||
       !form.password ||
+      !form.confirmPassword ||
       !form.country ||
       !form.nativeLanguage
     ) {
-      return setError(c.errRequired);
+      setClientError(c.errRequired);
+      return;
     }
 
-    setLoading(true);
-    // Simulate a network round-trip (frontend only, no backend yet).
-    setTimeout(() => {
-      const res =
-        mode === "login"
-          ? login(form.email, form.password)
-          : signup({
-              fullName: form.fullName,
-              email: form.email,
-              password: form.password,
-              country: form.country,
-              nativeLanguage: form.nativeLanguage,
-              role: "tourist",
-            });
-      setLoading(false);
-      if (!res.ok) {
-        setError(errText(res.error));
-        return;
-      }
-      const pendingRedirect = window.localStorage.getItem("lbf.auth.redirect");
-      if (pendingRedirect?.startsWith("/")) {
-        window.localStorage.removeItem("lbf.auth.redirect");
-        window.location.assign(pendingRedirect);
-        return;
-      }
-      const r = res.user?.role;
-      navigate({ to: r === "admin" ? "/admin" : "/account" });
-    }, 550);
+    if (form.password !== form.confirmPassword) {
+      setClientError(c.errPasswordMismatch);
+      return;
+    }
+
+    const result = await signup({
+      name: form.fullName,
+      email: form.email,
+      password: form.password,
+      confirmPassword: form.confirmPassword,
+      country: form.country,
+      language: form.nativeLanguage,
+    });
+
+    if (!result.ok) return;
+    if (result.emailVerified === false) {
+      setMode("login");
+      setVerifiedMessage({
+        ok: true,
+        text: "Compte créé ! Vérifiez votre boîte mail et cliquez sur le lien de confirmation avant de vous connecter.",
+      });
+      return;
+    }
+    finishAuth(result.role);
+  };
+
+  const resendEmailLink = async () => {
+    if (!resendEmail) return;
+    setResendLoading(true);
+    try {
+      await authService.resendVerification(resendEmail);
+      setVerifiedMessage({
+        ok: true,
+        text: "Un nouveau lien de confirmation a été envoyé à votre adresse email.",
+      });
+      setShowResend(false);
+      setClientError(null);
+    } catch (err) {
+      setClientError("Impossible de renvoyer le lien. Veuillez réessayer plus tard.");
+    } finally {
+      setResendLoading(false);
+    }
   };
 
   const inputCls =
@@ -266,7 +280,6 @@ function AuthScreen() {
 
   return (
     <div className="grid min-h-screen bg-background lg:grid-cols-2">
-      {/* Visual side */}
       <div className="relative hidden overflow-hidden lg:block">
         <img
           src={heroAtlas}
@@ -276,13 +289,10 @@ function AuthScreen() {
         <div className="absolute inset-0 bg-gradient-to-t from-ink/80 via-ink/30 to-transparent" />
         <div className="absolute inset-x-0 bottom-0 p-12 text-card">
           <p className="font-hand text-3xl text-saffron">{c.welcome}</p>
-          <p className="mt-3 max-w-md font-display text-2xl font-bold leading-snug">
-            {c.tagline}
-          </p>
+          <p className="mt-3 max-w-md font-display text-2xl font-bold leading-snug">{c.tagline}</p>
         </div>
       </div>
 
-      {/* Form side */}
       <div className="flex flex-col px-5 py-8 sm:px-10">
         <div className="flex items-center justify-between">
           <Link
@@ -298,28 +308,31 @@ function AuthScreen() {
         <div className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center py-8">
           <Logo className="mb-8 self-start" />
 
-          {/* Tabs */}
           <div className="mb-6 inline-flex rounded-full border border-border bg-muted p-1">
-            {(["login", "signup"] as const).map((m) => (
+            {(["login", "signup"] as const).map((tab) => (
               <button
-                key={m}
+                key={tab}
                 type="button"
                 onClick={() => {
-                  setMode(m);
-                  setError(null);
+                  setMode(tab);
+                  setClientError(null);
+                  setShowResend(false);
+                  setVerifiedMessage(null);
                 }}
                 className={`relative rounded-full px-6 py-2 text-sm font-semibold transition ${
-                  mode === m ? "text-primary-foreground" : "text-muted-foreground hover:text-foreground"
+                  mode === tab
+                    ? "text-primary-foreground"
+                    : "text-muted-foreground hover:text-foreground"
                 }`}
               >
-                {mode === m && (
+                {mode === tab && (
                   <motion.span
                     layoutId="auth-tab"
                     className="absolute inset-0 rounded-full bg-primary"
                     transition={{ type: "spring", stiffness: 400, damping: 32 }}
                   />
                 )}
-                <span className="relative">{m === "login" ? c.loginTab : c.signupTab}</span>
+                <span className="relative">{tab === "login" ? c.loginTab : c.signupTab}</span>
               </button>
             ))}
           </div>
@@ -330,7 +343,11 @@ function AuthScreen() {
 
           <button
             type="button"
-            onClick={() => setError("Google sera disponible avec le backend.")}
+            onClick={() => {
+              // Navigation plein-page (pas d'appel axios) : le flux OAuth2 a besoin
+              // de vraies redirections de navigateur vers Google puis retour ici.
+              window.location.href = `${API_ORIGIN}/oauth2/authorization/google`;
+            }}
             className="mb-4 inline-flex w-full items-center justify-center gap-3 rounded-xl border border-border bg-card px-4 py-3 text-sm font-semibold text-foreground transition hover:bg-muted"
           >
             <GoogleIcon />
@@ -345,8 +362,6 @@ function AuthScreen() {
 
           <form onSubmit={submit} className="space-y-3">
             <AnimatePresence initial={false}>
-
-
               {mode === "signup" && (
                 <motion.div
                   initial={{ opacity: 0, height: 0 }}
@@ -377,7 +392,7 @@ function AuthScreen() {
             <div className="relative">
               <input
                 className={inputCls}
-                type={showPw ? "text" : "password"}
+                type={showPassword ? "text" : "password"}
                 placeholder={c.password}
                 value={form.password}
                 onChange={set("password")}
@@ -385,13 +400,24 @@ function AuthScreen() {
               />
               <button
                 type="button"
-                onClick={() => setShowPw((v) => !v)}
+                onClick={() => setShowPassword((value) => !value)}
                 className="absolute end-3 top-1/2 -translate-y-1/2 text-muted-foreground transition hover:text-foreground"
                 aria-label="toggle password"
               >
-                {showPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </button>
             </div>
+
+            {mode === "login" && (
+              <div className="text-right">
+                <Link
+                  to="/forgot-password"
+                  className="text-xs font-medium text-muted-foreground transition hover:text-primary"
+                >
+                  Mot de passe oublié ?
+                </Link>
+              </div>
+            )}
 
             <AnimatePresence initial={false}>
               {mode === "signup" && (
@@ -399,29 +425,81 @@ function AuthScreen() {
                   initial={{ opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: "auto" }}
                   exit={{ opacity: 0, height: 0 }}
-                  className="grid gap-3 overflow-hidden sm:grid-cols-2"
+                  className="overflow-hidden"
                 >
-                  <input
-                    className={inputCls}
-                    placeholder={c.country}
+                  <div className="relative">
+                    <input
+                      className={inputCls}
+                      type={showConfirmPassword ? "text" : "password"}
+                      placeholder={c.confirmPassword}
+                      value={form.confirmPassword}
+                      onChange={set("confirmPassword")}
+                      autoComplete="new-password"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPassword((value) => !value)}
+                      className="absolute end-3 top-1/2 -translate-y-1/2 text-muted-foreground transition hover:text-foreground"
+                      aria-label="toggle confirm password"
+                    >
+                      {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            <AnimatePresence initial={false}>
+              {mode === "signup" && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="grid gap-3 overflow-visible sm:grid-cols-2"
+                >
+                  <Combobox
                     value={form.country}
-                    onChange={set("country")}
-                    autoComplete="country-name"
+                    onChange={(value) => setForm((prev) => ({ ...prev, country: value }))}
+                    options={countryOptions}
+                    placeholder={c.countryPh}
                   />
-                  <input
-                    className={inputCls}
-                    placeholder={c.nativeLanguage}
+                  <Combobox
                     value={form.nativeLanguage}
-                    onChange={set("nativeLanguage")}
+                    onChange={(value) => setForm((prev) => ({ ...prev, nativeLanguage: value }))}
+                    options={languageOptions}
+                    placeholder={c.languagePh}
                   />
                 </motion.div>
               )}
             </AnimatePresence>
 
-            {error && (
-              <p className="rounded-xl bg-destructive/10 px-4 py-2.5 text-sm text-destructive">
-                {error}
+            {!error && verifiedMessage && (
+              <p
+                className={`rounded-xl px-4 py-2.5 text-sm ${
+                  verifiedMessage.ok
+                    ? "bg-secondary/10 text-secondary"
+                    : "bg-destructive/10 text-destructive"
+                }`}
+              >
+                {verifiedMessage.text}
               </p>
+            )}
+            {error && (
+              <div className="space-y-2">
+                <p className="rounded-xl bg-destructive/10 px-4 py-2.5 text-sm text-destructive">
+                  {error}
+                </p>
+                {showResend && (
+                  <button
+                    type="button"
+                    onClick={resendEmailLink}
+                    disabled={resendLoading}
+                    className="text-xs font-semibold text-primary hover:underline block text-right w-full"
+                  >
+                    {resendLoading ? "Envoi en cours..." : "Pas reçu d'e-mail ? Renvoyer le lien de confirmation"}
+                  </button>
+                )}
+              </div>
             )}
 
             <button
@@ -440,16 +518,14 @@ function AuthScreen() {
               type="button"
               onClick={() => {
                 setMode(mode === "login" ? "signup" : "login");
-                setError(null);
+                setClientError(null);
+                setShowResend(false);
+                setVerifiedMessage(null);
               }}
               className="font-semibold text-primary hover:underline"
             >
               {mode === "login" ? c.signupTab : c.loginTab}
             </button>
-          </p>
-
-          <p className="mt-6 rounded-xl border border-dashed border-border bg-muted/50 px-4 py-2.5 text-center text-xs text-muted-foreground">
-            {c.demoHint}
           </p>
         </div>
       </div>
@@ -460,10 +536,22 @@ function AuthScreen() {
 function GoogleIcon() {
   return (
     <svg className="h-4 w-4" viewBox="0 0 48 48" aria-hidden="true">
-      <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z" />
-      <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z" />
-      <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z" />
-      <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z" />
+      <path
+        fill="#EA4335"
+        d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"
+      />
+      <path
+        fill="#4285F4"
+        d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"
+      />
+      <path
+        fill="#FBBC05"
+        d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"
+      />
+      <path
+        fill="#34A853"
+        d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"
+      />
     </svg>
   );
 }

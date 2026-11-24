@@ -1,17 +1,17 @@
 package ma.lbledfirst.backend.controller;
 
 import java.util.List;
+import java.util.Map;
 
-import ma.lbledfirst.backend.domain.User;
+import jakarta.validation.Valid;
+import ma.lbledfirst.backend.dto.UserResponse;
+import ma.lbledfirst.backend.dto.UserRequest;
+import ma.lbledfirst.backend.dto.UserUpdateMeRequest;
+import ma.lbledfirst.backend.dto.ChangePasswordRequest;
 import ma.lbledfirst.backend.service.UserService;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/users")
@@ -23,29 +23,46 @@ public class UserController {
         this.service = service;
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping
-    public List<User> findAll() {
-        return service.findAll();
+    public List<UserResponse> findAll() {
+        return service.findAllUsers();
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/{id}")
-    public User findById(@PathVariable Long id) {
-        return service.findById(id);
+    public UserResponse findById(@PathVariable Long id) {
+        return service.findByIdUser(id);
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
-    public User create(@RequestBody User user) {
-        return service.save(user);
+    public UserResponse create(@Valid @RequestBody UserRequest req) {
+        return service.createUser(req);
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{id}")
-    public User update(@PathVariable Long id, @RequestBody User user) {
-        user.setId(id);
-        return service.update(id, user);
+    public UserResponse update(@PathVariable Long id, @Valid @RequestBody UserRequest req) {
+        return service.updateUser(id, req);
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{id}")
     public void delete(@PathVariable Long id) {
         service.delete(id);
+    }
+
+    @PatchMapping("/me")
+    public UserResponse updateMe(@Valid @RequestBody UserUpdateMeRequest patch, Authentication authentication) {
+        String email = (authentication != null) ? authentication.getName() : null;
+        return service.updateMe(email, patch);
+    }
+
+    @PatchMapping("/me/password")
+    public Map<String, String> changePassword(@Valid @RequestBody ChangePasswordRequest body, Authentication authentication) {
+        String email = (authentication != null) ? authentication.getName() : null;
+        service.changePassword(email, body);
+        return Map.of("message", "Password updated");
     }
 }

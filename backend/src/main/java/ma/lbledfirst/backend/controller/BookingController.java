@@ -2,16 +2,13 @@ package ma.lbledfirst.backend.controller;
 
 import java.util.List;
 
-import ma.lbledfirst.backend.domain.Booking;
+import jakarta.validation.Valid;
+import ma.lbledfirst.backend.dto.BookingRequest;
+import ma.lbledfirst.backend.dto.BookingResponse;
 import ma.lbledfirst.backend.service.BookingService;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/bookings")
@@ -23,27 +20,46 @@ public class BookingController {
         this.service = service;
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping
-    public List<Booking> findAll() {
-        return service.findAll();
+    public List<BookingResponse> findAll() {
+        return service.findAllDto();
     }
 
+    @GetMapping("/my-bookings")
+    public List<BookingResponse> findMyBookings(Authentication authentication) {
+        String email = (authentication != null) ? authentication.getName() : null;
+        return service.findMyBookingsDto(email);
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/{id}")
-    public Booking findById(@PathVariable Long id) {
-        return service.findById(id);
+    public BookingResponse findById(@PathVariable Long id) {
+        return service.findByIdDto(id);
     }
 
     @PostMapping
-    public Booking create(@RequestBody Booking booking) {
-        return service.save(booking);
+    public BookingResponse create(@Valid @RequestBody BookingRequest booking, Authentication authentication) {
+        String email = (authentication != null) ? authentication.getName() : null;
+        return service.createDto(booking, email);
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{id}")
-    public Booking update(@PathVariable Long id, @RequestBody Booking booking) {
-        booking.setId(id);
-        return service.update(id, booking);
+    public BookingResponse update(@PathVariable Long id, @Valid @RequestBody BookingRequest booking) {
+        return service.updateDto(id, booking);
     }
 
+    // Allow any authenticated user to cancel their own booking
+    @PostMapping("/{id}/cancel")
+    public BookingResponse cancel(@PathVariable Long id, Authentication authentication) {
+        String email = (authentication != null) ? authentication.getName() : null;
+        boolean isAdmin = authentication != null && authentication.getAuthorities().stream()
+                .anyMatch(g -> "ROLE_ADMIN".equals(g.getAuthority()));
+        return service.cancelDto(id, email, isAdmin);
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{id}")
     public void delete(@PathVariable Long id) {
         service.delete(id);
